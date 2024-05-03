@@ -1,0 +1,59 @@
+<!--<div class="variables" [class.dark]="dark.isDark" #container>-->
+
+<!--  <div id="cytoscape" #cytoscape></div>-->
+<!--    <div id="disease-container" class="drag-container" #compareContainer [style.display]="comparing ? 'flex': 'none'">-->
+<!--      <div id="handle-limits" (mouseup)="dragEnd()" (mouseleave)="dragEnd()"-->
+<!--           (mousemove)="dragMove($event, compareContainer)" [class.active]="compareDragging">-->
+<!--        <span id="disease-handle" class="drag-handle" (mousedown)="dragStart()"></span>-->
+<!--      </div>-->
+
+<!--      <div id="cytoscape-compare" #cytoscapeCompare class="drag-content"></div>-->
+<!--    </div>-->
+
+<!--  <div id="legend-boundary" [ngStyle]="{'&#45;&#45;legend-width': ratio  * container.clientHeight + 'px'}">-->
+<!--    <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#legend-boundary" id="legend-container" (cdkDragMoved)="updateLegend()"-->
+<!--         [style.height]="container.clientHeight + 'px'">-->
+<!--      <button id="legend-handle" cdkDragHandle>LEGEND</button>-->
+<!--      <div id="legend" #legend></div>-->
+<!--    </div>-->
+<!--  </div>-->
+
+
+<!--  <form id="controls">-->
+<!--&lt;!&ndash;    <button mat-raised-button  (click)="getInteractors(ResourceType.STATIC)">IntAct</button>&ndash;&gt;-->
+<!--&lt;!&ndash;    <button mat-raised-button (click)="getInteractors(ResourceType.DISGENET)">DisGeNet</button>&ndash;&gt;-->
+<!--    <button mat-raised-button (click)="updateStyle()">Update Style</button>-->
+<!--    <button mat-raised-button (click)="logProteins()">Log Proteins</button>-->
+
+<!--    <mat-form-field appearance="outline">-->
+<!--      <mat-label>PSICQUIC</mat-label>-->
+<!--&lt;!&ndash;      <mat-select #psicquicSelect [formControl]="selectedPsicquicResource" [hideSingleSelectionIndicator]=true (selectionChange)="onPsicquicResourceChange($event.value)">&ndash;&gt;-->
+<!--&lt;!&ndash;        <mat-option *ngFor="let resource of psicquicResources" [value]="resource.name" [disabled]="!resource.active" (click)="psicquicSelect.open()">&ndash;&gt;-->
+<!--&lt;!&ndash;          <div class="option-content">&ndash;&gt;-->
+<!--&lt;!&ndash;            <span><i>{{ resource.name }}</i></span>&ndash;&gt;-->
+<!--&lt;!&ndash;            <mat-spinner diameter="20" *ngIf="isDataFromPsicquicLoading && selectedPsicquicResource.value === resource.name"></mat-spinner>&ndash;&gt;-->
+<!--&lt;!&ndash;          </div>&ndash;&gt;-->
+<!--&lt;!&ndash;        </mat-option>&ndash;&gt;-->
+<!--&lt;!&ndash;      </mat-select>&ndash;&gt;-->
+<!--    </mat-form-field>-->
+
+<!--&lt;!&ndash;    <button mat-raised-button (click)="openCustomInteractorDialog()">Custom resource</button>&ndash;&gt;-->
+
+<!--    <mat-slide-toggle [(ngModel)]="dark.isDark" name="dark">Dark mode</mat-slide-toggle>-->
+<!--&lt;!&ndash;    <span>{{(reactomeEvents$ | async)?.detail?.reactomeId}}</span>&ndash;&gt;-->
+<!--  </form>-->
+
+
+<!--&lt;!&ndash;  <mat-selection-list style="width: 260px" *ngIf="resourceTokens?.length != 0" [multiple]="false">&ndash;&gt;-->
+<!--&lt;!&ndash;    <mat-list-option color="primary" *ngFor="let resourceToken of resourceTokens" [value]="resourceToken"&ndash;&gt;-->
+<!--&lt;!&ndash;                     [selected]="isSelected(resourceToken)" (click)="onCustomResourceChange(resourceToken)">&ndash;&gt;-->
+<!--&lt;!&ndash;      <div class="option-content">&ndash;&gt;-->
+<!--&lt;!&ndash;        <div>{{ resourceToken.token?.summary?.name }}</div>&ndash;&gt;-->
+<!--&lt;!&ndash;        <button mat-icon-button color="primary" (click)="deleteResource(resourceToken)">&ndash;&gt;-->
+<!--&lt;!&ndash;          <mat-icon>delete</mat-icon>&ndash;&gt;-->
+<!--&lt;!&ndash;        </button>&ndash;&gt;-->
+<!--&lt;!&ndash;      </div>&ndash;&gt;-->
+<!--&lt;!&ndash;    </mat-list-option>&ndash;&gt;-->
+<!--&lt;!&ndash;  </mat-selection-list>&ndash;&gt;-->
+
+<!--</div>-->

@@ -10,6 +10,12 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "paths": {
+      "ngx-reactome-cytoscape-style": [
+        "./dist/ngx-reactome-cytoscape-style"
+      ],
+      "ngx-reactome-diagram": [
+        "./dist/ngx-reactome-diagram"
+      ],
       "ngx-reactome-style": [
         "./dist/ngx-reactome-style"
       ]
@@ -32,6 +38,10 @@
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "typeRoots": [
+      "node_modules/@types",
+      "node_modules/ngx-reactome-cytoscape-style/types"
+    ]
   }
 }
