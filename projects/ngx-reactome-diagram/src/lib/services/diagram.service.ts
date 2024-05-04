@@ -3,9 +3,7 @@ import {forkJoin, map, Observable, of, tap} from "rxjs";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {Diagram, Edge, Node, NodeConnector, Position, Prop, Rectangle} from "../model/diagram.model";
 import {Edge as GraphEdge, Graph, Node as GraphNode} from "../model/graph.model";
-// @ts-ignore
-import Reactome, {Style} from "reactome-cytoscape-style";
-// @ts-ignore
+import Reactome, {Style} from "ngx-reactome-cytoscape-style";
 import legend from "../../assets/json/legend.json"
 import {array} from "vectorious";
 

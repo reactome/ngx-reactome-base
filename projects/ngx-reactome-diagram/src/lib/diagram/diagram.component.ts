@@ -25,7 +25,8 @@ import {MatDialog} from "@angular/material/dialog";
 @Component({
   selector: 'cr-diagram',
   templateUrl: './diagram.component.html',
-  styleUrls: ['./diagram.component.scss']
+  styleUrls: ['./diagram.component.scss'],
+  standalone: true
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
   title = 'pathway-browser';
@@ -79,22 +80,22 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
     this.reactomeStyle = new Style(container);
 
-    this.diagram.getLegend()
-      .subscribe(legend => {
-        this.legend = cytoscape({
-          container: legendContainer,
-          elements: legend,
-          style: this.reactomeStyle?.getStyleSheet(),
-          layout: {name: "preset"},
-          boxSelectionEnabled: false
-        });
-        this.reactomeStyle?.bindToCytoscape(this.legend);
-        this.legend.zoomingEnabled(false);
-        this.legend.panningEnabled(false);
-        this.legend.minZoom(0)
-        const bb = this.legend.elements().boundingBox();
-        // this.ratio = bb.w / bb.h;
-      });
+    // this.diagram.getLegend()
+    //   .subscribe(legend => {
+    //     this.legend = cytoscape({
+    //       container: legendContainer,
+    //       elements: legend,
+    //       style: this.reactomeStyle?.getStyleSheet(),
+    //       layout: {name: "preset"},
+    //       boxSelectionEnabled: false
+    //     });
+    //     this.reactomeStyle?.bindToCytoscape(this.legend);
+    //     this.legend.zoomingEnabled(false);
+    //     this.legend.panningEnabled(false);
+    //     this.legend.minZoom(0)
+    //     const bb = this.legend.elements().boundingBox();
+    //     // this.ratio = bb.w / bb.h;
+    //   });
 
     this.loadDiagram();
 
