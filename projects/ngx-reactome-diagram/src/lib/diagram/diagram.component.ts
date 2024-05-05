@@ -20,13 +20,17 @@ import {FormControl} from "@angular/forms";
 import {DiagramStateService} from "../services/diagram-state.service";
 import {UntilDestroy} from "@ngneat/until-destroy";
 import {MatDialog} from "@angular/material/dialog";
+import { CommonModule } from '@angular/common';
 
 @UntilDestroy({checkProperties: true})
 @Component({
   selector: 'cr-diagram',
   templateUrl: './diagram.component.html',
   styleUrls: ['./diagram.component.scss'],
-  standalone: true
+  standalone: true,
+  imports: [
+    CommonModule
+  ]
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
   title = 'pathway-browser';
