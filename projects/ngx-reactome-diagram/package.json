@@ -1,13 +1,13 @@
 {
   "name": "ngx-reactome-diagram",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "peerDependencies": {
     "cytoscape": "^3.27.0",
     "cytoscape-fcose": "^2.2.0",
     "cytoscape-layers": "^2.4.4",
     "lodash.memoize": "^4.1.2",
-    "@angular/common": "^17.3.0",
-    "@angular/core": "^17.3.0"
+    "@angular/common": "^17.2.4",
+    "@angular/core": "^17.2.4"
   },
   "dependencies": {
     "tslib": "^2.3.0"

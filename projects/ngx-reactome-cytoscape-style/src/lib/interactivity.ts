@@ -10,7 +10,7 @@ cytoscape.use(Layers)
 export class Interactivity {
   constructor(private cy: cytoscape.Core, private properties: Properties) {
     // @ts-ignore
-    cy.elements().ungrabify().panify();
+    // cy.elements().ungrabify().panify();
     this.initHover(cy);
     this.initSelect(cy);
     this.initZoom(cy);

@@ -84,22 +84,22 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
     this.reactomeStyle = new Style(container);
 
-    // this.diagram.getLegend()
-    //   .subscribe(legend => {
-    //     this.legend = cytoscape({
-    //       container: legendContainer,
-    //       elements: legend,
-    //       style: this.reactomeStyle?.getStyleSheet(),
-    //       layout: {name: "preset"},
-    //       boxSelectionEnabled: false
-    //     });
-    //     this.reactomeStyle?.bindToCytoscape(this.legend);
-    //     this.legend.zoomingEnabled(false);
-    //     this.legend.panningEnabled(false);
-    //     this.legend.minZoom(0)
-    //     const bb = this.legend.elements().boundingBox();
-    //     // this.ratio = bb.w / bb.h;
-    //   });
+    this.diagram.getLegend()
+      .subscribe(legend => {
+        this.legend = cytoscape({
+          container: legendContainer,
+          elements: legend,
+          style: this.reactomeStyle?.getStyleSheet(),
+          layout: {name: "preset"},
+          boxSelectionEnabled: false
+        });
+        this.reactomeStyle?.bindToCytoscape(this.legend);
+        this.legend.zoomingEnabled(false);
+        this.legend.panningEnabled(false);
+        this.legend.minZoom(0)
+        const bb = this.legend.elements().boundingBox();
+        // this.ratio = bb.w / bb.h;
+      });
 
     this.loadDiagram();
 
@@ -119,6 +119,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
           elements: elements,
           style: this.reactomeStyle?.getStyleSheet(),
           layout: {name: "preset"},
+          userPanningEnabled: false,
+          userZoomingEnabled: false,
+          autoungrabify: false
         });
         this.reactomeStyle.bindToCytoscape(this.cy);
         this.reactomeStyle.clearCache();
