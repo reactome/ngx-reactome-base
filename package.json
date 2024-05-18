@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "build-style": "ng build ngx-reactome-style",
-    "build-diagram": "ng build ngx-reactome-diagram",
+    "build-diagram": "ng build ngx-reactome-diagram && cd dist/ngx-reactome-diagram && npm pack",
     "build-cytoscape-style": "ng build ngx-reactome-cytoscape-style"
   },
   "private": false,

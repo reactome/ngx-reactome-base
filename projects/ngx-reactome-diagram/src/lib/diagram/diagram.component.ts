@@ -21,6 +21,7 @@ import {DiagramStateService} from "../services/diagram-state.service";
 import {UntilDestroy} from "@ngneat/until-destroy";
 import {MatDialog} from "@angular/material/dialog";
 import { CommonModule } from '@angular/common';
+import {CdkDrag} from '@angular/cdk/drag-drop';
 
 @UntilDestroy({checkProperties: true})
 @Component({
@@ -29,7 +30,8 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./diagram.component.scss'],
   standalone: true,
   imports: [
-    CommonModule
+    CommonModule,
+    CdkDrag
   ]
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
