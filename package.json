@@ -9,7 +9,7 @@
     "test": "ng test",
     "build-style": "ng build ngx-reactome-style",
     "build-diagram": "ng build ngx-reactome-diagram && cd dist/ngx-reactome-diagram && npm pack",
-    "build-cytoscape-style": "ng build ngx-reactome-cytoscape-style"
+    "build-cytoscape-style": "ng build ngx-reactome-cytoscape-style && cd dist/ngx-reactome-cytoscape-style && npm pack"
   },
   "private": false,
   "dependencies": {

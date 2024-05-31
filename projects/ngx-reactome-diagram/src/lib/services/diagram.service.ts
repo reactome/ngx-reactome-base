@@ -159,8 +159,8 @@ export class DiagramService {
 
   public getDiagram(id: number | string): Observable<cytoscape.ElementsDefinition> {
     return forkJoin({
-      diagram: this.http.get<Diagram>(`https://release.reactome.org/download/current/diagram/${id}.json`),
-      graph: this.http.get<Graph>(`https://release.reactome.org/download/current/diagram/${id}.graph.json`)
+      diagram: this.http.get<Diagram>(`https://dev.reactome.org/download/current/diagram/${id}.json`),
+      graph: this.http.get<Graph>(`https://dev.reactome.org/download/current/diagram/${id}.graph.json`)
     }).pipe(
       tap((mergedResponse) => console.log('All responses:', mergedResponse)),
       map((response) => {

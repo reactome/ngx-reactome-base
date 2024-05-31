@@ -70,7 +70,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     if (changes['diagramId']) this.loadDiagram();
   }
 
-
   ngAfterViewInit(): void {
     this.dark.$dark.subscribe(this.updateStyle.bind(this))
 
@@ -452,5 +451,12 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   logProteins() {
     console.debug(new Set(this.cy.nodes(".Protein").map(node => node.data("acc") || node.data("iAcc"))))
+  }
+
+  /**
+   * Somehow DiagramService cannot be exported for use out of this package. Therefore, use this method to get this instance.
+   */
+  getDiagramService(): DiagramService {
+    return this.diagram;
   }
 }
