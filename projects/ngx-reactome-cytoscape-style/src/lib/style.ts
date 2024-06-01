@@ -571,6 +571,14 @@ export class Style {
           "text-max-width": (node: cytoscape.NodeSingular) => (node.width() - 60) + 'px',
         }
       },
+      {
+        selector: 'node.input_output',
+        style: {
+          "shape": "ellipse",
+          "width": this.pm('global', 'thickness', t => t * 4),
+          "height": this.pm('global', 'thickness', t => t * 4),
+        }
+      },
 
 
       {
@@ -706,7 +714,7 @@ export class Style {
         selector: "edge[?weights]",
         style: {
           // @ts-ignore
-          "curve-style": "round-segments",
+          "curve-style": (ele) => ele.data('curveStyle') || 'round-segments',
           "segment-distances": "data(distances)",
           "segment-weights": "data(weights)",
           "segment-radius": 30,

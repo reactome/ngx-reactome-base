@@ -409,7 +409,10 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       if (e.detail.type === 'reaction') {
         elements = e.detail.cy.elements('node.reaction:selected')
       }
-      const reactomeIds = elements.map(el => el.data('graph.stId'));
+      let reactomeIds = elements.map(el => el.data('graph.stId'));
+      // Make sure reactomeIds don't contain duplicated element
+      const uniqueSet = new Set(reactomeIds);
+      reactomeIds = Array.from(uniqueSet);
       this.state.set('select', reactomeIds)
     }
   );
