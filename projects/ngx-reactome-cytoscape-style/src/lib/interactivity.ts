@@ -242,9 +242,7 @@ export class Interactivity {
   }
 
   initZoom(cy: cytoscape.Core) {
-    const shadows = cy.edges('[?pathway]');
-    const shadowLabels = cy.nodes('.Shadow');
-    const trivial = cy.elements('.trivial');
+
     this.updateProteins();
 
     cy.minZoom(Math.min(cy.zoom(), extract(this.properties.shadow.labelOpacity)[0][0] / 100));
@@ -267,6 +265,10 @@ export class Interactivity {
       const maxWidth = this.interpolate(z, [this.p(zoomStart, 100), this.p(zoomEnd, 50)]);
       const margin = this.interpolate(z, [this.p(zoomStart, 0), this.p(zoomEnd, 25)]);
       const fontSize = this.interpolate(z, [this.p(zoomStart, baseFontSize), this.p(zoomEnd, baseFontSize / 2)]);
+      
+      const shadows = cy.edges('[?pathway]');
+      const shadowLabels = cy.nodes('.Shadow');
+      const trivial = cy.elements('.trivial');
       shadows.style({
         'underlay-opacity': shadowOpacity
       });
