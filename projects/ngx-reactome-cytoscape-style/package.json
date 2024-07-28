@@ -1,6 +1,6 @@
 {
   "name": "ngx-reactome-cytoscape-style",
-  "version": "0.0.7",
+  "version": "0.0.12",
   "peerDependencies": {
     "cytoscape": "^3.27.0",
     "cytoscape-fcose": "^2.2.0",

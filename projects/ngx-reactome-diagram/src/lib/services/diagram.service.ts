@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable, InjectionToken, OnInit} from '@angular/core';
 import {forkJoin, map, Observable, of, tap} from "rxjs";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {Diagram, Edge, Node, NodeConnector, Position, Prop, Rectangle} from "../model/diagram.model";
@@ -70,8 +70,10 @@ export class DiagramService {
 
   extraLine: Map<string, Position> = new Map<string, Position>();
   reverseExtraLine: Map<string, Position> = new Map<string, Position>();
-
-  constructor(private http: HttpClient) {
+  
+  constructor(private http: HttpClient, @Inject(DIAGRAM_CONFIG_TOKEN) private config: any) {
+    // This is a service object. Therefore, we have to extract configure here if any
+    this.diagramUrl = this.config?.diagramUrl;
   }
 
   nodeTypeMap = new Map<string, NodeDefinition>([
@@ -153,14 +155,18 @@ export class DiagramService {
 
   private readonly COMPARTMENT_SHIFT = 35;
 
+  // The server address: this should be injected from the client that setting up this.
+  private diagramUrl: string = 'https://dev.reactome.org/download/current/diagram';
+
   public getLegend(): Observable<cytoscape.ElementsDefinition> {
     return of(legend)
   }
 
+  //TODO: Don't do anything if id is undefined here - GW
   public getDiagram(id: number | string): Observable<cytoscape.ElementsDefinition> {
     return forkJoin({
-      diagram: this.http.get<Diagram>(`https://dev.reactome.org/download/current/diagram/${id}.json`),
-      graph: this.http.get<Graph>(`https://dev.reactome.org/download/current/diagram/${id}.graph.json`)
+      diagram: this.http.get<Diagram>(`${this.diagramUrl}/${id}.json`),
+      graph: this.http.get<Graph>(`${this.diagramUrl}/${id}.graph.json`)
     }).pipe(
       tap((mergedResponse) => console.log('All responses:', mergedResponse)),
       map((response) => {
@@ -799,3 +805,6 @@ function avoidOverlap(definitions: cytoscape.NodeDefinition[]) {
   cy.destroy()
   container.remove()
 }
+
+
+export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<any>('DIAGRAM_CONFIG_TOKEN');

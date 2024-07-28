@@ -2,26 +2,24 @@ import {
   AfterViewInit,
   ChangeDetectorRef,
   Component,
-  ElementRef,
-  Input,
+  ElementRef, Input,
   OnChanges,
   Output,
   SimpleChanges,
   ViewChild
 } from '@angular/core';
-import {DiagramService} from "../services/diagram.service";
+import { DiagramService } from "../services/diagram.service";
 import cytoscape from "cytoscape";
 // @ts-ignore
-import {Interactivity, ReactomeEvent, ReactomeEventTypes, Style} from "ngx-reactome-cytoscape-style";
-import {DarkService} from "../services/dark.service";
-import {delay, distinctUntilChanged, filter, Observable, share, Subject, tap} from "rxjs";
-import {MatSelect} from "@angular/material/select";
-import {FormControl} from "@angular/forms";
-import {DiagramStateService} from "../services/diagram-state.service";
-import {UntilDestroy} from "@ngneat/until-destroy";
-import {MatDialog} from "@angular/material/dialog";
+import { ReactomeEvent, ReactomeEventTypes, Style } from "ngx-reactome-cytoscape-style";
+import { DarkService } from "../services/dark.service";
+import { delay, distinctUntilChanged, filter, Observable, share, Subject, tap } from "rxjs";
+import { FormControl } from "@angular/forms";
+import { DiagramStateService } from "../services/diagram-state.service";
+import { UntilDestroy } from "@ngneat/until-destroy";
+import { MatDialog } from "@angular/material/dialog";
 import { CommonModule } from '@angular/common';
-import {CdkDrag} from '@angular/cdk/drag-drop';
+import { CdkDrag } from '@angular/cdk/drag-drop';
 
 @UntilDestroy({checkProperties: true})
 @Component({
