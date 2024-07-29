@@ -108,29 +108,36 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   loadDiagram() {
     if (!this.cytoscapeContainer) return;
 
-    const container = this.cytoscapeContainer!.nativeElement;
-
     this.diagram.getDiagram(this.diagramId)
       .subscribe(elements => {
-        this.comparing = elements.nodes.some(node => node.data['isFadeOut']) || elements.edges.some(edge => edge.data['isFadeOut'])
-        this.cy = cytoscape({
-          container: container,
-          elements: elements,
-          style: this.reactomeStyle?.getStyleSheet(),
-          layout: {name: "preset"},
-          userPanningEnabled: false,
-          userZoomingEnabled: false,
-          autoungrabify: false
-        });
-        this.reactomeStyle.bindToCytoscape(this.cy);
-        this.reactomeStyle.clearCache();
-
-        this.loadCompare(elements, container);
-
-        this.stateToDiagram();
+        this.displayNetwork(elements);
       })
   }
 
+  displayNetwork(elements: any) {
+    const container = this.cytoscapeContainer!.nativeElement;
+    this.comparing = elements.nodes.some((node: any) => node.data['isFadeOut']) || 
+                     elements.edges.some((edge: any) => edge.data['isFadeOut'])
+    this.cy = cytoscape({
+      container: container,
+      elements: elements,
+      style: this.reactomeStyle?.getStyleSheet(),
+      layout: {name: "preset"},
+      userPanningEnabled: false,
+      userZoomingEnabled: false,
+      autoungrabify: false
+    });
+    this.reactomeStyle.bindToCytoscape(this.cy);
+    this.reactomeStyle.clearCache();
+
+    this.loadCompare(elements, container);
+
+    this.stateToDiagram();
+
+    // Fire an event after this network is displayed.
+    const event = new CustomEvent("network_displayed");
+    container.dispatchEvent(event);
+  }
 
   private loadCompare(elements: cytoscape.ElementsDefinition, container: HTMLDivElement) {
     if (this.comparing) {
