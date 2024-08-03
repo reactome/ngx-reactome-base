@@ -64,6 +64,11 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   @Input('id') diagramId: string = '';
 
+  // Flag to control if dbId should be used as primary ids
+  // This should be useful in the context of the curator tool since
+  // dbIds are used as primary ids. Not all instances have stable ids.
+  @Input() usedbId: boolean = false;
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['diagramId']) this.loadDiagram();
   }
@@ -116,8 +121,8 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   displayNetwork(elements: any) {
     const container = this.cytoscapeContainer!.nativeElement;
-    this.comparing = elements.nodes.some((node: any) => node.data['isFadeOut']) || 
-                     elements.edges.some((edge: any) => edge.data['isFadeOut'])
+    this.comparing = (elements.nodes && elements.nodes.some((node: any) => node.data['isFadeOut'])) || 
+                     (elements.edges && elements.edges.some((edge: any) => edge.data['isFadeOut']))
     this.cy = cytoscape({
       container: container,
       elements: elements,
@@ -203,7 +208,12 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
             } else { // Non physical entity
               elements = elements.or(`.${clazz}`);
             }
-          } else {
+          } 
+          else if (this.usedbId) {
+            // It is possible dbId is encoded in string
+            elements = elements.or(`[reactomeId=${token}]`);
+          }
+          else {
             elements = elements.or(`[acc=${token}]`)
           }
         }
@@ -414,7 +424,11 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       if (e.detail.type === 'reaction') {
         elements = e.detail.cy.elements('node.reaction:selected')
       }
-      let reactomeIds = elements.map(el => el.data('graph.stId'));
+      let reactomeIds = []
+      if (this.usedbId)
+        reactomeIds = elements.map(el => el.data('reactomeId'));
+      else
+        reactomeIds = elements.map(el => el.data('graph.stId'));
       // Make sure reactomeIds don't contain duplicated element
       const uniqueSet = new Set(reactomeIds);
       reactomeIds = Array.from(uniqueSet);
