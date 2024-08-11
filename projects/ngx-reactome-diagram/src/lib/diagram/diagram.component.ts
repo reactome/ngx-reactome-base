@@ -113,6 +113,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   loadDiagram() {
     if (!this.cytoscapeContainer) return;
 
+    if (!this.diagramId || this.diagramId.trim().length == 0)
+      return; // Nothing to do.
+
     this.diagram.getDiagram(this.diagramId)
       .subscribe(elements => {
         this.displayNetwork(elements);
