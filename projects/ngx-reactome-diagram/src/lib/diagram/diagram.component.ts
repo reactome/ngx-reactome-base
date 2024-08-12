@@ -228,6 +228,13 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     return elements;
   }
 
+  // Apparently the selected state is kept when a new diagram is loaded.
+  // This method is used to reset the state
+  resetState() {
+    this.state.set('select', []);
+    this.state.set('flag', []);
+  }
+
   select(tokens: (string | number)[], cy: cytoscape.Core): cytoscape.CollectionArgument {
     let selected = this.getElements(tokens, cy);
     selected.select();
