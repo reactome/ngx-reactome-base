@@ -68,6 +68,14 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   // This should be useful in the context of the curator tool since
   // dbIds are used as primary ids. Not all instances have stable ids.
   @Input() usedbId: boolean = false;
+  // There are many issues having URL changes for selection state or other
+  // state changes in the curator tool environment (e.g conflict with tree URL)
+  // therefore, we'd like to block the change by flagging this to true.
+  @Input() 
+  set blockRouterChange(block: boolean) {
+    if (this.state)
+      this.state.blockRouterChange = block;
+  };
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['diagramId']) this.loadDiagram();

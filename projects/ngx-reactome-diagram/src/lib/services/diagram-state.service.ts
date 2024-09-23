@@ -22,6 +22,7 @@ export type State = {
 export class DiagramStateService {
 
   private ignore = false;
+  blockRouterChange = false;
 
   private state: State = {
     select: {otherTokens: ['SEL'], value: []},
@@ -68,6 +69,8 @@ export class DiagramStateService {
   }
 
   onPropertyModified() {
+    if (this.blockRouterChange)
+      return Promise.reject();
     return this.router.navigate([], {
       queryParams: {
         ...Object.entries(this.state)

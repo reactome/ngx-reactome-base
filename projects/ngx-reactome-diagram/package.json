@@ -1,6 +1,6 @@
 {
   "name": "ngx-reactome-diagram",
-  "version": "0.0.26",
+  "version": "0.0.30",
   "peerDependencies": {
     "cytoscape": "^3.27.0",
     "cytoscape-fcose": "^2.2.0",
