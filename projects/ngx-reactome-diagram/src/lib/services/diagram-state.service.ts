@@ -22,6 +22,7 @@ export type State = {
 export class DiagramStateService {
 
   private ignore = false;
+  blockRouterChange = false;
 
   private state: State = {
     select: {otherTokens: ['SEL'], value: []},
@@ -61,10 +62,13 @@ export class DiagramStateService {
 
   set<T extends keyof State>(token: T, value: State[T]['value']): void {
     this.state[token].value = value;
+    // N.B. by GW: Not sure why this.ignore is here. Nothing changes here!!!
     this.ignore = false;
-    this.onPropertyModified().then(() =>
-      this.ignore = false
-    );
+    if (!this.blockRouterChange) {
+      this.onPropertyModified().then(() =>
+        this.ignore = false
+      );
+    }
   }
 
   onPropertyModified() {
