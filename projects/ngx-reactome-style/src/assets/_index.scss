@@ -24,7 +24,8 @@ $bg-color: map.get(p.$primary-colors, 990);
 //  you can delete this line and instead use:
 //    `@include mat.typography-hierarchy(mat.define-typography-config());`
 @include mat.all-component-typographies();
-@include mat.core();
+@include mat.elevation-classes();
+@include mat.app-background();
 
 
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
@@ -72,7 +73,8 @@ $palettes: (
 // that you are using.
 //@include mat.all-component-themes($light-theme);
 
-@include mat.core-theme($light-theme);
+@include mat.elevation-classes();
+@include mat.app-background();
 @include mat.card-theme($light-theme);
 @include mat.progress-bar-theme($light-theme);
 @include mat.tooltip-theme($light-theme);
@@ -113,7 +115,8 @@ $color-config: mat.m2-get-color-config($light-theme);
   $color-config: mat.m2-get-color-config($dark-theme);
   @include mat.all-component-colors($dark-theme);
 
-  @include mat.core-color($dark-theme);
+  @include mat.elevation-classes();
+  @include mat.app-background();
   @include mat.card-color($dark-theme);
   @include mat.progress-bar-color($dark-theme);
   @include mat.tooltip-color($dark-theme);
