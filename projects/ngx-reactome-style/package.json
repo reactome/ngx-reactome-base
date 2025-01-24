@@ -1,6 +1,6 @@
 {
   "name": "ngx-reactome-style",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "peerDependencies": {
     "@angular/common": "^18.2.4",
     "@angular/core": "^18.2.4",
