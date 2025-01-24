@@ -23,14 +23,13 @@ import { CdkDrag } from '@angular/cdk/drag-drop';
 
 @UntilDestroy({checkProperties: true})
 @Component({
-  selector: 'cr-diagram',
-  templateUrl: './diagram.component.html',
-  styleUrls: ['./diagram.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    CdkDrag
-  ]
+    selector: 'cr-diagram',
+    templateUrl: './diagram.component.html',
+    styleUrls: ['./diagram.component.scss'],
+    imports: [
+        CommonModule,
+        CdkDrag
+    ]
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
   title = 'pathway-browser';
