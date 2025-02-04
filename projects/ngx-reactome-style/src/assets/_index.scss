@@ -6,17 +6,31 @@
 
 @mixin theme() {
   :root {
-    font-family: Roboto, "Helvetica Neue", sans-serif;
+    color-scheme: light;
     @include mat.theme((
       color: (
         primary: colors.$primary-palette,
         tertiary: colors.$tertiary-palette,
-        theme-type: color-scheme
+        theme-type: light
       ),
       typography: Roboto,
       density: 0
     ));
+    font: var(--mat-sys-body-large);
   };
+
+  body.dark {
+    color-scheme: dark;
+    @include mat.theme((
+      color: (
+        primary: colors.$primary-palette,
+        tertiary: colors.$tertiary-palette,
+        theme-type: dark
+      ),
+      typography: Roboto,
+      density: 0
+    ));
+  }
 
   .high-contrast {
     @include colors.high-contrast-overrides('color-scheme');

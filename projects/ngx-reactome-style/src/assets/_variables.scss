@@ -2,7 +2,7 @@
 @use "sass:map";
 
 @mixin variables() {
-  :root {
+  body {
     --primary: var(--mat-sys-primary);
     --on-primary: var(--mat-sys-on-primary);
     --primary-container: var(--mat-sys-primary-container);
