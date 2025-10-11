@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
-import {BehaviorSubject} from "rxjs";
+import {BehaviorSubject, distinctUntilChanged, map, Observable, tap} from "rxjs";
 import {isArray} from "lodash";
 
 
@@ -11,10 +11,16 @@ export interface UrlParam<T> {
 
 export type State = {
   [token: string]: UrlParam<any>
-  select: UrlParam<(string | number)[]>
+  select: UrlParam<(string | number)>
   flag: UrlParam<(string | number)[]>
-  overlay: UrlParam<(string)>
+  path: UrlParam<string[]>
+  flagInteractors: UrlParam<boolean>
+  overlay: UrlParam<string | null>
+  analysis: UrlParam<string | null>
+  analysisProfile: UrlParam<string | null>
 };
+
+type ObservableState = { [K in keyof State as `${K & string}$`]: Observable<State[K]['value']> };
 
 @Injectable({
   providedIn: 'root'
@@ -25,13 +31,27 @@ export class DiagramStateService {
   blockRouterChange = false;
 
   private state: State = {
-    select: {otherTokens: ['SEL'], value: []},
+    select: {otherTokens: ['SEL'], value: ''},
     flag: {otherTokens: ['FLG'], value: []},
-    overlay: {value: ''}
+    path: {otherTokens: ['PATH'], value: []},
+    flagInteractors: {otherTokens: ['FLGINT'], value: false},
+    overlay: {value: ''},
+    analysis: {value: null, otherTokens: ['ANALYSIS']},
+    analysisProfile: {value: null},
   };
 
   private _state$ = new BehaviorSubject<State>(this.state);
-  public state$ = this._state$.asObservable()
+  public state$ = this._state$.asObservable();
+  public onChange: ObservableState = Object.keys(this.state)
+  .reduce((properties, prop: keyof State) => {
+    properties[`${prop}$`] = this.state$.pipe(
+      map(state => state[prop].value),
+      distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString()),
+      tap(v => console.log(`${prop} has been updated to ${v}`)),
+      // share()
+    )
+    return properties;
+  }, {} as ObservableState);
 
   constructor(route: ActivatedRoute, private router: Router) {
     route.queryParamMap.subscribe(params => {
@@ -63,6 +83,7 @@ export class DiagramStateService {
   set<T extends keyof State>(token: T, value: State[T]['value']): void {
     this.state[token].value = value;
     // N.B. by GW: Not sure why this.ignore is here. Nothing changes here!!!
+    // Most likely this.ignore = true below
     this.ignore = false;
     if (!this.blockRouterChange) {
       this.onPropertyModified().then(() =>
