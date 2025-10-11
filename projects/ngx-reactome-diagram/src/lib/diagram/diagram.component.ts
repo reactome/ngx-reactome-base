@@ -505,11 +505,12 @@ private updateReplacementVisibility() {
     let replacements = tgt.getElementById(replacedBy);
     if (event.detail.type === 'reaction') {
       // Need to check if replaceBy is an object or a number
-      if (typeof replacedBy === 'object' && replacedBy !== null) {
+      if (typeof replacedBy === 'object') {
         // If replacedBy is an object, try to get its id property
         replacedBy = replacedBy.reactomeId;
-      } 
-      replacements = replacements.add(tgt.elements(`[reactionId=${replacedBy}]`))
+      }
+      if (typeof replacedBy === 'number') // Looks like there is a bug in cytoscape. check for object will return all elements.
+        replacements = replacements.add(tgt.elements(`[reactionId=${replacedBy}]`))
     }
 
     this.applyEvent(event, replacements)

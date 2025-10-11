@@ -26,6 +26,7 @@ export class Style {
 
   bindToCytoscape(cy: cytoscape.Core) {
     this.cy = cy;
+    cy.data('reactome', this);
     this.interactivity = new Interactivity(cy, this.properties);
     this.initSubPathwayColors()
   }
