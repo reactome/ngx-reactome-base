@@ -247,10 +247,10 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   ));
 
   private stateToDiagram() {
-    // for (let cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
-    //   this.flag(this.state.get('flag'), cy);
-    //   this.select(this.state.get("select"), cy);
-    // }
+    for (let cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
+      this.flag(this.state.get('flag'), cy);
+      this.select(this.state.get("select"), cy);
+    }
   }
 
   readonly classRegex = /class:(\w+)([!.]drug)?/
