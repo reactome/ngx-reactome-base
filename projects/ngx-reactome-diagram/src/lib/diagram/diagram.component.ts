@@ -261,6 +261,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     elements = cy.collection()
     tokens.forEach(token => {
       if (typeof token === 'string') {
+        // An empty token should be ignored. If this is not done,
+        // all objects will be selected since [acc=""] matches all elements without acc attribute.
+        if (token.trim().length === 0) return;
         if (token.startsWith('R-')) {
           elements = elements.or(`[graph.stId="${token}"]`)
         } else {
