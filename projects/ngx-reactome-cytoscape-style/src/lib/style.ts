@@ -26,6 +26,7 @@ export class Style {
 
   bindToCytoscape(cy: cytoscape.Core) {
     this.cy = cy;
+    cy.data('reactome', this);
     this.interactivity = new Interactivity(cy, this.properties);
     this.initSubPathwayColors()
   }
@@ -839,6 +840,6 @@ export class Style {
     this.clearCache();
     cy.style(this.getStyleSheet());
     this.initSubPathwayColors();
-    this.interactivity.onZoom()
+    this.interactivity.triggerZoom()
   }
 }
