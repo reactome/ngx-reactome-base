@@ -9,7 +9,6 @@ import {array} from "vectorious";
 
 import cytoscape from "cytoscape";
 import cytoscapeFcose, {FcoseLayoutOptions} from "cytoscape-fcose";
-import NodeDefinition = Reactome.Types.NodeDefinition;
 import ReactionDefinition = Reactome.Types.ReactionDefinition;
 import EdgeTypeDefinition = Reactome.Types.EdgeTypeDefinition;
 
@@ -76,13 +75,14 @@ export class DiagramService {
     this.diagramUrl = this.config?.diagramUrl;
   }
 
-  nodeTypeMap = new Map<string, NodeDefinition>([
+  nodeTypeMap = new Map<string, string[]>([
       ['Gene', ['Gene', 'PhysicalEntity']],
       ['RNA', ['RNA', 'PhysicalEntity']],
       ['Protein', ['Protein', 'PhysicalEntity']],
       ['Entity', ['GenomeEncodedEntity', 'PhysicalEntity']],
       ['Complex', ['Complex', 'PhysicalEntity']],
       ['EntitySet', ['EntitySet', 'PhysicalEntity']],
+      ['Polymer', ['Polymer', 'PhysicalEntity']],
       ['Chemical', ['Molecule', 'PhysicalEntity']],
       ['Cell', ['Cell', 'PhysicalEntity']],
 
@@ -315,7 +315,26 @@ export class DiagramService {
 
         //entity nodes
         const entityNodes: cytoscape.NodeDefinition[] = data?.nodes.flatMap(item => {
-          const classes = [...this.nodeTypeMap.get(item.renderableClass)!] || [item.renderableClass.toLowerCase()];
+          const nodeType = this.nodeTypeMap.get(item.renderableClass);
+          let classes = nodeType ? [...nodeType] : [item.renderableClass.toLowerCase()];
+          let unitId: string | undefined;
+
+          if (item.schemaClass === 'Polymer') {
+            const polymerGraphNode = idToGraphNodes.get(item.id);
+            const unitGraph = polymerGraphNode?.children?.length ? dbIdToGraphNode.get(polymerGraphNode.children[0]) : undefined;
+            if (unitGraph) {
+              const unitTypeKey = unitGraph.schemaClass === 'EntityWithAccessionedSequence'
+                ? unitGraph.referenceType
+                : unitGraph.schemaClass;
+              const unitClass = this.nodeTypeMap.get(unitGraph.schemaClass)
+                ?? this.nodeTypeMap.get(unitTypeKey)
+                ?? ['GenomeEncodedEntity', 'PhysicalEntity'];
+
+              classes = ['Polymer', ...unitClass];
+              unitId = unitGraph.identifier;
+            }
+          }
+
           let replacedBy: string | undefined;
           let replacement: string | undefined;
           if (item.isDisease) classes.push('disease');
@@ -341,7 +360,7 @@ export class DiagramService {
           let html = undefined;
           let width = scale(item.prop.width);
           let height = scale(item.prop.height);
-          let uniprotId = idToGraphNodes.get(item.id)?.identifier;
+          let uniprotId = unitId || idToGraphNodes.get(item.id)?.identifier;
           if (classes.some(clazz => clazz === 'Protein')) {
             html = this.getStructureVideoHtml({...item, type: 'Protein'}, width, height, uniprotId);
           }
@@ -402,7 +421,12 @@ export class DiagramService {
               reactomeId: item.reactomeId,
             },
             classes: ['Shadow'],
-            position: closestToAverage(subpathwayIdToEventIds.get(item.reactomeId)!.map(reactionId => reactomeIdToEdge.get(reactionId)!).map(edge => scale(edge!.position)))
+            position: closestToAverage(
+              (subpathwayIdToEventIds.get(item.reactomeId) ?? [])
+                .map(reactionId => reactomeIdToEdge.get(reactionId))
+                .filter(edge => edge !== undefined)
+                .map(edge => scale(edge!.position))
+            )
           }
         });
 
