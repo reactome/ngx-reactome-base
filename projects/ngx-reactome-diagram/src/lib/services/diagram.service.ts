@@ -445,7 +445,13 @@ export class DiagramService {
          */
         const edges: cytoscape.EdgeDefinition[] =
           data.nodes.flatMap(node => {
-              return node.connectors.map(connector => {
+              return node.connectors
+                .filter(connector => {
+                  const found = idToEdges.has(connector.edgeId);
+                  if (!found) console.warn(`Diagram ${id}: connector on node ${node.id} references missing edge ${connector.edgeId} (stale/regenerating data?), skipping.`);
+                  return found;
+                })
+                .map(connector => {
                 const reaction = idToEdges.get(connector.edgeId)!;
 
                 const reactionP = scale(reaction.position);
@@ -499,7 +505,7 @@ export class DiagramService {
                 }
                 if (!connector.isFadeOut) {
                   // First case: same node is used both special and normal context
-                  replacement = node.connectors.find(otherConnector => otherConnector !== connector && otherConnector.isFadeOut && samePoint(idToEdges.get(otherConnector.edgeId)!.position, reaction.position))?.edgeId;
+                  replacement = node.connectors.find(otherConnector => otherConnector !== connector && otherConnector.isFadeOut && idToEdges.has(otherConnector.edgeId) && samePoint(idToEdges.get(otherConnector.edgeId)!.position, reaction.position))?.edgeId;
                   // Second case: different nodes are used between special and normal context
                   replacement = replacement || (posToNormalNode.get(pointToStr(node.position)) && posToNormalEdge.get(pointToStr(reaction.position)))?.id;
                 }
@@ -530,6 +536,11 @@ export class DiagramService {
 
         const linkEdges: cytoscape.EdgeDefinition[] = data.links
           ?.filter(link => !link.renderableClass.includes('EntitySet') || link.inputs[0].id !== link.outputs[0].id)
+          ?.filter(link => {
+              const found = idToNodes.has(link.inputs[0].id) && idToNodes.has(link.outputs[0].id);
+              if (!found) console.warn(`Diagram ${id}: link ${link.id} references missing node ${link.inputs[0].id} or ${link.outputs[0].id} (stale/regenerating data?), skipping.`);
+              return found;
+            })
           ?.map(link => {
               const source = idToNodes.get(link.inputs[0].id)!;
               const target = idToNodes.get(link.outputs[0].id)!;
