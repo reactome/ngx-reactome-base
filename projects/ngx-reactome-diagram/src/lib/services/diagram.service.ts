@@ -77,7 +77,9 @@ export class DiagramService {
   
   constructor(private http: HttpClient, @Inject(DIAGRAM_CONFIG_TOKEN) private config: any) {
     // This is a service object. Therefore, we have to extract configure here if any
-    this.diagramUrl = this.config?.diagramUrl;
+    // The default stands when the configuration does not name an address; it
+    // was overwritten with undefined, and every request went to "undefined/...".
+    this.diagramUrl = this.config?.diagramUrl ?? this.diagramUrl;
   }
 
   nodeTypeMap = new Map<string, NodeDefinition>([

@@ -1,34 +1,36 @@
-import {TestBed} from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
-import {DiagramService} from './diagram.service';
-import {HttpClient, HttpClientModule} from "@angular/common/http";
-import {concatMap, delay, from, interval, tap, zip} from "rxjs";
+import { DIAGRAM_CONFIG_TOKEN, DiagramService } from './diagram.service';
+
+function setUp(config: unknown) {
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: DIAGRAM_CONFIG_TOKEN, useValue: config },
+    ],
+  });
+  return {
+    service: TestBed.inject(DiagramService),
+    http: TestBed.inject(HttpTestingController),
+  };
+}
 
 describe('DiagramService', () => {
-  let service: DiagramService;
-  let client: HttpClient;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [HttpClientModule],
-      teardown: {destroyAfterEach: false}
-    });
-    service = TestBed.inject(DiagramService);
-    client = TestBed.inject(HttpClient);
+  it('loads a diagram and its graph from the configured address', () => {
+    const { service, http } = setUp({ diagramUrl: 'https://example.org/diagram' });
+    service.getDiagram('R-HSA-1').subscribe();
+    http.expectOne('https://example.org/diagram/R-HSA-1.json');
+    http.expectOne('https://example.org/diagram/R-HSA-1.graph.json');
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  it('loads from its default address when the configuration does not give one', () => {
+    const { service, http } = setUp({});
+    service.getDiagram('R-HSA-1').subscribe();
+    const requested = http.match(() => true).map((r) => r.request.url);
+    expect(requested.length).toBe(2);
+    for (const url of requested) expect(url).toMatch(/^https:\/\//);
   });
-
-  it("shouldn't have too small edge to be rendered", () => {
-    zip(
-      interval(50),
-      client.get('/assets/data/diagrams-prod.txt', {responseType: "text"}).pipe(
-        concatMap(ids => from(ids.split('\n').filter(s => s.length !== 0)))
-      )
-    ).pipe(
-      tap(([_, id]) => service.getDiagram(id).subscribe()),
-    ).subscribe();
-  })
 });

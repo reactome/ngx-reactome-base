@@ -233,7 +233,7 @@ After building your library with `ng build ngx-reactome-cytoscape-style`, go to 
 
 ### Running unit tests
 
-Run `ng test reactome-cytoscape-style` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Run `ng test ngx-reactome-cytoscape-style` to run the unit tests with Vitest.
 
 ### Further help
 

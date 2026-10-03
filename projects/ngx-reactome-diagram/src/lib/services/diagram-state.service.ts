@@ -65,11 +65,14 @@ export class DiagramStateService {
           const formerValue = param.value;
           if (isArray(param.value)) {
             const rawValue = params.get(token)!;
-            param.value = rawValue.split(',').map(v => v.charAt(0).match(/d/) ? parseInt(v) : v);
+            // A database id is a number; anything else, such as a gene name, a string.
+            param.value = rawValue.split(',').map(v => /^\d+$/.test(v) ? parseInt(v) : v);
           } else {
             param.value = params.get(token)!;
           }
-          change = change || formerValue == param.value;
+          // Changed when it differs from before. This was inverted, so a state
+          // read from the address reached no one and an unchanged one did.
+          change = change || formerValue?.toString() !== param.value?.toString();
         }
       }
       if (change) this._state$.next(this.state);

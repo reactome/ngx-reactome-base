@@ -39,10 +39,6 @@
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true,
-    "typeRoots": [
-      "node_modules/@types",
-      "node_modules/ngx-reactome-cytoscape-style/types"
-    ]
+    "strictTemplates": true
   }
 }
