@@ -490,7 +490,10 @@ export class Interactivity {
           // promise where zone.js has replaced the global, as in an app that
           // uses it -- and not rxjs's internal isPromise, no part of its API.
           if (typeof (structure as PromiseLike<string>)?.then === 'function') {
-            (structure as PromiseLike<string>).then(initStructure);
+            // A structure that fails to load is one that could not be found.
+            (structure as PromiseLike<string>).then(initStructure, () =>
+              this.removeStructureContainer(elem, node)
+            );
           } else {
             initStructure(structure as string);
           }
