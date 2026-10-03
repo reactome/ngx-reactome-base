@@ -14,6 +14,20 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 Run `npm run build` to build the libraries and the demo app, in the order they depend on each other (`npm run build:libs` for the libraries alone). The build artifacts are stored in `dist/`.
 
+## Using the libraries before they are on npm
+
+Each push to `main` that passes its tests publishes the built libraries to
+branches of this repository, one per library, with the package at the branch
+root. Install one from there:
+
+```json
+"ngx-reactome-cytoscape-style": "github:reactome/ngx-reactome-base#dist/ngx-reactome-cytoscape-style",
+"ngx-reactome-style": "github:reactome/ngx-reactome-base#dist/ngx-reactome-style",
+"ngx-reactome-diagram": "github:reactome/ngx-reactome-base#dist/ngx-reactome-diagram"
+```
+
+The lockfile pins the commit; `npm update <name>` moves to the latest build.
+
 ## Running unit tests
 
 Run `npm test` to run every project's unit tests with [Vitest](https://vitest.dev) through Angular's unit-test builder, or `ng test <project>` for one. The diagram's tests use the built style library, so run `npm run build:libs` first.
