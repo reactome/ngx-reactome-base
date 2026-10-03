@@ -1,0 +1,32 @@
+{
+  "name": "ngx-reactome-cytoscape-style",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./assets": {
+      "sass": "./assets/index.scss",
+      "style": "./assets/index.scss",
+      "default": "./assets/index.scss"
+    },
+    "./assets/*": "./assets/*",
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./types/ngx-reactome-cytoscape-style.d.ts",
+      "default": "./fesm2022/ngx-reactome-cytoscape-style.mjs"
+    }
+  },
+  "peerDependencies": {
+    "cytoscape": "^3.30.0",
+    "cytoscape-layers": "^3.0.0",
+    "chroma-js": "^3.1.2",
+    "lodash": "^4.17.21"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false,
+  "module": "fesm2022/ngx-reactome-cytoscape-style.mjs",
+  "typings": "types/ngx-reactome-cytoscape-style.d.ts"
+}
