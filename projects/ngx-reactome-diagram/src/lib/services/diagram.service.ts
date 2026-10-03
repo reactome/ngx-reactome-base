@@ -93,6 +93,7 @@ export class DiagramService {
       ['ProteinDrug', ['Protein', 'PhysicalEntity', 'drug']],
       ['ComplexDrug', ['Complex', 'PhysicalEntity', 'drug']],
       ['ChemicalDrug', ['Molecule', 'PhysicalEntity', 'drug']],
+      ['RNADrug', ['RNA', 'PhysicalEntity', 'drug']],
       ['EntitySetDrug', ['EntitySet', 'PhysicalEntity', 'drug']],
 
       ['ProcessNode', ['SUB', 'Pathway']],

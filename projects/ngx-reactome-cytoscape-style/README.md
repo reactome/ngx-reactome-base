@@ -5,10 +5,10 @@
 To use reactome-cytoscape-style, use the following:
 
 ```typescript
-import {Reactome} from "reactome-cytoscape-style";
+import { Style, type UserProperties } from "ngx-reactome-cytoscape-style";
 
 const container: HTMLElement = document.querySelector('#cytoscape-container');
-const reactome = new Reactome.Style(container);
+const reactome = new Style(container);
 const cy = cytoscape({
   ...,
   container: container,
@@ -157,14 +157,14 @@ Here is a table summarizing how to access and customize all those properties.
 
 #### Update by JS properties
 
-In order to customise your style, you can provide to the `Reactome.Style()` constructor a property object, of type `Reactome.UserProperties`, where you can define the properties that you want to customize. The values can either be a direct value, or a function that provide the required value type
+In order to customise your style, you can provide to the `Style()` constructor a property object, of type `UserProperties`, where you can define the properties that you want to customize. The values can either be a direct value, or a function that provide the required value type
 
 ```typescript
-import {Reactome} from "reactome-cytoscape-style";
+import { Style, type UserProperties } from "ngx-reactome-cytoscape-style";
 
 const container: HTMLElement = document.querySelector('#cytoscape-container');
-const properties: Reactome.UserProperties = {};
-const style = new Reactome.Style(container, properties);
+const properties: UserProperties = {};
+const style = new Style(container, properties);
 
 const cy = cytoscape({
   ...,
@@ -180,23 +180,23 @@ function updateJsProperty() {
 }
 ```
 
-Updating the `Reactome.UserProperties` you used to initialize the `Reactome.Style`, here `style`, will automatically update the inner state of the style.
+Updating the `UserProperties` you used to initialize the `Style`, here `style`, will automatically update the inner state of the style.
 You simply need to force an update on the style afterwards so that the new values are taken into account
 
 #### Update by CSS properties
 
 Another way to customise the reactome-cytoscape-style is though the usage of css variables.  
-We are using the values as they can be found on the cytoscape container you provided to the `Reactome.Style()` constructor.
+We are using the values as they can be found on the cytoscape container you provided to the `Style()` constructor.
 This means that you can define your variables either directly on the container, or within one of its parent in the DOM.
 
 That is specifically useful when you have defined a light and a dark theme.  
 However, as it is the case when updating the style though Js properties, you also need to trigger an update on the style after the properties have changed so that the change can be taken into account.
 
 ```typescript
-import {Reactome} from "reactome-cytoscape-style";
+import { Style, type UserProperties } from "ngx-reactome-cytoscape-style";
 
 const container: HTMLElement = document.querySelector('#cytoscape-container');
-const style = new Reactome.Style(container);
+const style = new Style(container);
 
 const cy = cytoscape({
   ...,
@@ -205,9 +205,9 @@ const cy = cytoscape({
 })
 
 function updateCssProperty(property: string, newValue: string) {
-  // Updating Reactome.Style.css is updating the CSS variable on the container element
-  // in order to mimic a css variable change
-  Reactome.Style.css.setProperty('--property', newValue);
+  // The style reads its values from the container's CSS variables, so set the
+  // variable there. (`style.css` is the container's computed style: read-only.)
+  container.style.setProperty('--property', newValue);
   // Needed to apply the changes
   style.update(cy);
 }
@@ -219,17 +219,17 @@ This library was generated with [Angular CLI](https://github.com/angular/angular
 
 ### Code scaffolding
 
-Run `ng generate component component-name --project reactome-cytoscape-style` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project reactome-cytoscape-style`.
+Run `ng generate component component-name --project ngx-reactome-cytoscape-style` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project ngx-reactome-cytoscape-style`.
 
-> Note: Don't forget to add `--project reactome-cytoscape-style` or else it will be added to the default project in your `angular.json` file.
+> Note: Don't forget to add `--project ngx-reactome-cytoscape-style` or else it will be added to the default project in your `angular.json` file.
 
 ### Build
 
-Run `ng build reactome-cytoscape-style` to build the project. The build artifacts will be stored in the `dist/` directory.
+Run `ng build ngx-reactome-cytoscape-style` to build the project. The build artifacts will be stored in the `dist/` directory.
 
 ### Publishing
 
-After building your library with `ng build reactome-cytoscape-style`, go to the dist folder `cd dist/reactome-cytoscape-style` and run `npm publish`.
+After building your library with `ng build ngx-reactome-cytoscape-style`, go to the dist folder `cd dist/ngx-reactome-cytoscape-style` and run `npm publish`.
 
 ### Running unit tests
 

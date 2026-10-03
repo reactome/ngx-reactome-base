@@ -426,7 +426,17 @@ export class Interactivity {
     // console.log('Remove diagram structure container because not found', loadingContainer, node)
     loadingContainer.classList.remove('loading');
     this.removeLoading(loadingContainer);
-    node.removeStyle();
+    // Only what the structure set. All of the node's inline style went before,
+    // the zoom's opacity with it, and a trivial molecule then fell back to its
+    // stylesheet opacity of 0 until the next zoom -- which never came in a
+    // diagram that cannot be zoomed.
+    for (const property of [
+      'background-position-x',
+      'background-position-y',
+      'background-width',
+      'background-height',
+    ])
+      node.removeStyle(property);
     this.structureContainers = this.structureContainers.not(node);
   }
 
@@ -456,7 +466,7 @@ export class Interactivity {
           elem.style.display = 'flex';
 
           // The structure's SVG, or its load while it is still on the way.
-          const structure = node.data('chebiStructure') as string | Promise<string>;
+          const structure = node.data('chebiStructure') as string | PromiseLike<string>;
           const initStructure = (svgData: string) => {
             if (svgData === undefined) return this.removeStructureContainer(elem, node);
             elem.innerHTML = svgData;
@@ -476,11 +486,13 @@ export class Interactivity {
             this.removeLoading(elem);
           };
 
-          // A thenable, not rxjs's internal isPromise, which is no part of its API.
-          if (structure instanceof Promise) {
-            structure.then(initStructure);
+          // A thenable -- not `instanceof Promise`, which is false for a native
+          // promise where zone.js has replaced the global, as in an app that
+          // uses it -- and not rxjs's internal isPromise, no part of its API.
+          if (typeof (structure as PromiseLike<string>)?.then === 'function') {
+            (structure as PromiseLike<string>).then(initStructure);
           } else {
-            initStructure(structure);
+            initStructure(structure as string);
           }
         },
         transform: `translate(-100%, -50%)`,
