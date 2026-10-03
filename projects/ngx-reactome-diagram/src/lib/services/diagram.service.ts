@@ -1,5 +1,5 @@
 import {Inject, Injectable, InjectionToken} from '@angular/core';
-import {forkJoin, map, Observable, of, tap} from "rxjs";
+import {forkJoin, map, Observable, of} from "rxjs";
 import {HttpClient} from "@angular/common/http";
 import {Diagram, Edge, Node, NodeConnector, Position, Prop, Rectangle} from "../model/diagram.model";
 import {Edge as GraphEdge, Graph, Node as GraphNode} from "../model/graph.model";
@@ -162,8 +162,9 @@ export class DiagramService {
 
   private readonly COMPARTMENT_SHIFT = 35;
 
-  // The server address: this should be injected from the client that setting up this.
-  private diagramUrl: string = 'https://dev.reactome.org/download/current/diagram';
+  // Where diagrams are loaded from, unless the configuration says otherwise:
+  // Reactome's public release.
+  private diagramUrl: string = 'https://reactome.org/download/current/diagram';
 
   public getLegend(): Observable<cytoscape.ElementsDefinition> {
     return of(legend)
@@ -175,17 +176,11 @@ export class DiagramService {
       diagram: this.http.get<Diagram>(`${this.diagramUrl}/${id}.json`),
       graph: this.http.get<Graph>(`${this.diagramUrl}/${id}.graph.json`)
     }).pipe(
-      tap((mergedResponse) => console.log('All responses:', mergedResponse)),
       map((response) => {
 
         const data = response.diagram
         const graph = response.graph
 
-        console.log("edge.reactionType", new Set(data.edges.flatMap(edge => edge.reactionType)))
-        console.log("node.connectors.types", new Set(data.nodes.flatMap(node => node.connectors.flatMap(con => con.type))))
-        console.log("node.renderableClass", new Set(data.nodes.flatMap(node => node.renderableClass)))
-        console.log("links.renderableClass", new Set(data.links.flatMap(link => link.renderableClass)))
-        console.log("shadow.renderableClass", new Set(data.shadows.flatMap(shadow => shadow.renderableClass)))
 
         const idToEdges = new Map<number, Edge>(data.edges.map(edge => [edge.id, edge]));
         const idToNodes = new Map<number, Node>(data.nodes.map(node => [node.id, node]));
@@ -560,7 +555,6 @@ export class DiagramService {
           edges: [...edges, ...linkEdges]
         };
       }),
-      tap((output) => console.log('Output:', output)),
     )
 
   }

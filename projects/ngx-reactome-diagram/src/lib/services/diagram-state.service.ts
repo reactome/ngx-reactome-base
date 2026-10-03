@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
-import {BehaviorSubject, distinctUntilChanged, map, Observable, tap} from "rxjs";
+import {BehaviorSubject, distinctUntilChanged, map, Observable} from "rxjs";
 import {isArray} from "lodash";
 
 
@@ -47,7 +47,6 @@ export class DiagramStateService {
     properties[`${prop}$`] = this.state$.pipe(
       map(state => state[prop].value),
       distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString()),
-      tap(v => console.log(`${prop} has been updated to ${v}`)),
       // share()
     )
     return properties;
@@ -89,9 +88,13 @@ export class DiagramStateService {
     // Most likely this.ignore = true below
     this.ignore = false;
     if (!this.blockRouterChange) {
-      void this.onPropertyModified().then(() =>
-        this.ignore = false
-      );
+      // Subscribers hear of it once the address has it. They used to through
+      // the address itself, by way of the inverted change check that read an
+      // unchanged value as a change.
+      void this.onPropertyModified().then(() => {
+        this.ignore = false;
+        this._state$.next(this.state);
+      });
     }
   }
 

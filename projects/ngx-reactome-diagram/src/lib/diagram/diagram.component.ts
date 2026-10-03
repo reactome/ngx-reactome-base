@@ -12,7 +12,7 @@ import cytoscape from "cytoscape";
 // @ts-ignore
 import { interactivityOf, ReactomeEvent, ReactomeEventTypes, Style } from "ngx-reactome-cytoscape-style";
 import { DarkService } from "../services/dark.service";
-import { delay, distinctUntilChanged, filter, Observable, share, Subject, tap } from "rxjs";
+import { delay, distinctUntilChanged, filter, Observable, share, Subject } from "rxjs";
 import { FormControl } from "@angular/forms";
 import { DiagramStateService } from "../services/diagram-state.service";
 import { UntilDestroy } from "@ngneat/until-destroy";
@@ -57,7 +57,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   @Output()
   public reactomeEvents$: Observable<ReactomeEvent> = this._reactomeEvents$.asObservable().pipe(
     distinctUntilChanged((prev, current) => prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId),
-    tap(e => console.log(e.type, e.detail, e.detail.element.data(), e.detail.cy.container()?.id)),
     filter(() => !this._ignore),
     share()
   );
@@ -284,7 +283,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
           }
         }
       } else {
-        console.log('number')
         elements = elements.or(`[acc=${token}]`).or(`[reactomeId=${token}]`)
       }
     });
@@ -607,6 +605,7 @@ private updateReplacementVisibility() {
   });
 
   logProteins() {
+    // eslint-disable-next-line no-console -- logging is what it is called for
     console.debug(new Set(this.cy.nodes(".Protein").map(node => node.data("acc") || node.data("iAcc"))))
   }
 

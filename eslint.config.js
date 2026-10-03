@@ -67,6 +67,11 @@ module.exports = tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' },
       ],
+      // Published libraries print to their consumers' consoles. Debug logging
+      // on every diagram load and state change was removed; warnings and
+      // errors (and failed assertions on the data) are what a library should
+      // say there.
+      'no-console': ['error', { allow: ['warn', 'error', 'assert'] }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       // `any` flowing through the code: an API answer read as any, then passed,
