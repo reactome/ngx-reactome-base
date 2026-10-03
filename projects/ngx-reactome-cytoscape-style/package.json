@@ -1,34 +1,27 @@
 {
   "name": "ngx-reactome-cytoscape-style",
-  "version": "0.0.20",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./assets": {
+      "sass": "./assets/index.scss",
+      "style": "./assets/index.scss",
+      "default": "./assets/index.scss"
+    },
+    "./assets/*": "./assets/*"
+  },
   "peerDependencies": {
-    "cytoscape": "^3.27.0",
-    "cytoscape-fcose": "^2.2.0",
-    "cytoscape-layers": "^2.4.4",
-    "lodash.memoize": "^4.1.2",
-    "@angular/common": "^17.2.4",
-    "@angular/core": "^17.2.4"
+    "cytoscape": "^3.30.0",
+    "cytoscape-layers": "^3.0.0",
+    "chroma-js": "^3.1.2",
+    "lodash": "^4.17.21"
   },
   "dependencies": {
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^18.2.9",
-    "@angular/cli": "^18.2.9",
-    "@angular/compiler-cli": "^18.2.8",
-    "@types/cytoscape": "^3.21.0",
-    "@types/cytoscape-fcose": "^2.2.4",
-    "@types/jasmine": "~4.3.0",
-    "@types/lodash": "^4.14.202",
-    "angular-cli-ghpages": "^1.0.6",
-    "jasmine-core": "~4.6.0",
-    "karma": "~6.4.0",
-    "karma-chrome-launcher": "~3.2.0",
-    "karma-coverage": "~2.2.0",
-    "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.1.0",
-    "ng-packagr": "^18.2.1",
-    "npm-run-all": "^4.1.1",
-    "typescript": "~5.4.5"
-  }
+    "@types/chroma-js": "^3.1.1",
+    "@types/lodash": "^4.17.0"
+  },
+  "sideEffects": false
 }

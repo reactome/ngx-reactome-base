@@ -3,20 +3,24 @@ import {forkJoin, map, Observable, of, tap} from "rxjs";
 import {HttpClient, HttpHeaders} from "@angular/common/http";
 import {Diagram, Edge, Node, NodeConnector, Position, Prop, Rectangle} from "../model/diagram.model";
 import {Edge as GraphEdge, Graph, Node as GraphNode} from "../model/graph.model";
-import Reactome, {Style} from "ngx-reactome-cytoscape-style";
+import {Style, Types} from "ngx-reactome-cytoscape-style";
 import legend from "../../assets/json/legend.json"
 import {array} from "vectorious";
 
 import cytoscape from "cytoscape";
 import cytoscapeFcose, {FcoseLayoutOptions} from "cytoscape-fcose";
-import NodeDefinition = Reactome.Types.NodeDefinition;
-import ReactionDefinition = Reactome.Types.ReactionDefinition;
-import EdgeTypeDefinition = Reactome.Types.EdgeTypeDefinition;
+type NodeDefinition = Types.NodeDefinition;
+type ReactionDefinition = Types.ReactionDefinition;
+type EdgeTypeDefinition = Types.EdgeTypeDefinition;
 
 cytoscape.use(cytoscapeFcose)
 
 
 type RelativePosition = { distances: number[], weights: number[] };
+
+// Above the service, which names it in its constructor's @Inject: declared
+// after it, the decorator read it before it existed.
+export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<any>('DIAGRAM_CONFIG_TOKEN');
 
 const posToStr = (edge: Edge, pos: Position) => `${edge.id}-${pos.x},${pos.y}`
 
@@ -89,6 +93,7 @@ export class DiagramService {
       ['ProteinDrug', ['Protein', 'PhysicalEntity', 'drug']],
       ['ComplexDrug', ['Complex', 'PhysicalEntity', 'drug']],
       ['ChemicalDrug', ['Molecule', 'PhysicalEntity', 'drug']],
+      ['RNADrug', ['RNA', 'PhysicalEntity', 'drug']],
       ['EntitySetDrug', ['EntitySet', 'PhysicalEntity', 'drug']],
 
       ['ProcessNode', ['SUB', 'Pathway']],
@@ -208,7 +213,7 @@ export class DiagramService {
         const subpathwayIdToEventIds = new Map<number, number[]>(graph.subpathways?.map(subpathway => [subpathway.dbId, subpathway.events]));
 
         // create a node id - graph node mapping
-        const dbIdToGraphNode = new Map<number, GraphNode>(graph.nodes.map(node => ([node.dbId, node]) || []))
+        const dbIdToGraphNode = new Map<number, GraphNode>(graph.nodes.map(node => [node.dbId, node]))
         const mappingList: [number, GraphNode][] = graph.nodes.flatMap(node => {
           if (node.children && node.children.length === 1) {
             return node.diagramIds?.map(id => [id, dbIdToGraphNode.get(node.children[0])]).filter(entry => entry[1] !== undefined) as [number, GraphNode][]
@@ -218,7 +223,7 @@ export class DiagramService {
         const idToGraphNodes = new Map([...mappingList]);
         const idToGraphEdges = new Map(graph.edges.map(edge => [edge.dbId, edge]));
 
-        const dbIdToGraphEdge = new Map<number, GraphEdge>(graph.edges.map(edge => ([edge.dbId, edge]) || []))
+        const dbIdToGraphEdge = new Map<number, GraphEdge>(graph.edges.map(edge => [edge.dbId, edge]))
 
         const hasFadeOut = data.nodes.some(node => node.isFadeOut);
         const normalNodes = data.nodes.filter(node => node.isFadeOut);
@@ -315,7 +320,7 @@ export class DiagramService {
 
         //entity nodes
         const entityNodes: cytoscape.NodeDefinition[] = data?.nodes.flatMap(item => {
-          const classes = [...this.nodeTypeMap.get(item.renderableClass)!] || [item.renderableClass.toLowerCase()];
+          const classes = [...(this.nodeTypeMap.get(item.renderableClass) || [item.renderableClass.toLowerCase()])];
           let replacedBy: string | undefined;
           let replacement: string | undefined;
           if (item.isDisease) classes.push('disease');
@@ -807,4 +812,3 @@ function avoidOverlap(definitions: cytoscape.NodeDefinition[]) {
 }
 
 
-export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<any>('DIAGRAM_CONFIG_TOKEN');

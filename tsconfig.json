@@ -10,6 +10,11 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "paths": {
+      // vectorious's "exports" lists its plain module before its types, so
+      // bundler resolution finds no declarations; point straight at them.
+      "vectorious": [
+        "./node_modules/vectorious/dist/index.d.ts"
+      ],
       "ngx-reactome-cytoscape-style": [
         "./dist/ngx-reactome-cytoscape-style"
       ],
@@ -24,15 +29,11 @@
     "sourceMap": true,
     "declaration": false,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "useDefineForClassFields": false,
-    "lib": [
-      "ES2022",
-      "dom"
-    ]
+    "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

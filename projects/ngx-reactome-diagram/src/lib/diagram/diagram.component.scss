@@ -1,7 +1,7 @@
 .variables {
   position: absolute;
   inset: 0 0 40px 0;
-  --opacity: 0.08;
+  --compartment-opacity: 0.08;
   --structure-opacity: [[130,0], [150,100]];
 
   --shadow-luminosity: 40;
@@ -38,7 +38,7 @@
   --drug-contrast-4: #BB557A;
 
   &.dark {
-    --opacity: 0.08;
+    --compartment-opacity: 0.08;
     --shadow-luminosity: 70;
     --shadow-opacity: [[20, 40], [40, 0]];
 
