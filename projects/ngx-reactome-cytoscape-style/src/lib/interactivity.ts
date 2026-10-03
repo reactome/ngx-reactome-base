@@ -4,7 +4,6 @@ import { Properties } from './properties';
 import { ReactomeEvent, ReactomeEventTypes } from './model/reactome-event.model';
 import Layers, { IHTMLLayer, layers, LayersPlugin } from 'cytoscape-layers';
 import * as _ from 'lodash';
-import { isPromise } from 'rxjs/internal/util/isPromise';
 
 cytoscape.use(Layers);
 type RenderableHTMLElement = HTMLElement & {
@@ -456,7 +455,8 @@ export class Interactivity {
           elem.style.height = h - 2 * margin + 'px';
           elem.style.display = 'flex';
 
-          const structure = node.data('chebiStructure') as string;
+          // The structure's SVG, or its load while it is still on the way.
+          const structure = node.data('chebiStructure') as string | Promise<string>;
           const initStructure = (svgData: string) => {
             if (svgData === undefined) return this.removeStructureContainer(elem, node);
             elem.innerHTML = svgData;
@@ -476,7 +476,8 @@ export class Interactivity {
             this.removeLoading(elem);
           };
 
-          if (isPromise(structure)) {
+          // A thenable, not rxjs's internal isPromise, which is no part of its API.
+          if (structure instanceof Promise) {
             structure.then(initStructure);
           } else {
             initStructure(structure);
