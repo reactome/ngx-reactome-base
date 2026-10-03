@@ -8,6 +8,10 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
     "skipLibCheck": true,
     "paths": {
       // vectorious's "exports" lists its plain module before its types, so
@@ -40,9 +44,14 @@
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": true,
-    "typeRoots": [
-      "node_modules/@types",
-      "node_modules/ngx-reactome-cytoscape-style/types"
-    ]
+    "typeCheckHostBindings": true,
+    "strictStandalone": true,
+    "extendedDiagnostics": {
+      "defaultCategory": "error",
+      "checks": {
+        "nullishCoalescingNotNullable": "warning",
+        "optionalChainNotNullable": "warning"
+      }
+    }
   }
 }

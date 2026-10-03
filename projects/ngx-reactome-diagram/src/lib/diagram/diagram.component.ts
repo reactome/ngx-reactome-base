@@ -1,6 +1,5 @@
 import {
   AfterViewInit,
-  ChangeDetectorRef,
   Component,
   ElementRef, Input,
   OnChanges,
@@ -13,7 +12,7 @@ import cytoscape from "cytoscape";
 // @ts-ignore
 import { interactivityOf, ReactomeEvent, ReactomeEventTypes, Style } from "ngx-reactome-cytoscape-style";
 import { DarkService } from "../services/dark.service";
-import { delay, distinctUntilChanged, filter, Observable, share, Subject, tap } from "rxjs";
+import { delay, distinctUntilChanged, filter, Observable, share, Subject } from "rxjs";
 import { FormControl } from "@angular/forms";
 import { DiagramStateService } from "../services/diagram-state.service";
 import { UntilDestroy } from "@ngneat/until-destroy";
@@ -43,7 +42,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   isDataFromPsicquicLoading: boolean = false;
 
 
-  constructor(private diagram: DiagramService, public dark: DarkService, private state: DiagramStateService, public dialog: MatDialog, private cdr: ChangeDetectorRef) {
+  constructor(private diagram: DiagramService, public dark: DarkService, private state: DiagramStateService, public dialog: MatDialog) {
   }
 
   cy!: cytoscape.Core;
@@ -58,7 +57,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   @Output()
   public reactomeEvents$: Observable<ReactomeEvent> = this._reactomeEvents$.asObservable().pipe(
     distinctUntilChanged((prev, current) => prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId),
-    tap(e => console.log(e.type, e.detail, e.detail.element.data(), e.detail.cy.container()?.id)),
     filter(() => !this._ignore),
     share()
   );
@@ -111,8 +109,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
         this.legend.zoomingEnabled(false);
         this.legend.panningEnabled(false);
         this.legend.minZoom(0)
-        const bb = this.legend.elements().boundingBox();
-        // this.ratio = bb.w / bb.h;
       });
 
     this.loadDiagram();
@@ -134,8 +130,8 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   displayNetwork(elements: any) {
     const container = this.cytoscapeContainer!.nativeElement;
-    this.comparing = (elements.nodes && elements.nodes.some((node: any) => node.data['isFadeOut'])) || 
-                     (elements.edges && elements.edges.some((edge: any) => edge.data['isFadeOut']))
+    this.comparing = (elements.nodes?.some((node: any) => node.data['isFadeOut'])) || 
+                     (elements.edges?.some((edge: any) => edge.data['isFadeOut']))
     this.cy = cytoscape({
       container: container,
       elements: elements,
@@ -247,7 +243,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   ));
 
   private stateToDiagram() {
-    for (let cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
+    for (const cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
       this.flag(this.state.get('flag'), cy);
       this.select(this.state.get("select"), cy);
     }
@@ -287,7 +283,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
           }
         }
       } else {
-        console.log('number')
         elements = elements.or(`[acc=${token}]`).or(`[reactomeId=${token}]`)
       }
     });
@@ -328,10 +323,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   }
 
   flagElements(toFlag: cytoscape.CollectionArgument, cy: cytoscape.Core): cytoscape.CollectionArgument {
-      const shadowNodes = cy.nodes('.Shadow');
-      const shadowEdges = cy.edges('[?color]');
-      const trivials = cy.elements('.trivial');
-  
       if (toFlag.nonempty()) {
         cy.batch(() => {
           this.setSubPathwayVisibility(false, cy);
@@ -614,6 +605,7 @@ private updateReplacementVisibility() {
   });
 
   logProteins() {
+    // eslint-disable-next-line no-console -- logging is what it is called for
     console.debug(new Set(this.cy.nodes(".Protein").map(node => node.data("acc") || node.data("iAcc"))))
   }
 

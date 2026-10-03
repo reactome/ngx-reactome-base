@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
-import {BehaviorSubject, distinctUntilChanged, map, Observable, tap} from "rxjs";
+import {BehaviorSubject, distinctUntilChanged, map, Observable} from "rxjs";
 import {isArray} from "lodash";
 
 
@@ -47,7 +47,6 @@ export class DiagramStateService {
     properties[`${prop}$`] = this.state$.pipe(
       map(state => state[prop].value),
       distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString()),
-      tap(v => console.log(`${prop} has been updated to ${v}`)),
       // share()
     )
     return properties;
@@ -65,11 +64,14 @@ export class DiagramStateService {
           const formerValue = param.value;
           if (isArray(param.value)) {
             const rawValue = params.get(token)!;
-            param.value = rawValue.split(',').map(v => v.charAt(0).match(/d/) ? parseInt(v) : v);
+            // A database id is a number; anything else, such as a gene name, a string.
+            param.value = rawValue.split(',').map(v => /^\d+$/.test(v) ? parseInt(v) : v);
           } else {
             param.value = params.get(token)!;
           }
-          change = change || formerValue == param.value;
+          // Changed when it differs from before. This was inverted, so a state
+          // read from the address reached no one and an unchanged one did.
+          change = change || formerValue?.toString() !== param.value?.toString();
         }
       }
       if (change) this._state$.next(this.state);
@@ -86,9 +88,13 @@ export class DiagramStateService {
     // Most likely this.ignore = true below
     this.ignore = false;
     if (!this.blockRouterChange) {
-      this.onPropertyModified().then(() =>
-        this.ignore = false
-      );
+      // Subscribers hear of it once the address has it. They used to through
+      // the address itself, by way of the inverted change check that read an
+      // unchanged value as a change.
+      void this.onPropertyModified().then(() => {
+        this.ignore = false;
+        this._state$.next(this.state);
+      });
     }
   }
 
@@ -96,7 +102,7 @@ export class DiagramStateService {
     return this.router.navigate([], {
       queryParams: {
         ...Object.entries(this.state)
-          .filter(([token, param]) => param.value && param.value.length !== 0)
+          .filter(([_token, param]) => param.value && param.value.length !== 0)
           .reduce((acc, [token, param]) => ({
             ...acc,
             [token]: Array.isArray(param.value) ? param.value.join(',') : param.value

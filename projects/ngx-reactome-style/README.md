@@ -18,7 +18,7 @@ After building your library with `ng build ngx-reactome-style`, go to the dist f
 
 ## Running unit tests
 
-Run `ng test ngx-reactome-style` to execute the unit tests via [Karma](https://karma-runner.github.io).
+This library is Sass only and has no unit tests.
 
 ## Further help
 
