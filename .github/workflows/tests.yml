@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build, lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # In dependency order: the diagram and the demo app import the style
+      # library from dist/, so nothing else type-checks until it is built.
+      - name: Build the libraries
+        run: npm run build:libs
+
+      - name: Lint
+        run: npm run check:lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build the demo app
+        run: npx ng build ngx-reactome-base
+
+      # What would be published: a package that packs is a package that installs.
+      - name: Pack the libraries
+        run: |
+          for lib in ngx-reactome-cytoscape-style ngx-reactome-style ngx-reactome-diagram; do
+            (cd "dist/$lib" && npm pack --dry-run)
+          done
