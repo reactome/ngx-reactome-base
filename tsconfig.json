@@ -1,0 +1,57 @@
+/* To learn more about this file see: https://angular.io/config/tsconfig. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "paths": {
+      // vectorious's "exports" lists its plain module before its types, so
+      // bundler resolution finds no declarations; point straight at them.
+      "vectorious": [
+        "./node_modules/vectorious/dist/index.d.ts"
+      ],
+      "ngx-reactome-cytoscape-style": [
+        "./dist/ngx-reactome-cytoscape-style"
+      ],
+      "ngx-reactome-diagram": [
+        "./dist/ngx-reactome-diagram"
+      ],
+      "ngx-reactome-style": [
+        "./dist/ngx-reactome-style"
+      ]
+    },
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "useDefineForClassFields": false
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true,
+    "typeCheckHostBindings": true,
+    "strictStandalone": true,
+    "extendedDiagnostics": {
+      "defaultCategory": "error",
+      "checks": {
+        "nullishCoalescingNotNullable": "warning",
+        "optionalChainNotNullable": "warning"
+      }
+    }
+  }
+}
