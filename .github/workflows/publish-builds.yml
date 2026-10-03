@@ -19,7 +19,8 @@ on:
     types: [completed]
     branches:
       - main
-  # To publish again without a new commit.
+  # To publish main again without a new commit. Only from main: a run from
+  # another branch would build and publish that branch, untested.
   workflow_dispatch:
 
 permissions:
@@ -34,7 +35,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.event == 'push')
     steps:
@@ -42,6 +43,9 @@ jobs:
         with:
           # The commit that was tested, not whatever main points at now.
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # No token left in .git/config while npm install scripts and the
+          # build run: only the push step below has it.
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -60,6 +64,14 @@ jobs:
           REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         run: |
           set -euo pipefail
+          # Only main's current commit. Test runs finish out of order, and an
+          # older run finishing (or re-run) later must not publish over a newer
+          # build.
+          tip=$(git ls-remote "$REMOTE" refs/heads/main | cut -f1)
+          if [ "$tip" != "$SOURCE" ]; then
+            echo "$SOURCE is no longer main's tip ($tip): not publishing."
+            exit 0
+          fi
           for lib in ngx-reactome-cytoscape-style ngx-reactome-style ngx-reactome-diagram; do
             branch="dist/$lib"
             cd "dist/$lib"
