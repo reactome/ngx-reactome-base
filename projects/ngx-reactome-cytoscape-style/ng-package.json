@@ -6,9 +6,9 @@
   },
   "assets": [
     {
+      "input": "src/assets/",
       "glob": "**/*",
-      "input": "/src/assets/",
-      "output": "/"
+      "output": "/assets/"
     }
   ]
 }
