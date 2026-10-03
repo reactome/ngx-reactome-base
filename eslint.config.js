@@ -156,6 +156,19 @@ module.exports = tseslint.config(
     },
   },
   {
+    // Specs are type-checked with the configs that load Vitest's globals.
+    // The project service picks the nearest tsconfig.json, which does not, so
+    // expect() and vi were `any` and every new test added warnings.
+    files: ['**/*.spec.ts'],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ['./tsconfig.spec.json', './projects/*/tsconfig.spec.json'],
+        tsconfigRootDir: __dirname,
+      },
+    },
+  },
+  {
     // Specs and tooling scripts: looser, and not held to the app's rules about
     // awaiting promises.
     files: ['**/*.spec.ts', 'scripts/**/*.{js,mjs}'],

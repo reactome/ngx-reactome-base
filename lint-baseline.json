@@ -1,5 +1,5 @@
 {
-  "warnings": 383,
+  "warnings": 334,
   "rules": {
     "@angular-eslint/no-input-rename": 1,
     "@angular-eslint/prefer-inject": 8,
@@ -11,9 +11,9 @@
     "@typescript-eslint/no-non-null-assertion": 56,
     "@typescript-eslint/no-unsafe-argument": 19,
     "@typescript-eslint/no-unsafe-assignment": 75,
-    "@typescript-eslint/no-unsafe-call": 88,
-    "@typescript-eslint/no-unsafe-member-access": 65,
-    "@typescript-eslint/no-unsafe-return": 27,
+    "@typescript-eslint/no-unsafe-call": 51,
+    "@typescript-eslint/no-unsafe-member-access": 54,
+    "@typescript-eslint/no-unsafe-return": 26,
     "@typescript-eslint/no-unused-expressions": 3,
     "no-useless-assignment": 1,
     "prefer-const": 1
