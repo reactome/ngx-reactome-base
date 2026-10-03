@@ -89,7 +89,7 @@ export class DiagramStateService {
     // Most likely this.ignore = true below
     this.ignore = false;
     if (!this.blockRouterChange) {
-      this.onPropertyModified().then(() =>
+      void this.onPropertyModified().then(() =>
         this.ignore = false
       );
     }
@@ -99,7 +99,7 @@ export class DiagramStateService {
     return this.router.navigate([], {
       queryParams: {
         ...Object.entries(this.state)
-          .filter(([token, param]) => param.value && param.value.length !== 0)
+          .filter(([_token, param]) => param.value && param.value.length !== 0)
           .reduce((acc, [token, param]) => ({
             ...acc,
             [token]: Array.isArray(param.value) ? param.value.join(',') : param.value

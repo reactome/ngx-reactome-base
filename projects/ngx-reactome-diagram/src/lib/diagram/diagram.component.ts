@@ -1,6 +1,5 @@
 import {
   AfterViewInit,
-  ChangeDetectorRef,
   Component,
   ElementRef, Input,
   OnChanges,
@@ -43,7 +42,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   isDataFromPsicquicLoading: boolean = false;
 
 
-  constructor(private diagram: DiagramService, public dark: DarkService, private state: DiagramStateService, public dialog: MatDialog, private cdr: ChangeDetectorRef) {
+  constructor(private diagram: DiagramService, public dark: DarkService, private state: DiagramStateService, public dialog: MatDialog) {
   }
 
   cy!: cytoscape.Core;
@@ -111,8 +110,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
         this.legend.zoomingEnabled(false);
         this.legend.panningEnabled(false);
         this.legend.minZoom(0)
-        const bb = this.legend.elements().boundingBox();
-        // this.ratio = bb.w / bb.h;
       });
 
     this.loadDiagram();
@@ -134,8 +131,8 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   displayNetwork(elements: any) {
     const container = this.cytoscapeContainer!.nativeElement;
-    this.comparing = (elements.nodes && elements.nodes.some((node: any) => node.data['isFadeOut'])) || 
-                     (elements.edges && elements.edges.some((edge: any) => edge.data['isFadeOut']))
+    this.comparing = (elements.nodes?.some((node: any) => node.data['isFadeOut'])) || 
+                     (elements.edges?.some((edge: any) => edge.data['isFadeOut']))
     this.cy = cytoscape({
       container: container,
       elements: elements,
@@ -247,7 +244,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   ));
 
   private stateToDiagram() {
-    for (let cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
+    for (const cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
       this.flag(this.state.get('flag'), cy);
       this.select(this.state.get("select"), cy);
     }
@@ -328,10 +325,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   }
 
   flagElements(toFlag: cytoscape.CollectionArgument, cy: cytoscape.Core): cytoscape.CollectionArgument {
-      const shadowNodes = cy.nodes('.Shadow');
-      const shadowEdges = cy.edges('[?color]');
-      const trivials = cy.elements('.trivial');
-  
       if (toFlag.nonempty()) {
         cy.batch(() => {
           this.setSubPathwayVisibility(false, cy);

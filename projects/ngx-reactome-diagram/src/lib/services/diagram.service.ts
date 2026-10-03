@@ -1,6 +1,6 @@
-import {Inject, Injectable, InjectionToken, OnInit} from '@angular/core';
+import {Inject, Injectable, InjectionToken} from '@angular/core';
 import {forkJoin, map, Observable, of, tap} from "rxjs";
-import {HttpClient, HttpHeaders} from "@angular/common/http";
+import {HttpClient} from "@angular/common/http";
 import {Diagram, Edge, Node, NodeConnector, Position, Prop, Rectangle} from "../model/diagram.model";
 import {Edge as GraphEdge, Graph, Node as GraphNode} from "../model/graph.model";
 import {Style, Types} from "ngx-reactome-cytoscape-style";
@@ -217,7 +217,7 @@ export class DiagramService {
         // create a node id - graph node mapping
         const dbIdToGraphNode = new Map<number, GraphNode>(graph.nodes.map(node => [node.dbId, node]))
         const mappingList: [number, GraphNode][] = graph.nodes.flatMap(node => {
-          if (node.children && node.children.length === 1) {
+          if (node.children?.length === 1) {
             return node.diagramIds?.map(id => [id, dbIdToGraphNode.get(node.children[0])]).filter(entry => entry[1] !== undefined) as [number, GraphNode][]
           } else return node.diagramIds?.map(id => [id, node]) as [number, GraphNode][]
         }).filter(entry => entry !== undefined);
@@ -247,7 +247,7 @@ export class DiagramService {
             bottom: scale(prop.x + prop.height),
           })
 
-          let innerCR = 10;
+          const innerCR = 10;
           let outerCR
           if (item.insets) {
             const rects = [propToRects(item.prop), propToRects(item.insets)]
@@ -346,9 +346,9 @@ export class DiagramService {
           const isBackground = item.isFadeOut || classes.some(clazz => clazz === 'Pathway') || item.connectors.some(connector => connector.isFadeOut);
           item.isBackground = isBackground;
           let html = undefined;
-          let width = scale(item.prop.width);
-          let height = scale(item.prop.height);
-          let uniprotId = idToGraphNodes.get(item.id)?.identifier;
+          const width = scale(item.prop.width);
+          const height = scale(item.prop.height);
+          const uniprotId = idToGraphNodes.get(item.id)?.identifier;
           if (classes.some(clazz => clazz === 'Protein')) {
             html = this.getStructureVideoHtml({...item, type: 'Protein'}, width, height, uniprotId);
           }
@@ -441,7 +441,7 @@ export class DiagramService {
                 const sourceP = scale(source.position);
                 const targetP = scale(target.position);
 
-                let points = connector.segments
+                const points = connector.segments
                   .flatMap((segment, i) => i === 0 ? [segment.from, segment.to] : [segment.to])
                   .map(pos => scale(pos));
                 if (connector.type === 'OUTPUT') points.reverse();
@@ -520,7 +520,7 @@ export class DiagramService {
               const sourceP = scale(source.position);
               const targetP = scale(target.position);
 
-              let points = link.segments
+              const points = link.segments
                 .flatMap((segment, i) => i === 0 ? [segment.from, segment.to] : [segment.to])
                 .map(pos => scale(pos));
 
@@ -616,7 +616,6 @@ export class DiagramService {
 
 
   lastSelectedResource: string | undefined
-  private INTACT: string = "IntAct";
 
   /**
    * Use Matrix power to convert points from an absolute coordinate system to an edge relative system
@@ -635,12 +634,12 @@ export class DiagramService {
     const mainVector = array([target.x - source.x, target.y - source.y]); // Edge vector
     const orthoVector = array([-mainVector.y, mainVector.x]) // Perpendicular vector
       .normalize(); //Normalized to have the distance expressed in pixels https://math.stackexchange.com/a/413235/683621
-    let transform = array([
+    const transform = array([
       [mainVector.x, mainVector.y],
       [orthoVector.x, orthoVector.y],
     ]).inv(); // Should always be invertible if the ortho vector is indeed perpendicular
 
-    for (let coord of toConvert) {
+    for (const coord of toConvert) {
       const absolute = array([[coord.x - source.x, coord.y - source.y]]);
       const relative = absolute.multiply(transform);
       relatives.weights.push(relative.get(0, 0))
@@ -655,7 +654,7 @@ export class DiagramService {
     // const peTypes = ['Gene'];
     const reactionTypes = ['association', 'dissociation', 'transition', 'uncertain', 'omitted'];
 
-    const physicalEntities: cytoscape.NodeDefinition[] = Array.from({length: amount}, (x, i) => {
+    const physicalEntities: cytoscape.NodeDefinition[] = Array.from({length: amount}, (_x, i) => {
       const clazz = this.pick(peTypes);
       return {
         group: 'nodes',
@@ -670,7 +669,7 @@ export class DiagramService {
       };
     });
 
-    const reactions: cytoscape.NodeDefinition[] = physicalEntities.map((node, i) =>
+    const reactions: cytoscape.NodeDefinition[] = physicalEntities.map((_node, i) =>
       ({
         group: 'nodes',
         data: {
@@ -686,7 +685,7 @@ export class DiagramService {
     );
 
 
-    const inOut: cytoscape.EdgeDefinition[] = physicalEntities.flatMap((node, i) => [
+    const inOut: cytoscape.EdgeDefinition[] = physicalEntities.flatMap((_node, i) => [
       {
         group: 'edges',
         data: {
@@ -750,13 +749,6 @@ function overlapLimited(nodeA: Node, nodeB: Node, limit: number = 0.8): boolean 
     bottom: Math.min(rectA.bottom, rectB.bottom)
   }
   return (o.left < o.right && o.top < o.bottom) && ((area(o) / area(rectA)) > limit);
-}
-
-function overlap(nodeA: Node, nodeB: Node): boolean {
-  if (nodeA.position.x === nodeB.position.x && nodeA.position.y === nodeB.position.y) return true;
-  const rectA = getRect(nodeA), rectB = getRect(nodeB);
-  return Math.max(rectA.left, rectB.left) < Math.min(rectA.right, rectB.right)
-    && Math.max(rectA.top, rectB.top) < Math.min(rectA.bottom, rectB.bottom);
 }
 
 function area(rect: Rectangle) {
