@@ -10,6 +10,11 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "paths": {
+      // vectorious's "exports" lists its plain module before its types, so
+      // bundler resolution finds no declarations; point straight at them.
+      "vectorious": [
+        "./node_modules/vectorious/dist/index.d.ts"
+      ],
       "ngx-reactome-cytoscape-style": [
         "./dist/ngx-reactome-cytoscape-style"
       ],
