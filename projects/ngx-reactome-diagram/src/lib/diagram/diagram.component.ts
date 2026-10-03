@@ -11,7 +11,7 @@ import {
 import { DiagramService } from "../services/diagram.service";
 import cytoscape from "cytoscape";
 // @ts-ignore
-import { ReactomeEvent, ReactomeEventTypes, Style } from "ngx-reactome-cytoscape-style";
+import { interactivityOf, ReactomeEvent, ReactomeEventTypes, Style } from "ngx-reactome-cytoscape-style";
 import { DarkService } from "../services/dark.service";
 import { delay, distinctUntilChanged, filter, Observable, share, Subject, tap } from "rxjs";
 import { FormControl } from "@angular/forms";
@@ -360,12 +360,18 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       shadowNodes.style({opacity: 1})
       trivials.style({opacity: 1})
       shadowEdges.addClass('shadow')
-      cy.on('zoom', cy.data('reactome').interactivity.onZoom.shadow)
-      cy.data('reactome').interactivity.onZoom.shadow()
+      // The handlers bound to this graph: cy.data('reactome').interactivity is
+      // whichever graph its Style was bound to last.
+      const onZoomShadow = interactivityOf(cy)?.onZoom.shadow;
+      if (onZoomShadow) {
+        cy.on('zoom', onZoomShadow)
+        onZoomShadow()
+      }
     } else {
       shadowNodes.style({opacity: 0})
       shadowEdges.removeClass('shadow')
-      cy.off('zoom', cy.data('reactome').interactivity.onZoom.shadow)
+      const onZoomShadow = interactivityOf(cy)?.onZoom.shadow;
+      if (onZoomShadow) cy.off('zoom', onZoomShadow)
       trivials.style({opacity: 1})
       cy.edges().style({'underlay-opacity': 0})
     }
