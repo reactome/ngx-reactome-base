@@ -1,0 +1,84 @@
+name: Publish builds
+
+# Until the libraries are released to npm, each one's build is kept on its own
+# branch -- dist/ngx-reactome-cytoscape-style, dist/ngx-reactome-style,
+# dist/ngx-reactome-diagram -- with the package at the branch root, so another
+# project can install it straight from GitHub:
+#
+#   "ngx-reactome-cytoscape-style":
+#     "github:reactome/ngx-reactome-base#dist/ngx-reactome-cytoscape-style"
+#
+# npm's lockfile pins the commit, so a consumer moves to a newer build only
+# when it updates the dependency.
+#
+# Runs only after Tests has passed for a commit on main: a build that failed
+# its tests is never published.
+on:
+  workflow_run:
+    workflows: ['Tests']
+    types: [completed]
+    branches:
+      - main
+  # To publish again without a new commit.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One publish at a time, so two never race to push the same branch.
+concurrency:
+  group: publish-builds
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The commit that was tested, not whatever main points at now.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the libraries
+        run: npm run build:libs
+
+      - name: Push each build to its branch
+        env:
+          SOURCE: ${{ github.event.workflow_run.head_sha || github.sha }}
+          REMOTE: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        run: |
+          set -euo pipefail
+          for lib in ngx-reactome-cytoscape-style ngx-reactome-style ngx-reactome-diagram; do
+            branch="dist/$lib"
+            cd "dist/$lib"
+            git init -q
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            # Each build follows the previous one, so the branch keeps a
+            # history of what was published and from which commit.
+            if git ls-remote --exit-code "$REMOTE" "refs/heads/$branch" >/dev/null; then
+              git fetch -q --depth 1 "$REMOTE" "$branch"
+              git reset -q --soft FETCH_HEAD
+            fi
+            git add -A
+            if git diff --cached --quiet && git rev-parse -q --verify HEAD >/dev/null; then
+              echo "$lib: unchanged"
+            else
+              git commit -q -m "Build of $lib from ${SOURCE}"
+              git push -q "$REMOTE" "HEAD:refs/heads/$branch"
+              echo "$lib: published to $branch"
+            fi
+            cd - >/dev/null
+          done
