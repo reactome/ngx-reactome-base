@@ -1,0 +1,36 @@
+# Dependency updates, grouped so the queue stays reviewable. The same policy as
+# reactome/WebsiteAngular: small regular updates instead of accumulated drift.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Angular releases in lockstep -- splitting these produces PRs that
+      # cannot pass on their own.
+      angular:
+        patterns:
+          - '@angular/*'
+          - '@angular-devkit/*'
+          - 'angular-eslint'
+          - 'ng-packagr'
+      tooling:
+        patterns:
+          - 'eslint*'
+          - 'prettier'
+          - 'typescript*'
+          - 'vitest'
+          - 'knip'
+          - 'husky'
+          - 'lint-staged'
+    ignore:
+      # Majors change behaviour and want a person driving them.
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

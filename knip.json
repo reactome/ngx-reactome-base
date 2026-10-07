@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["projects/*/src/public-api.ts", "scripts/*.mjs", "**/*.spec.ts"],
+  "project": ["src/**/*.ts", "projects/**/*.ts", "scripts/**/*.mjs"],
+  "ignoreDependencies": ["ngx-reactome-cytoscape-style"]
+}

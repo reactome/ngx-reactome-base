@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   test:
+    # This name is the status check that branch protection requires on main.
+    # Renaming the job leaves main requiring a check that never reports, and
+    # every pull request waits on it forever.
     name: Build, lint and test
     runs-on: ubuntu-latest
     steps:
@@ -29,8 +32,20 @@ jobs:
       - name: Build the libraries
         run: npm run build:libs
 
+      # Formatting is checked, not applied: a CI job that pushes a formatting
+      # commit back cannot run on a protected main, and silently formats nothing
+      # once it breaks -- which is what WebsiteAngular's old one did for months.
+      - name: Check formatting
+        run: npm run format:check
+
       - name: Lint
         run: npm run check:lint
+
+      # eslint sees unused symbols within a file; knip sees whole files and
+      # exports nothing imports. Held to dead-code-baseline.json, like the lint
+      # warnings, so the count can only go down.
+      - name: Check unreachable code has not increased
+        run: npm run check:dead
 
       - name: Test
         run: npm test

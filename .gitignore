@@ -44,3 +44,6 @@ testem.log
 Thumbs.db
 /.vscode/
 /.angular/
+
+# Worktrees created by Claude Code sessions
+.claude/worktrees/
