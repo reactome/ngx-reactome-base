@@ -1,0 +1,9 @@
+# Bulk reformats, so `git blame` skips past them to the commit that last
+# changed the code itself. Git uses this via:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# GitHub reads it automatically.
+
+# Prettier applied across 34 files
+2745f40
