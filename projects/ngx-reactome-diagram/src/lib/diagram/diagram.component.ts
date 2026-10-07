@@ -1,35 +1,38 @@
 import {
   AfterViewInit,
   Component,
-  ElementRef, Input,
+  ElementRef,
+  Input,
   OnChanges,
   Output,
   SimpleChanges,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
-import { DiagramService } from "../services/diagram.service";
-import cytoscape from "cytoscape";
+import { DiagramService } from '../services/diagram.service';
+import cytoscape from 'cytoscape';
 // @ts-ignore
-import { interactivityOf, ReactomeEvent, ReactomeEventTypes, Style } from "ngx-reactome-cytoscape-style";
-import { DarkService } from "../services/dark.service";
-import { delay, distinctUntilChanged, filter, Observable, share, Subject } from "rxjs";
-import { FormControl } from "@angular/forms";
-import { DiagramStateService } from "../services/diagram-state.service";
-import { UntilDestroy } from "@ngneat/until-destroy";
-import { MatDialog } from "@angular/material/dialog";
+import {
+  interactivityOf,
+  ReactomeEvent,
+  ReactomeEventTypes,
+  Style,
+} from 'ngx-reactome-cytoscape-style';
+import { DarkService } from '../services/dark.service';
+import { delay, distinctUntilChanged, filter, Observable, share, Subject } from 'rxjs';
+import { FormControl } from '@angular/forms';
+import { DiagramStateService } from '../services/diagram-state.service';
+import { UntilDestroy } from '@ngneat/until-destroy';
+import { MatDialog } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 
-@UntilDestroy({checkProperties: true})
+@UntilDestroy({ checkProperties: true })
 @Component({
-    selector: 'cr-diagram',
-    templateUrl: './diagram.component.html',
-    styleUrls: ['./diagram.component.scss'],
-    standalone: true,
-    imports: [
-        CommonModule,
-        CdkDrag
-    ]
+  selector: 'cr-diagram',
+  templateUrl: './diagram.component.html',
+  styleUrls: ['./diagram.component.scss'],
+  standalone: true,
+  imports: [CommonModule, CdkDrag],
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
   title = 'pathway-browser';
@@ -41,26 +44,31 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   selectedPsicquicResource = new FormControl();
   isDataFromPsicquicLoading: boolean = false;
 
-
-  constructor(private diagram: DiagramService, public dark: DarkService, private state: DiagramStateService, public dialog: MatDialog) {
-  }
+  constructor(
+    private diagram: DiagramService,
+    public dark: DarkService,
+    private state: DiagramStateService,
+    public dialog: MatDialog
+  ) {}
 
   cy!: cytoscape.Core;
   cyCompare!: cytoscape.Core;
   legend!: cytoscape.Core;
   reactomeStyle!: Style;
   reactomeStyleCompare!: Style;
-  
+
   private _reactomeEvents$: Subject<ReactomeEvent> = new Subject<ReactomeEvent>();
   private _ignore = false;
 
   @Output()
   public reactomeEvents$: Observable<ReactomeEvent> = this._reactomeEvents$.asObservable().pipe(
-    distinctUntilChanged((prev, current) => prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId),
+    distinctUntilChanged(
+      (prev, current) =>
+        prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId
+    ),
     filter(() => !this._ignore),
     share()
   );
-
 
   @Input('id') diagramId: string = '';
 
@@ -71,45 +79,45 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   // There are many issues having URL changes for selection state or other
   // state changes in the curator tool environment (e.g conflict with tree URL)
   // therefore, we'd like to block the change by flagging this to true.
-  @Input() 
+  @Input()
   set blockRouterChange(block: boolean) {
-    if (this.state)
-      this.state.blockRouterChange = block;
-  };
+    if (this.state) this.state.blockRouterChange = block;
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['diagramId']) this.loadDiagram();
   }
 
   ngAfterViewInit(): void {
-    this.dark.$dark.subscribe(this.updateStyle.bind(this))
+    this.dark.$dark.subscribe(this.updateStyle.bind(this));
 
     const container = this.cytoscapeContainer!.nativeElement;
     const compareContainer = this.compareContainer!.nativeElement;
     const legendContainer = this.legendContainer!.nativeElement;
 
     Object.values(ReactomeEventTypes).forEach((type) => {
-      container.addEventListener(type, (e) => this._reactomeEvents$.next(e as ReactomeEvent))
-      compareContainer.addEventListener(type, (e) => this._reactomeEvents$.next(e as ReactomeEvent))
-      legendContainer.addEventListener(type, (e) => this._reactomeEvents$.next(e as ReactomeEvent))
-    })
+      container.addEventListener(type, (e) => this._reactomeEvents$.next(e as ReactomeEvent));
+      compareContainer.addEventListener(type, (e) =>
+        this._reactomeEvents$.next(e as ReactomeEvent)
+      );
+      legendContainer.addEventListener(type, (e) => this._reactomeEvents$.next(e as ReactomeEvent));
+    });
 
     this.reactomeStyle = new Style(container);
 
-    this.diagram.getLegend()
-      .subscribe(legend => {
-        this.legend = cytoscape({
-          container: legendContainer,
-          elements: legend,
-          style: this.reactomeStyle?.getStyleSheet(),
-          layout: {name: "preset"},
-          boxSelectionEnabled: false
-        });
-        this.reactomeStyle?.bindToCytoscape(this.legend);
-        this.legend.zoomingEnabled(false);
-        this.legend.panningEnabled(false);
-        this.legend.minZoom(0)
+    this.diagram.getLegend().subscribe((legend) => {
+      this.legend = cytoscape({
+        container: legendContainer,
+        elements: legend,
+        style: this.reactomeStyle?.getStyleSheet(),
+        layout: { name: 'preset' },
+        boxSelectionEnabled: false,
       });
+      this.reactomeStyle?.bindToCytoscape(this.legend);
+      this.legend.zoomingEnabled(false);
+      this.legend.panningEnabled(false);
+      this.legend.minZoom(0);
+    });
 
     this.loadDiagram();
 
@@ -119,27 +127,26 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   loadDiagram() {
     if (!this.cytoscapeContainer) return;
 
-    if (!this.diagramId || this.diagramId.trim().length == 0)
-      return; // Nothing to do.
+    if (!this.diagramId || this.diagramId.trim().length == 0) return; // Nothing to do.
 
-    this.diagram.getDiagram(this.diagramId)
-      .subscribe(elements => {
-        this.displayNetwork(elements);
-      })
+    this.diagram.getDiagram(this.diagramId).subscribe((elements) => {
+      this.displayNetwork(elements);
+    });
   }
 
   displayNetwork(elements: any) {
     const container = this.cytoscapeContainer!.nativeElement;
-    this.comparing = (elements.nodes?.some((node: any) => node.data['isFadeOut'])) || 
-                     (elements.edges?.some((edge: any) => edge.data['isFadeOut']))
+    this.comparing =
+      elements.nodes?.some((node: any) => node.data['isFadeOut']) ||
+      elements.edges?.some((edge: any) => edge.data['isFadeOut']);
     this.cy = cytoscape({
       container: container,
       elements: elements,
       style: this.reactomeStyle?.getStyleSheet(),
-      layout: {name: "preset"},
+      layout: { name: 'preset' },
       userPanningEnabled: false,
       userZoomingEnabled: false,
-      autoungrabify: false
+      autoungrabify: false,
     });
     this.reactomeStyle.bindToCytoscape(this.cy);
     this.reactomeStyle.clearCache();
@@ -149,28 +156,27 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     this.stateToDiagram();
 
     // Fire an event after this network is displayed.
-    const event = new CustomEvent("network_displayed");
+    const event = new CustomEvent('network_displayed');
     container.dispatchEvent(event);
   }
 
   private initialiseReplaceElements() {
     if (this.comparing)
       this.cy.batch(() => {
-        this.cy.elements('[!isBackground]').style('visibility', 'hidden')
-        this.cy.edges('.shadow').style('underlay-padding', 0)
+        this.cy.elements('[!isBackground]').style('visibility', 'hidden');
+        this.cy.edges('.shadow').style('underlay-padding', 0);
         this.lastIndex = 0;
         this.updateReplacementVisibility();
-        this.cy.elements('.Compartment').style('visibility', 'visible')
-      })
+        this.cy.elements('.Compartment').style('visibility', 'visible');
+      });
   }
 
   private loadCompare(elements: cytoscape.ElementsDefinition, container: HTMLDivElement) {
-
-    const getPosition = (e: cytoscape.SingularElementArgument) => e.is('.Shadow') ? e.data('triggerPosition') : e.boundingBox().x1;
+    const getPosition = (e: cytoscape.SingularElementArgument) =>
+      e.is('.Shadow') ? e.data('triggerPosition') : e.boundingBox().x1;
     if (this.comparing) {
-      this.cy.elements('[!isBackground]').style('visibility', 'hidden')
-      this.replacedElements = this.cy!
-        .elements('[?replacedBy]')
+      this.cy.elements('[!isBackground]').style('visibility', 'hidden');
+      this.replacedElements = this.cy!.elements('[?replacedBy]')
         .add('[?isCrossed]')
         .sort((a, b) => getPosition(a) - getPosition(b))
         .style('visibility', 'hidden')
@@ -178,56 +184,58 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
       this.replacedElementsPosition = this.replacedElements.map(getPosition);
 
-
-      this.cy.on('add', e => {
+      this.cy.on('add', (e) => {
         const addedElement = e.target;
         if (addedElement.data('replacedBy') || addedElement.data('isCrossed')) {
           const x = getPosition(addedElement);
-          let index = this.replacedElementsPosition.findIndex(x1 => x1 >= x);
+          let index = this.replacedElementsPosition.findIndex((x1) => x1 >= x);
           if (index === -1) index = this.replacedElements.length;
 
           this.replacedElements.splice(index, 0, addedElement);
           this.replacedElementsPosition.splice(index, 0, x);
           addedElement.style('visibility', 'hidden');
         }
-      })
+      });
 
-      this.cy.on('remove', e => {
+      this.cy.on('remove', (e) => {
         const removedElement = e.target;
         const index = this.replacedElements.indexOf(removedElement);
         if (index > -1) {
           this.replacedElements.splice(index, 1);
           this.replacedElementsPosition.splice(index, 1);
         }
-      })
+      });
 
       const compareContainer = this.compareContainer!.nativeElement;
       this.cyCompare = cytoscape({
         container: compareContainer,
         elements: elements,
         style: this.reactomeStyle?.getStyleSheet(),
-        layout: { name: "preset" },
+        layout: { name: 'preset' },
       });
-      
+
       this.cyCompare.elements('[?isFadeOut]').remove();
       this.cyCompare.elements('.Compartment').remove();
       this.cy!.nodes('.crossed').removeClass('crossed');
 
-      this.cyCompare!.on('viewport', () => this.syncViewports(this.cyCompare, compareContainer, this.cy, container))
-      this.cy!.on('viewport', () => this.syncViewports(this.cy, container, this.cyCompare, compareContainer))
+      this.cyCompare!.on('viewport', () =>
+        this.syncViewports(this.cyCompare, compareContainer, this.cy, container)
+      );
+      this.cy!.on('viewport', () =>
+        this.syncViewports(this.cy, container, this.cyCompare, compareContainer)
+      );
 
       this.reactomeStyleCompare = new Style(compareContainer);
       this.reactomeStyleCompare?.bindToCytoscape(this.cyCompare);
-      this.cyCompare.minZoom(this.cy!.minZoom())
-      this.cyCompare.maxZoom(this.cy!.maxZoom())
+      this.cyCompare.minZoom(this.cy!.minZoom());
+      this.cyCompare.maxZoom(this.cy!.maxZoom());
 
       setTimeout(() => {
-        this.syncViewports(this.cy!, container, this.cyCompare, compareContainer)
+        this.syncViewports(this.cy!, container, this.cyCompare, compareContainer);
         this.initialiseReplaceElements();
-      })
+      });
     }
   }
-
 
   avoidSideEffect(m: () => any) {
     this._ignore = true;
@@ -235,55 +243,68 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     this._ignore = false;
   }
 
-  flagging = this.state.onChange.flag$.subscribe((value) => this.avoidSideEffect(
-    () => [this.cy, this.cyCompare].forEach(cy => {if (cy) {this.flag(value, cy)} })
-  ));
-  selecting = this.state.onChange.select$.subscribe((value) => this.avoidSideEffect(
-    () => [this.cy, this.cyCompare].forEach(cy => {if (cy) {this.select(value, cy)} })
-  ));
+  flagging = this.state.onChange.flag$.subscribe((value) =>
+    this.avoidSideEffect(() =>
+      [this.cy, this.cyCompare].forEach((cy) => {
+        if (cy) {
+          this.flag(value, cy);
+        }
+      })
+    )
+  );
+  selecting = this.state.onChange.select$.subscribe((value) =>
+    this.avoidSideEffect(() =>
+      [this.cy, this.cyCompare].forEach((cy) => {
+        if (cy) {
+          this.select(value, cy);
+        }
+      })
+    )
+  );
 
   private stateToDiagram() {
-    for (const cy of [this.cy, this.cyCompare].filter(cy => cy !== undefined)) {
+    for (const cy of [this.cy, this.cyCompare].filter((cy) => cy !== undefined)) {
       this.flag(this.state.get('flag'), cy);
-      this.select(this.state.get("select"), cy);
+      this.select(this.state.get('select'), cy);
     }
   }
 
-  readonly classRegex = /class:(\w+)([!.]drug)?/
+  readonly classRegex = /class:(\w+)([!.]drug)?/;
 
   getElements(tokens: (string | number)[], cy: cytoscape.Core): cytoscape.CollectionArgument {
     let elements: cytoscape.Collection;
 
-    elements = cy.collection()
-    tokens.forEach(token => {
+    elements = cy.collection();
+    tokens.forEach((token) => {
       if (typeof token === 'string') {
         // An empty token should be ignored. If this is not done,
         // all objects will be selected since [acc=""] matches all elements without acc attribute.
         if (token.trim().length === 0) return;
         if (token.startsWith('R-')) {
-          elements = elements.or(`[graph.stId="${token}"]`)
+          elements = elements.or(`[graph.stId="${token}"]`);
         } else {
           const matchArray = token.match(this.classRegex);
           if (matchArray) {
             const [_, clazz, drug] = matchArray;
-            if (drug === '.drug') { // Drug physical entity
+            if (drug === '.drug') {
+              // Drug physical entity
               elements = elements.or(`.${clazz}`).and('.drug');
-            } else if (drug === '!drug') { // Non drug physical entity
+            } else if (drug === '!drug') {
+              // Non drug physical entity
               elements = elements.or(`.${clazz}`).not('.drug');
-            } else { // Non physical entity
+            } else {
+              // Non physical entity
               elements = elements.or(`.${clazz}`);
             }
-          } 
-          else if (this.usedbId) {
+          } else if (this.usedbId) {
             // It is possible dbId is encoded in string
             elements = elements.or(`[reactomeId=${token}]`);
-          }
-          else {
-            elements = elements.or(`[acc=${token}]`)
+          } else {
+            elements = elements.or(`[acc=${token}]`);
           }
         }
       } else {
-        elements = elements.or(`[acc=${token}]`).or(`[reactomeId=${token}]`)
+        elements = elements.or(`[acc=${token}]`).or(`[reactomeId=${token}]`);
       }
     });
     return elements;
@@ -296,11 +317,11 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     this.state.set('flag', []);
   }
 
-  select(tokens: (string | number), cy: cytoscape.Core): cytoscape.CollectionArgument {
+  select(tokens: string | number, cy: cytoscape.Core): cytoscape.CollectionArgument {
     cy.elements(':selected').unselect();
     let selected = this.getElements([tokens], cy);
     selected.select();
-    if ("connectedNodes" in selected) {
+    if ('connectedNodes' in selected) {
       selected = selected.add(selected.connectedNodes());
     }
 
@@ -308,68 +329,72 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       cy.animate({
         fit: {
           eles: selected,
-          padding: 100
+          padding: 100,
         },
         duration: 1000,
-        easing: "ease-in-out"
-      })
+        easing: 'ease-in-out',
+      });
     }
 
     return selected;
   }
 
   flag(accs: (string | number)[], cy: cytoscape.Core): cytoscape.CollectionArgument {
-    return this.flagElements(this.getElements(accs, cy), cy)
+    return this.flagElements(this.getElements(accs, cy), cy);
   }
 
-  flagElements(toFlag: cytoscape.CollectionArgument, cy: cytoscape.Core): cytoscape.CollectionArgument {
-      if (toFlag.nonempty()) {
-        cy.batch(() => {
-          this.setSubPathwayVisibility(false, cy);
-          cy.elements().removeClass('flag')
-          toFlag.addClass('flag')
-            .edges().style({'underlay-opacity': 1})
-        })
-  
-        return toFlag
-      } else {
-        cy.batch(() => {
-          this.setSubPathwayVisibility(true, cy);
-          cy.elements().removeClass('flag');
-        })
-  
-        return cy.collection()
-      }
+  flagElements(
+    toFlag: cytoscape.CollectionArgument,
+    cy: cytoscape.Core
+  ): cytoscape.CollectionArgument {
+    if (toFlag.nonempty()) {
+      cy.batch(() => {
+        this.setSubPathwayVisibility(false, cy);
+        cy.elements().removeClass('flag');
+        toFlag.addClass('flag').edges().style({ 'underlay-opacity': 1 });
+      });
+
+      return toFlag;
+    } else {
+      cy.batch(() => {
+        this.setSubPathwayVisibility(true, cy);
+        cy.elements().removeClass('flag');
+      });
+
+      return cy.collection();
     }
-  
+  }
+
   setSubPathwayVisibility(visible: boolean, cy: cytoscape.Core) {
     const shadowNodes = cy.nodes('.Shadow');
     const shadowEdges = cy.edges('[?color]');
     const trivials = cy.elements('.trivial');
 
     if (visible) {
-      shadowNodes.style({opacity: 1})
-      trivials.style({opacity: 1})
-      shadowEdges.addClass('shadow')
+      shadowNodes.style({ opacity: 1 });
+      trivials.style({ opacity: 1 });
+      shadowEdges.addClass('shadow');
       // The handlers bound to this graph: cy.data('reactome').interactivity is
       // whichever graph its Style was bound to last.
       const onZoomShadow = interactivityOf(cy)?.onZoom.shadow;
       if (onZoomShadow) {
-        cy.on('zoom', onZoomShadow)
-        onZoomShadow()
+        cy.on('zoom', onZoomShadow);
+        onZoomShadow();
       }
     } else {
-      shadowNodes.style({opacity: 0})
-      shadowEdges.removeClass('shadow')
+      shadowNodes.style({ opacity: 0 });
+      shadowEdges.removeClass('shadow');
       const onZoomShadow = interactivityOf(cy)?.onZoom.shadow;
-      if (onZoomShadow) cy.off('zoom', onZoomShadow)
-      trivials.style({opacity: 1})
-      cy.edges().style({'underlay-opacity': 0})
+      if (onZoomShadow) cy.off('zoom', onZoomShadow);
+      trivials.style({ opacity: 1 });
+      cy.edges().style({ 'underlay-opacity': 0 });
     }
   }
 
-
-  applyEvent(event: ReactomeEvent, affectedElements: cytoscape.NodeCollection | cytoscape.EdgeCollection) {
+  applyEvent(
+    event: ReactomeEvent,
+    affectedElements: cytoscape.NodeCollection | cytoscape.EdgeCollection
+  ) {
     switch (event.type) {
       case ReactomeEventTypes.hover:
         affectedElements.addClass('hover');
@@ -386,7 +411,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     }
   }
 
-
   ratio = 0.384;
 
   replacedElements!: cytoscape.SingularElementArgument[];
@@ -395,12 +419,11 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   lastIndex = 0;
   underlayPadding = 0;
 
-private updateReplacementVisibility() {
-
+  private updateReplacementVisibility() {
     // // Calculate the position of the element that is to the right of the separation
 
     const extent = this.cyCompare!.extent();
-    let limitIndex = this.replacedElementsPosition.findIndex(x1 => x1 >= extent.x1);
+    let limitIndex = this.replacedElementsPosition.findIndex((x1) => x1 >= extent.x1);
     if (limitIndex === -1) limitIndex = this.replacedElements.length;
 
     /// Alternative calculation. In theory more optimised, but seems worse when console is opened for some reason
@@ -422,36 +445,46 @@ private updateReplacementVisibility() {
 
     if (this.lastIndex !== limitIndex) {
       // If at least one element is switched from left to right
-      if (limitIndex < this.lastIndex) this.replacedElements.slice(limitIndex, this.lastIndex)
-        .map(e => e.style('visibility', 'hidden')) // Hide the range of elements
-        .filter(e => e.is('.Shadow')) // And if it is an shadow
-        .forEach(shadow => shadow.data('edges').style('underlay-padding', 0)) // Hide as well the associated reaction underlay
+      if (limitIndex < this.lastIndex)
+        this.replacedElements
+          .slice(limitIndex, this.lastIndex)
+          .map((e) => e.style('visibility', 'hidden')) // Hide the range of elements
+          .filter((e) => e.is('.Shadow')) // And if it is an shadow
+          .forEach((shadow) => shadow.data('edges').style('underlay-padding', 0)); // Hide as well the associated reaction underlay
       // If at least one element is switched from right to left
-      if (limitIndex > this.lastIndex) this.replacedElements.slice(this.lastIndex, limitIndex)
-        .map(e => e.style('visibility', 'visible')) // Show the range of elements
-        .filter(e => e.is('.Shadow')) // And if it is an shadow
-        .forEach(shadow => shadow.data('edges').style('underlay-padding', this.underlayPadding)) // Show as well the associated reaction underlay
+      if (limitIndex > this.lastIndex)
+        this.replacedElements
+          .slice(this.lastIndex, limitIndex)
+          .map((e) => e.style('visibility', 'visible')) // Show the range of elements
+          .filter((e) => e.is('.Shadow')) // And if it is an shadow
+          .forEach((shadow) =>
+            shadow.data('edges').style('underlay-padding', this.underlayPadding)
+          ); // Show as well the associated reaction underlay
     }
-    this.lastIndex = limitIndex
+    this.lastIndex = limitIndex;
   }
 
   syncing = false;
-  syncViewports = (source: cytoscape.Core, sourceContainer: HTMLElement, target: cytoscape.Core, targetContainer: HTMLElement) => {
+  syncViewports = (
+    source: cytoscape.Core,
+    sourceContainer: HTMLElement,
+    target: cytoscape.Core,
+    targetContainer: HTMLElement
+  ) => {
     if (this.syncing) return;
     this.syncing = true;
     this.updateReplacementVisibility();
 
-    const position = {...source.pan()};
+    const position = { ...source.pan() };
     const sourceX = sourceContainer.getBoundingClientRect().x;
     const targetX = targetContainer.getBoundingClientRect().x;
     position.x += sourceX - targetX;
     target.viewport({
       zoom: source.zoom(),
       pan: position,
-    })
+    });
     this.syncing = false;
   };
-
 
   updateStyle() {
     this.cy ? setTimeout(() => this.reactomeStyle?.update(this.cy), 5) : null;
@@ -472,49 +505,61 @@ private updateReplacementVisibility() {
   dragMove($event: MouseEvent, compareContainer: HTMLDivElement, container: HTMLDivElement) {
     if (!this.compareDragging) return;
     compareContainer.style['left'] = $event.x - container.getBoundingClientRect().x + 'px';
-    this.cyCompare.resize()
-    this.syncViewports(this.cy!, this.cytoscapeContainer!.nativeElement, this.cyCompare!, this.compareContainer!.nativeElement);
+    this.cyCompare.resize();
+    this.syncViewports(
+      this.cy!,
+      this.cytoscapeContainer!.nativeElement,
+      this.cyCompare!,
+      this.compareContainer!.nativeElement
+    );
   }
 
   updateLegend() {
-    this.legend.resize()
-    this.legend.panningEnabled(true)
-    this.legend.zoomingEnabled(true)
-    this.legend.fit(this.legend.elements(), 2)
-    this.legend.panningEnabled(false)
-    this.legend.zoomingEnabled(false)
+    this.legend.resize();
+    this.legend.panningEnabled(true);
+    this.legend.zoomingEnabled(true);
+    this.legend.fit(this.legend.elements(), 2);
+    this.legend.panningEnabled(false);
+    this.legend.zoomingEnabled(false);
   }
 
   // ----- Event Syncing -----
 
   // stateToDiagramSub = this.state.state$.subscribe(() => this.stateToDiagram());
-  
-  compareBackgroundSync = this.reactomeEvents$.pipe(
-    filter(() => this.comparing),
-    filter((e) => e.detail.cy !== this.legend)
-  ).subscribe(event => {
-    const src = event.detail.cy;
-    const tgt = src === this.cy ? this.cyCompare : this.cy;
 
-    let replacedBy = event.detail.element.data('replacedBy');
-    replacedBy = replacedBy || event.detail.element.data('replacement');
-    replacedBy = replacedBy || (event.detail.element.data('isBackground') && !event.detail.element.data('isFadeOut') && event.detail.element.data('id'));
+  compareBackgroundSync = this.reactomeEvents$
+    .pipe(
+      filter(() => this.comparing),
+      filter((e) => e.detail.cy !== this.legend)
+    )
+    .subscribe((event) => {
+      const src = event.detail.cy;
+      const tgt = src === this.cy ? this.cyCompare : this.cy;
 
-    if (!replacedBy) return;
+      let replacedBy = event.detail.element.data('replacedBy');
+      replacedBy = replacedBy || event.detail.element.data('replacement');
+      replacedBy =
+        replacedBy ||
+        (event.detail.element.data('isBackground') &&
+          !event.detail.element.data('isFadeOut') &&
+          event.detail.element.data('id'));
 
-    let replacements = tgt.getElementById(replacedBy);
-    if (event.detail.type === 'reaction') {
-      // Need to check if replaceBy is an object or a number
-      if (typeof replacedBy === 'object') {
-        // If replacedBy is an object, try to get its id property
-        replacedBy = replacedBy.reactomeId;
+      if (!replacedBy) return;
+
+      let replacements = tgt.getElementById(replacedBy);
+      if (event.detail.type === 'reaction') {
+        // Need to check if replaceBy is an object or a number
+        if (typeof replacedBy === 'object') {
+          // If replacedBy is an object, try to get its id property
+          replacedBy = replacedBy.reactomeId;
+        }
+        if (typeof replacedBy === 'number')
+          // Looks like there is a bug in cytoscape. check for object will return all elements.
+          replacements = replacements.add(tgt.elements(`[reactionId=${replacedBy}]`));
       }
-      if (typeof replacedBy === 'number') // Looks like there is a bug in cytoscape. check for object will return all elements.
-        replacements = replacements.add(tgt.elements(`[reactionId=${replacedBy}]`))
-    }
 
-    this.applyEvent(event, replacements)
-  });
+      this.applyEvent(event, replacements);
+    });
 
   // interactorHandling = this.reactomeEvents$
   //   .pipe(
@@ -528,85 +573,93 @@ private updateReplacementVisibility() {
   //     }
   //   );
 
-  diagram2legend = this.reactomeEvents$.pipe(
-    filter((e) => e.detail.cy !== this.legend),
-  ).subscribe(event => {
-    const classes = event.detail.element.classes();
-    let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection = this.legend.elements(`.${classes[0]}`);
+  diagram2legend = this.reactomeEvents$
+    .pipe(filter((e) => e.detail.cy !== this.legend))
+    .subscribe((event) => {
+      const classes = event.detail.element.classes();
+      let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection =
+        this.legend.elements(`.${classes[0]}`);
 
-    if (event.detail.type === 'PhysicalEntity') {
-      if (classes.includes('drug')) matchingElement = matchingElement.nodes('.drug')
-      else matchingElement = matchingElement.not('.drug')
-    } else if (event.detail.type === 'reaction') {
-      const reaction = event.detail.element.nodes('.reaction');
-      matchingElement = this.legend.nodes(`.${reaction.classes()[0]}`).first()
-      matchingElement = matchingElement.add(matchingElement.connectedEdges())
-    }
+      if (event.detail.type === 'PhysicalEntity') {
+        if (classes.includes('drug')) matchingElement = matchingElement.nodes('.drug');
+        else matchingElement = matchingElement.not('.drug');
+      } else if (event.detail.type === 'reaction') {
+        const reaction = event.detail.element.nodes('.reaction');
+        matchingElement = this.legend.nodes(`.${reaction.classes()[0]}`).first();
+        matchingElement = matchingElement.add(matchingElement.connectedEdges());
+      }
 
-    this._ignore = true;
-    this.applyEvent(event, matchingElement);
-    this._ignore = false;
-  });
+      this._ignore = true;
+      this.applyEvent(event, matchingElement);
+      this._ignore = false;
+    });
 
-  diagramSelect2state = this.reactomeEvents$.pipe(
-    filter((e) => e.detail.cy !== this.legend),
-    delay(0)
-  ).subscribe(e => {
+  diagramSelect2state = this.reactomeEvents$
+    .pipe(
+      filter((e) => e.detail.cy !== this.legend),
+      delay(0)
+    )
+    .subscribe((e) => {
       if (e.type !== ReactomeEventTypes.select) return;
       let elements: cytoscape.NodeSingular = e.detail.element;
       if (e.detail.type === 'reaction') {
-        elements = e.detail.cy.elements('node.reaction:selected')
+        elements = e.detail.cy.elements('node.reaction:selected');
       }
-      let reactomeIds = []
-      if (this.usedbId)
-        reactomeIds = elements.map(el => el.data('reactomeId'));
-      else
-        reactomeIds = elements.map(el => el.data('graph.stId'));
+      let reactomeIds = [];
+      if (this.usedbId) reactomeIds = elements.map((el) => el.data('reactomeId'));
+      else reactomeIds = elements.map((el) => el.data('graph.stId'));
       // Make sure reactomeIds don't contain duplicated element
       const uniqueSet = new Set(reactomeIds);
       reactomeIds = Array.from(uniqueSet);
       this.state.set('select', reactomeIds[0] || '');
-    }
-  );
+    });
 
-  legend2state = this.reactomeEvents$.pipe(
-    filter((e) => e.detail.cy === this.legend),
-    filter(() => !this._ignore),
-  ).subscribe((e) => {
-    const event = e as ReactomeEvent;
-    const classes = event.detail.element.classes();
-    let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection = this.cy.elements(`.${classes[0]}`);
+  legend2state = this.reactomeEvents$
+    .pipe(
+      filter((e) => e.detail.cy === this.legend),
+      filter(() => !this._ignore)
+    )
+    .subscribe((e) => {
+      const event = e as ReactomeEvent;
+      const classes = event.detail.element.classes();
+      let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection = this.cy.elements(
+        `.${classes[0]}`
+      );
 
-    if (event.detail.type === 'PhysicalEntity' || event.detail.type === 'Pathway') {
-      if (classes.includes('drug')) matchingElement = matchingElement.nodes('.drug')
-      else matchingElement = matchingElement.not('.drug')
-    } else if (event.detail.type === 'reaction') {
-      const reaction = event.detail.element.nodes('.reaction');
-      matchingElement = this.cy.nodes(`.${reaction.classes()[0]}`)
-      matchingElement = matchingElement.add(matchingElement.connectedEdges())
-    }
+      if (event.detail.type === 'PhysicalEntity' || event.detail.type === 'Pathway') {
+        if (classes.includes('drug')) matchingElement = matchingElement.nodes('.drug');
+        else matchingElement = matchingElement.not('.drug');
+      } else if (event.detail.type === 'reaction') {
+        const reaction = event.detail.element.nodes('.reaction');
+        matchingElement = this.cy.nodes(`.${reaction.classes()[0]}`);
+        matchingElement = matchingElement.add(matchingElement.connectedEdges());
+      }
 
-    switch (event.type) {
-      case ReactomeEventTypes.select:
-        this.state.set('flag', ['class:' + classes[0] + (classes.includes('drug') ? '.' : '!') + 'drug'])
-        this.stateToDiagram();
-        break;
-      case ReactomeEventTypes.unselect:
-        this.state.set('flag', [])
-        this.stateToDiagram();
-        break;
-      case ReactomeEventTypes.hover:
-        matchingElement.addClass('hover')
-        break;
-      case ReactomeEventTypes.leave:
-        matchingElement.removeClass('hover')
-        break;
-    }
-  });
+      switch (event.type) {
+        case ReactomeEventTypes.select:
+          this.state.set('flag', [
+            'class:' + classes[0] + (classes.includes('drug') ? '.' : '!') + 'drug',
+          ]);
+          this.stateToDiagram();
+          break;
+        case ReactomeEventTypes.unselect:
+          this.state.set('flag', []);
+          this.stateToDiagram();
+          break;
+        case ReactomeEventTypes.hover:
+          matchingElement.addClass('hover');
+          break;
+        case ReactomeEventTypes.leave:
+          matchingElement.removeClass('hover');
+          break;
+      }
+    });
 
   logProteins() {
     // eslint-disable-next-line no-console -- logging is what it is called for
-    console.debug(new Set(this.cy.nodes(".Protein").map(node => node.data("acc") || node.data("iAcc"))))
+    console.debug(
+      new Set(this.cy.nodes('.Protein').map((node) => node.data('acc') || node.data('iAcc')))
+    );
   }
 
   /**
