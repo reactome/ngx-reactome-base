@@ -14,6 +14,6 @@ package-lock.json
 .specify
 specs
 
-# Real Reactome layout and graph files, stored as test fixtures exactly as
-# served (minified). Reformatting them would multiply their size for nothing.
+# Real Reactome layout and graph files, stored as test fixtures (minified
+# from what the release serves). Reformatting them would multiply their size.
 **/fixtures/*.json
