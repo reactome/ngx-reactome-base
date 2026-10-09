@@ -74,7 +74,7 @@ interface UrlParam<T> {
 }
 type State = {
     [token: string]: UrlParam<any>;
-    select: UrlParam<(string | number)>;
+    select: UrlParam<string | number>;
     flag: UrlParam<(string | number)[]>;
     path: UrlParam<string[]>;
     flagInteractors: UrlParam<boolean>;
@@ -138,7 +138,7 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     readonly classRegex: RegExp;
     getElements(tokens: (string | number)[], cy: cytoscape.Core): cytoscape.CollectionArgument;
     resetState(): void;
-    select(tokens: (string | number), cy: cytoscape.Core): cytoscape.CollectionArgument;
+    select(tokens: string | number, cy: cytoscape.Core): cytoscape.CollectionArgument;
     flag(accs: (string | number)[], cy: cytoscape.Core): cytoscape.CollectionArgument;
     flagElements(toFlag: cytoscape.CollectionArgument, cy: cytoscape.Core): cytoscape.CollectionArgument;
     setSubPathwayVisibility(visible: boolean, cy: cytoscape.Core): void;
