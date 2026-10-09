@@ -86,8 +86,10 @@ Two ratchets, two baselines: a change may lower them and must never raise them.
 
 - **`main` is protected.** No direct pushes, administrators included. Every
   change is a pull request with the "Build, lint and test" check green and on an
-  up-to-date branch, and with its review conversations resolved. Reviews are not
-  required, so the checks are the review.
+  up-to-date branch, and with its review conversations resolved. GitHub does not
+  require an approving review, because a sole maintainer cannot approve their own
+  pull request; green checks are still not the review. Review each change
+  adversarially before it merges: chase its call sites, and try to break it.
 - **A green `main` is published.** After the tests pass on `main`, each library's
   build is pushed to its `dist/*` branch, which is what consumers install. A
   merge to `main` is a release to them.
