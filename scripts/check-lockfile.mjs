@@ -1,8 +1,9 @@
 /**
  * Fail when `package-lock.json` quietly re-resolves the dependency tree.
  *
- * A first attempt at regenerating the lockfile for the Node 24 move deleted the
- * file and let npm resolve from scratch. Preflight then said:
+ * Brought from WebsiteAngular, where it was written. There, a first attempt at
+ * regenerating the lockfile for the Node 24 move deleted the file and let npm
+ * resolve from scratch. Its preflight then said:
  *
  *     lockfile in sync (npm ci)          ok
  *     format / types / lint / dead code  ok

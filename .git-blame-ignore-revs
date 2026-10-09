@@ -3,7 +3,9 @@
 #
 #   git config blame.ignoreRevsFile .git-blame-ignore-revs
 #
-# GitHub reads it automatically.
+# GitHub reads it automatically. Full shas only: git rejects an abbreviated one
+# and blame then fails outright. They stay valid only while these commits keep
+# their ids, so the pull requests that bring them in merge with a merge commit.
 
 # Prettier applied across 34 files
-2745f40
+2745f401d82d24fd548db5036954e863e6592370

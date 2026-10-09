@@ -16,7 +16,6 @@
 #   npm ci        prints its usage page, because the flags are newer than npm 9
 #   check:dead    "knip produced no parseable report: Unexpected end of JSON input"
 #   npm test      vitest dies loading its config with ERR_REQUIRE_ESM
-#   e2e           "Playwright requires Node.js 20 or higher"
 #   lint-staged   TypeError: util.styleText is not a function
 #
 # Reading those, the natural conclusion is that the tree is broken. It is not.

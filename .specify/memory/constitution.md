@@ -4,8 +4,7 @@ These libraries were developed inside reactome/WebsiteAngular and moved here, so
 this constitution keeps that project's principles. They are not aspirations:
 each one is here because breaking it cost something specific, and the cost is
 named so the rule can be argued with rather than merely obeyed. The principles
-that only concern the website (stable ids in URLs, the CMS, the curator
-documents) stay there.
+that only concern the website (stable ids in URLs, the CMS) stay there.
 
 ## Core Principles
 
