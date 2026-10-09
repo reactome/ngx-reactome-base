@@ -1,0 +1,15 @@
+# Build output and dependencies
+dist
+node_modules
+.angular
+out-tsc
+coverage
+package-lock.json
+
+# Session scratch
+.claude
+
+# Spec Kit's own files: it records their hashes and treats a changed file as
+# edited by hand, so an upgrade would skip or ask about it. Specs are its output.
+.specify
+specs

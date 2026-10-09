@@ -5,10 +5,7 @@
         "id": "Label 1",
         "displayName": "Molecules"
       },
-      "classes": [
-        "Label",
-        "Legend"
-      ],
+      "classes": ["Label", "Legend"],
       "position": {
         "x": 250,
         "y": -20
@@ -21,10 +18,7 @@
         "height": 80,
         "width": 220
       },
-      "classes": [
-        "Gene",
-        "PhysicalEntity"
-      ],
+      "classes": ["Gene", "PhysicalEntity"],
       "position": {
         "x": 130,
         "y": 40
@@ -37,10 +31,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "GenomeEncodedEntity",
-        "PhysicalEntity"
-      ],
+      "classes": ["GenomeEncodedEntity", "PhysicalEntity"],
       "position": {
         "x": 370,
         "y": 50
@@ -53,10 +44,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "RNA",
-        "PhysicalEntity"
-      ],
+      "classes": ["RNA", "PhysicalEntity"],
       "position": {
         "x": 130,
         "y": 130
@@ -69,11 +57,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "RNA",
-        "PhysicalEntity",
-        "drug"
-      ],
+      "classes": ["RNA", "PhysicalEntity", "drug"],
       "position": {
         "x": 370,
         "y": 130
@@ -86,10 +70,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Protein",
-        "PhysicalEntity"
-      ],
+      "classes": ["Protein", "PhysicalEntity"],
       "position": {
         "x": 130,
         "y": 210
@@ -102,11 +83,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Protein",
-        "PhysicalEntity",
-        "drug"
-      ],
+      "classes": ["Protein", "PhysicalEntity", "drug"],
       "position": {
         "x": 370,
         "y": 210
@@ -119,10 +96,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Molecule",
-        "PhysicalEntity"
-      ],
+      "classes": ["Molecule", "PhysicalEntity"],
       "position": {
         "x": 130,
         "y": 290
@@ -135,11 +109,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Molecule",
-        "PhysicalEntity",
-        "drug"
-      ],
+      "classes": ["Molecule", "PhysicalEntity", "drug"],
       "position": {
         "x": 370,
         "y": 290
@@ -152,10 +122,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Complex",
-        "PhysicalEntity"
-      ],
+      "classes": ["Complex", "PhysicalEntity"],
       "position": {
         "x": 130,
         "y": 370
@@ -168,11 +135,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Complex",
-        "PhysicalEntity",
-        "drug"
-      ],
+      "classes": ["Complex", "PhysicalEntity", "drug"],
       "position": {
         "x": 370,
         "y": 370
@@ -185,10 +148,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "EntitySet",
-        "PhysicalEntity"
-      ],
+      "classes": ["EntitySet", "PhysicalEntity"],
       "position": {
         "x": 130,
         "y": 450
@@ -201,11 +161,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "EntitySet",
-        "PhysicalEntity",
-        "drug"
-      ],
+      "classes": ["EntitySet", "PhysicalEntity", "drug"],
       "position": {
         "x": 370,
         "y": 450
@@ -218,10 +174,7 @@
         "height": 60,
         "width": 220
       },
-      "classes": [
-        "Cell",
-        "PhysicalEntity"
-      ],
+      "classes": ["Cell", "PhysicalEntity"],
       "position": {
         "x": 250,
         "y": 530
@@ -235,10 +188,7 @@
         "height": 80,
         "width": 220
       },
-      "classes": [
-        "SUB",
-        "Pathway"
-      ],
+      "classes": ["SUB", "Pathway"],
       "position": {
         "x": 130,
         "y": 610
@@ -251,26 +201,19 @@
         "height": 80,
         "width": 220
       },
-      "classes": [
-        "Interacting",
-        "Pathway"
-      ],
+      "classes": ["Interacting", "Pathway"],
       "position": {
         "x": 370,
         "y": 610
       }
     },
 
-
     {
       "data": {
         "id": "Label 2",
         "displayName": "Reaction Types"
       },
-      "classes": [
-        "Label",
-        "Legend"
-      ],
+      "classes": ["Label", "Legend"],
       "position": {
         "x": 250,
         "y": 690
@@ -280,10 +223,7 @@
       "data": {
         "id": "a"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 760
@@ -294,10 +234,7 @@
         "id": "dissociation",
         "displayName": "Dissociation"
       },
-      "classes": [
-        "dissociation",
-        "reaction"
-      ],
+      "classes": ["dissociation", "reaction"],
       "position": {
         "x": 130,
         "y": 760
@@ -307,10 +244,7 @@
       "data": {
         "id": "b"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 250,
         "y": 740
@@ -320,10 +254,7 @@
       "data": {
         "id": "c"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 250,
         "y": 780
@@ -334,10 +265,7 @@
         "id": "association",
         "displayName": "Association"
       },
-      "classes": [
-        "association",
-        "reaction"
-      ],
+      "classes": ["association", "reaction"],
       "position": {
         "x": 370,
         "y": 760
@@ -347,10 +275,7 @@
       "data": {
         "id": "d"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 760
@@ -360,10 +285,7 @@
       "data": {
         "id": "e"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 840
@@ -374,10 +296,7 @@
         "id": "transition",
         "displayName": "Transition"
       },
-      "classes": [
-        "transition",
-        "reaction"
-      ],
+      "classes": ["transition", "reaction"],
       "position": {
         "x": 130,
         "y": 840
@@ -387,10 +306,7 @@
       "data": {
         "id": "f"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 250,
         "y": 840
@@ -401,10 +317,7 @@
         "id": "omitted",
         "displayName": "Omitted"
       },
-      "classes": [
-        "omitted",
-        "reaction"
-      ],
+      "classes": ["omitted", "reaction"],
       "position": {
         "x": 370,
         "y": 840
@@ -414,10 +327,7 @@
       "data": {
         "id": "g"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 840
@@ -427,10 +337,7 @@
       "data": {
         "id": "h"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 920
@@ -441,11 +348,7 @@
         "id": "uncertain-l",
         "displayName": "Uncertain"
       },
-      "classes": [
-        "Placeholder",
-        "reaction",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "reaction", "Legend"],
       "position": {
         "x": 250,
         "y": 916
@@ -455,10 +358,7 @@
       "data": {
         "id": "uncertain"
       },
-      "classes": [
-        "uncertain",
-        "reaction"
-      ],
+      "classes": ["uncertain", "reaction"],
       "position": {
         "x": 250,
         "y": 920
@@ -468,10 +368,7 @@
       "data": {
         "id": "i"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 920
@@ -482,10 +379,7 @@
         "id": "Label 3",
         "displayName": "Reaction Attributes"
       },
-      "classes": [
-        "Label",
-        "Legend"
-      ],
+      "classes": ["Label", "Legend"],
       "position": {
         "x": 250,
         "y": 980
@@ -495,10 +389,7 @@
       "data": {
         "id": "attr-catalysis"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 1020
@@ -508,10 +399,7 @@
       "data": {
         "id": "attr-reg+"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 1020
@@ -521,10 +409,7 @@
       "data": {
         "id": "attr-a"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 1060
@@ -534,10 +419,7 @@
       "data": {
         "id": "attr-b"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 1100
@@ -547,10 +429,7 @@
       "data": {
         "id": "attr-reaction"
       },
-      "classes": [
-        "association",
-        "reaction"
-      ],
+      "classes": ["association", "reaction"],
       "position": {
         "x": 250,
         "y": 1080
@@ -560,10 +439,7 @@
       "data": {
         "id": "attr-c"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 1080
@@ -573,10 +449,7 @@
       "data": {
         "id": "attr-reg-"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 1145
@@ -588,10 +461,7 @@
         "displayName": "Stoichiometry",
         "labelColor": "onSurface"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 73,
         "y": 1150
@@ -601,10 +471,7 @@
       "data": {
         "id": "line-a"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 1185
@@ -614,10 +481,7 @@
       "data": {
         "id": "line-b"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 250,
         "y": 1185
@@ -627,10 +491,7 @@
       "data": {
         "id": "line-c"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 1185
@@ -640,10 +501,7 @@
       "data": {
         "id": "line-d"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 15,
         "y": 1225
@@ -653,10 +511,7 @@
       "data": {
         "id": "line-e"
       },
-      "classes": [
-        "Placeholder",
-        "Legend"
-      ],
+      "classes": ["Placeholder", "Legend"],
       "position": {
         "x": 485,
         "y": 1225
@@ -669,10 +524,7 @@
         "source": "a",
         "target": "dissociation"
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
@@ -683,10 +535,7 @@
         "sourceEndpoint": "18 0",
         "targetEndpoint": "-10 0"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
@@ -697,10 +546,7 @@
         "sourceEndpoint": "18 0",
         "targetEndpoint": "-10 0"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
@@ -711,10 +557,7 @@
         "sourceEndpoint": "10 0",
         "targetEndpoint": "-10 0"
       },
-      "classes": [
-        "consumption",
-        "outgoing"
-      ]
+      "classes": ["consumption", "outgoing"]
     },
     {
       "data": {
@@ -725,80 +568,56 @@
         "sourceEndpoint": "10 0",
         "targetEndpoint": "-10 0"
       },
-      "classes": [
-        "consumption",
-        "outgoing"
-      ]
+      "classes": ["consumption", "outgoing"]
     },
     {
       "data": {
         "source": "association",
         "target": "d"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
         "source": "e",
         "target": "transition"
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
         "source": "transition",
         "target": "f"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
         "source": "f",
         "target": "omitted"
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
         "source": "omitted",
         "target": "g"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
         "source": "h",
         "target": "uncertain"
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
         "source": "uncertain",
         "target": "i"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
@@ -809,10 +628,7 @@
         "sourceEndpoint": "10 0",
         "targetEndpoint": "-12 0"
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
@@ -825,10 +641,7 @@
         "stoichiometry": 3,
         "sourceOffset": 50
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
@@ -837,10 +650,7 @@
         "sourceEndpoint": "12 0",
         "targetEndpoint": "-10 0"
       },
-      "classes": [
-        "production",
-        "outgoing"
-      ]
+      "classes": ["production", "outgoing"]
     },
     {
       "data": {
@@ -854,10 +664,7 @@
         "sourceOffset": 30,
         "labelColor": "positive"
       },
-      "classes": [
-        "catalysis",
-        "incoming"
-      ]
+      "classes": ["catalysis", "incoming"]
     },
     {
       "data": {
@@ -871,10 +678,7 @@
         "sourceOffset": 70,
         "labelColor": "positive"
       },
-      "classes": [
-        "positive-regulation",
-        "incoming"
-      ]
+      "classes": ["positive-regulation", "incoming"]
     },
     {
       "data": {
@@ -888,10 +692,7 @@
         "sourceOffset": 72,
         "labelColor": "negative"
       },
-      "classes": [
-        "negative-regulation",
-        "incoming"
-      ]
+      "classes": ["negative-regulation", "incoming"]
     },
     {
       "data": {
@@ -901,10 +702,7 @@
         "targetEndpoint": "-12 0",
         "label": "Wild Type"
       },
-      "classes": [
-        "consumption",
-        "incoming"
-      ]
+      "classes": ["consumption", "incoming"]
     },
     {
       "data": {
@@ -915,11 +713,7 @@
         "label": "Disease Associated",
         "labelColor": "negative"
       },
-      "classes": [
-        "consumption",
-        "incoming",
-        "disease"
-      ]
+      "classes": ["consumption", "incoming", "disease"]
     },
     {
       "data": {
@@ -930,9 +724,7 @@
         "label": "Member of Set",
         "labelColor": "onSurface"
       },
-      "classes": [
-        "set-to-member"
-      ]
+      "classes": ["set-to-member"]
     }
   ],
   "Reaction Types GeoGebra": "https://www.geogebra.org/calculator/bydd8bz5",

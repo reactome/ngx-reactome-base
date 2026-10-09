@@ -16,18 +16,10 @@
     "paths": {
       // vectorious's "exports" lists its plain module before its types, so
       // bundler resolution finds no declarations; point straight at them.
-      "vectorious": [
-        "./node_modules/vectorious/dist/index.d.ts"
-      ],
-      "ngx-reactome-cytoscape-style": [
-        "./dist/ngx-reactome-cytoscape-style"
-      ],
-      "ngx-reactome-diagram": [
-        "./dist/ngx-reactome-diagram"
-      ],
-      "ngx-reactome-style": [
-        "./dist/ngx-reactome-style"
-      ]
+      "vectorious": ["./node_modules/vectorious/dist/index.d.ts"],
+      "ngx-reactome-cytoscape-style": ["./dist/ngx-reactome-cytoscape-style"],
+      "ngx-reactome-diagram": ["./dist/ngx-reactome-diagram"],
+      "ngx-reactome-style": ["./dist/ngx-reactome-style"]
     },
     "esModuleInterop": true,
     "sourceMap": true,

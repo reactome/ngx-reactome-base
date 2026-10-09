@@ -1,11 +1,10 @@
-import {Injectable} from '@angular/core';
-import {BehaviorSubject} from "rxjs";
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DarkService {
-
   private _body: HTMLBodyElement | null;
   private _isDark: boolean = false;
 

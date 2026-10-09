@@ -1,25 +1,34 @@
 <div class="variables" [class.dark]="dark.isDark" #container>
-
-    <div id="cytoscape" #cytoscape></div>
-      <div id="disease-container" class="drag-container" #compareContainer [style.display]="comparing ? 'flex': 'none'">
-        <div id="handle-limits" (mouseup)="dragEnd()" (mouseleave)="dragEnd()"
-             (mousemove)="dragMove($event, compareContainer, container)" [class.active]="compareDragging">
-          <span id="disease-handle" class="drag-handle" (mousedown)="dragStart()"></span>
-        </div>
-  
-        <div id="cytoscape-compare" #cytoscapeCompare class="drag-content"></div>
-      </div>
-  
-    <div id="legend-boundary" [ngStyle]="{'--legend-width': ratio  * container.clientHeight + 'px'}">
-      <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#legend-boundary" id="legend-container" (cdkDragMoved)="updateLegend()"
-           [style.height]="container.clientHeight + 'px'">
-        <button id="legend-handle" cdkDragHandle>LEGEND</button>
-        <div id="legend" #legend></div>
-      </div>
+  <div id="cytoscape" #cytoscape></div>
+  <div id="disease-container" class="drag-container" #compareContainer [style.display]="comparing ? 'flex' : 'none'">
+    <div
+      id="handle-limits"
+      (mouseup)="dragEnd()"
+      (mouseleave)="dragEnd()"
+      (mousemove)="dragMove($event, compareContainer, container)"
+      [class.active]="compareDragging"
+    >
+      <span id="disease-handle" class="drag-handle" (mousedown)="dragStart()"></span>
     </div>
-  
-  
-    <!-- <form id="controls">
+
+    <div id="cytoscape-compare" #cytoscapeCompare class="drag-content"></div>
+  </div>
+
+  <div id="legend-boundary" [ngStyle]="{ '--legend-width': ratio * container.clientHeight + 'px' }">
+    <div
+      cdkDrag
+      cdkDragLockAxis="x"
+      cdkDragBoundary="#legend-boundary"
+      id="legend-container"
+      (cdkDragMoved)="updateLegend()"
+      [style.height]="container.clientHeight + 'px'"
+    >
+      <button id="legend-handle" cdkDragHandle>LEGEND</button>
+      <div id="legend" #legend></div>
+    </div>
+  </div>
+
+  <!-- <form id="controls">
       <button mat-raised-button  (click)="getInteractors(ResourceType.STATIC)">IntAct</button>
       <button mat-raised-button (click)="getInteractors(ResourceType.DISGENET)">DisGeNet</button>
       <button mat-raised-button (click)="updateStyle()">Update Style</button>
@@ -55,5 +64,4 @@
         </div>
       </mat-list-option>
     </mat-selection-list> -->
-  
-  </div>
+</div>

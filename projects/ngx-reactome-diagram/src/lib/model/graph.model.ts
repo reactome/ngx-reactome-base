@@ -1,4 +1,3 @@
-
 export interface Graph {
   dbId: number;
   stId: string;
@@ -10,9 +9,9 @@ export interface Graph {
 
 export type Entity = {
   dbId: number;
-  stId: string
+  stId: string;
   displayName: string;
-}
+};
 
 export interface Edge extends Entity {
   schemaClass: string;
@@ -20,13 +19,13 @@ export interface Edge extends Entity {
 
 export interface Node extends Entity {
   diagramIds?: number[];
-  identifier: string
+  identifier: string;
   parents: number[];
   children: number[];
   schemaClass: string;
-  referenceType: string
+  referenceType: string;
 }
 
 export interface SubPathway extends Entity {
-  events: number[]
+  events: number[];
 }

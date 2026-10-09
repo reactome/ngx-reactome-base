@@ -1,71 +1,74 @@
-import {Injectable} from '@angular/core';
-import {ActivatedRoute, Router} from "@angular/router";
-import {BehaviorSubject, distinctUntilChanged, map, Observable} from "rxjs";
-import {isArray} from "lodash";
-
+import { Injectable } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BehaviorSubject, distinctUntilChanged, map, Observable } from 'rxjs';
+import { isArray } from 'lodash';
 
 export interface UrlParam<T> {
-  value: T
-  otherTokens?: string[]
+  value: T;
+  otherTokens?: string[];
 }
 
 export type State = {
-  [token: string]: UrlParam<any>
-  select: UrlParam<(string | number)>
-  flag: UrlParam<(string | number)[]>
-  path: UrlParam<string[]>
-  flagInteractors: UrlParam<boolean>
-  overlay: UrlParam<string | null>
-  analysis: UrlParam<string | null>
-  analysisProfile: UrlParam<string | null>
+  [token: string]: UrlParam<any>;
+  select: UrlParam<string | number>;
+  flag: UrlParam<(string | number)[]>;
+  path: UrlParam<string[]>;
+  flagInteractors: UrlParam<boolean>;
+  overlay: UrlParam<string | null>;
+  analysis: UrlParam<string | null>;
+  analysisProfile: UrlParam<string | null>;
 };
 
 type ObservableState = { [K in keyof State as `${K & string}$`]: Observable<State[K]['value']> };
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DiagramStateService {
-
   private ignore = false;
   blockRouterChange = false;
 
   private state: State = {
-    select: {otherTokens: ['SEL'], value: ''},
-    flag: {otherTokens: ['FLG'], value: []},
-    path: {otherTokens: ['PATH'], value: []},
-    flagInteractors: {otherTokens: ['FLGINT'], value: false},
-    overlay: {value: ''},
-    analysis: {value: null, otherTokens: ['ANALYSIS']},
-    analysisProfile: {value: null},
+    select: { otherTokens: ['SEL'], value: '' },
+    flag: { otherTokens: ['FLG'], value: [] },
+    path: { otherTokens: ['PATH'], value: [] },
+    flagInteractors: { otherTokens: ['FLGINT'], value: false },
+    overlay: { value: '' },
+    analysis: { value: null, otherTokens: ['ANALYSIS'] },
+    analysisProfile: { value: null },
   };
 
   private _state$ = new BehaviorSubject<State>(this.state);
   public state$ = this._state$.asObservable();
-  public onChange: ObservableState = Object.keys(this.state)
-  .reduce((properties, prop: keyof State) => {
-    properties[`${prop}$`] = this.state$.pipe(
-      map(state => state[prop].value),
-      distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString()),
-      // share()
-    )
-    return properties;
-  }, {} as ObservableState);
+  public onChange: ObservableState = Object.keys(this.state).reduce(
+    (properties, prop: keyof State) => {
+      properties[`${prop}$`] = this.state$.pipe(
+        map((state) => state[prop].value),
+        distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString())
+        // share()
+      );
+      return properties;
+    },
+    {} as ObservableState
+  );
 
-  constructor(route: ActivatedRoute, private router: Router) {
-    route.queryParamMap.subscribe(params => {
+  constructor(
+    route: ActivatedRoute,
+    private router: Router
+  ) {
+    route.queryParamMap.subscribe((params) => {
       if (this.ignore) return;
       let change = false;
       for (const mainToken in this.state) {
         const param = this.state[mainToken];
-        const tokens: string[] = [mainToken, ...param.otherTokens || []];
-        const token = tokens.find(token => params.has(token));
+        const tokens: string[] = [mainToken, ...(param.otherTokens || [])];
+        const token = tokens.find((token) => params.has(token));
         if (token) {
           const formerValue = param.value;
           if (isArray(param.value)) {
             const rawValue = params.get(token)!;
             // A database id is a number; anything else, such as a gene name, a string.
-            param.value = rawValue.split(',').map(v => /^\d+$/.test(v) ? parseInt(v) : v);
+            param.value = rawValue.split(',').map((v) => (/^\d+$/.test(v) ? parseInt(v) : v));
           } else {
             param.value = params.get(token)!;
           }
@@ -79,7 +82,7 @@ export class DiagramStateService {
   }
 
   get<T extends keyof State>(token: T): State[T]['value'] {
-    return this.state[token].value
+    return this.state[token].value;
   }
 
   set<T extends keyof State>(token: T, value: State[T]['value']): void {
@@ -103,13 +106,14 @@ export class DiagramStateService {
       queryParams: {
         ...Object.entries(this.state)
           .filter(([_token, param]) => param.value && param.value.length !== 0)
-          .reduce((acc, [token, param]) => ({
-            ...acc,
-            [token]: Array.isArray(param.value) ? param.value.join(',') : param.value
-          }), {})
-      }
-    })
+          .reduce(
+            (acc, [token, param]) => ({
+              ...acc,
+              [token]: Array.isArray(param.value) ? param.value.join(',') : param.value,
+            }),
+            {}
+          ),
+      },
+    });
   }
-
-
 }
