@@ -13,3 +13,7 @@ package-lock.json
 # edited by hand, so an upgrade would skip or ask about it. Specs are its output.
 .specify
 specs
+
+# Real Reactome layout and graph files, stored as test fixtures (minified
+# from what the release serves). Reformatting them would multiply their size.
+**/fixtures/*.json
