@@ -3,11 +3,11 @@ import { extract } from './properties-utils';
 import { Properties } from './properties';
 import { ReactomeEvent, ReactomeEventTypes } from './model/reactome-event.model';
 import Layers, { IHTMLLayer, layers, LayersPlugin } from 'cytoscape-layers';
-import * as _ from 'lodash';
+import { throttle } from './util/throttle';
 
 cytoscape.use(Layers);
 type RenderableHTMLElement = HTMLElement & {
-  render: _.DebouncedFunc<() => void>;
+  render: () => void;
 };
 
 /**
@@ -334,7 +334,7 @@ export class Interactivity {
           elem.style.display = 'flex';
           const video = elem.children[0] as HTMLVideoElement;
 
-          elem.render = _.throttle(() => {
+          elem.render = throttle(() => {
             if (isElementInViewport(elem)) {
               // console.log('rendering', name)
               if (

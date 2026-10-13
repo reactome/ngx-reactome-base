@@ -1,6 +1,6 @@
 import cytoscape from 'cytoscape';
 import { gene } from './shape/gene-shape';
-import { isArray, isNumber, memoize } from 'lodash';
+import { memoize } from '../util/memoize';
 import { molecule } from './shape/molecule-shape';
 import { protein } from './shape/protein-shape';
 import { rna } from './shape/rna-shape';
@@ -105,8 +105,10 @@ export const imageBuilder = (properties: Properties, style: Style) =>
           ...l,
           'background-image': svgStr(
             l['background-image'] as string,
-            isNumber(l['background-width']) ? l['background-width'] : drawerParams.width,
-            isNumber(l['background-height']) ? l['background-height'] : drawerParams.height
+            typeof l['background-width'] === 'number' ? l['background-width'] : drawerParams.width,
+            typeof l['background-height'] === 'number'
+              ? l['background-height']
+              : drawerParams.height
           ),
         }));
 
@@ -167,20 +169,23 @@ function _expToGradient(
     exp: number | undefined;
     width: number;
   }[] = [];
-  const size = exps.reduce((l: number, e) => (e !== undefined && isArray(e) ? l + e[1] : l + 1), 0);
+  const size = exps.reduce(
+    (l: number, e) => (e !== undefined && Array.isArray(e) ? l + e[1] : l + 1),
+    0
+  );
   // Nothing to divide the width between: no gradient, not NaN widths.
   if (!(size > 0)) return undefined;
   const delta = 1 / size;
   exps.forEach((exp, _i) => {
     const p = stops.length - 1;
-    const realExp = isArray(exp) ? exp[0]! : exp;
+    const realExp = Array.isArray(exp) ? exp[0]! : exp;
     if (stops.length !== 0 && stops[p].exp === realExp) {
       // A [value, count] pair is count shares of the width, merged or not.
-      const share = isArray(exp) ? delta * exp[1] : delta;
+      const share = Array.isArray(exp) ? delta * exp[1] : delta;
       stops[p].stop += share;
       stops[p].width += share;
     } else {
-      if (isArray(exp)) {
+      if (Array.isArray(exp)) {
         stops.push({
           start: stops[p]?.stop || 0,
           stop: (stops[p]?.stop || 0) + delta * exp[1],
@@ -316,7 +321,7 @@ export function clearDrawersCache() {
   for (const value of classToDrawers.values()) {
     value.cache.clear();
   }
-  OMMITED_ICON.cache.clear!();
+  OMMITED_ICON.cache.clear();
 }
 
 function aggregate<T extends object, K extends keyof T>(
