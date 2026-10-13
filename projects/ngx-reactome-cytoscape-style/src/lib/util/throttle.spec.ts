@@ -48,4 +48,41 @@ describe('throttle', () => {
       expect(runs(throttle, calls)).toEqual(runs(lodashThrottle, calls));
     });
   }
+
+  /** When `fn` ran when the clock is set back mid-sequence, for each implementation. */
+  function runsWithClockBack(impl: (fn: () => void, wait: number) => () => void) {
+    vi.setSystemTime(100_000);
+    const at: number[] = [];
+    const t = impl(() => at.push(Date.now()), 500);
+    t();
+    vi.advanceTimersByTime(100);
+    t();
+    // The clock goes back, as a system clock can: lodash treats that as a fresh start.
+    vi.setSystemTime(50_000);
+    t();
+    vi.advanceTimersByTime(5000);
+    return at;
+  }
+
+  it("runs when lodash's does when the clock goes backwards", () => {
+    expect(runsWithClockBack(throttle)).toEqual(runsWithClockBack(lodashThrottle));
+  });
+
+  /** When `fn` ran when `fn` itself calls the throttled function, as a render can. */
+  function runsReentrant(impl: (fn: () => void, wait: number) => () => void) {
+    const start = Date.now();
+    const at: number[] = [];
+    let depth = 0;
+    const t: () => void = impl(() => {
+      at.push(Date.now() - start);
+      if (depth++ < 3) t();
+    }, 500);
+    t();
+    vi.advanceTimersByTime(5000);
+    return at;
+  }
+
+  it("runs when lodash's does when fn calls it again", () => {
+    expect(runsReentrant(throttle)).toEqual(runsReentrant(lodashThrottle));
+  });
 });
