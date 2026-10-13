@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-import { memoize, isNumber, isArray } from 'lodash';
 import cytoscape from 'cytoscape';
 import Layers, { layers } from 'cytoscape-layers';
 import chroma from 'chroma-js';
@@ -171,6 +169,19 @@ const gene = (properties, { width, height, interactor, disease, lossOfFunction }
         // }
     };
 };
+
+function memoize(fn, resolver) {
+    const cache = new Map();
+    const memoized = (...args) => {
+        const key = resolver ? resolver(...args) : args[0];
+        if (cache.has(key))
+            return cache.get(key);
+        const result = fn(...args);
+        cache.set(key, result);
+        return result;
+    };
+    return Object.assign(memoized, { cache });
+}
 
 const molecule = (properties, { width, height, drug, interactor }) => {
     const select = extract(properties.global.selectNode);
@@ -1117,7 +1128,9 @@ const imageBuilder = (properties, style) => memoize((node) => {
         : l)
         .map((l) => ({
         ...l,
-        'background-image': svgStr(l['background-image'], isNumber(l['background-width']) ? l['background-width'] : drawerParams.width, isNumber(l['background-height']) ? l['background-height'] : drawerParams.height),
+        'background-image': svgStr(l['background-image'], typeof l['background-width'] === 'number' ? l['background-width'] : drawerParams.width, typeof l['background-height'] === 'number'
+            ? l['background-height']
+            : drawerParams.height),
     }));
     const aggregated = aggregate(layers, defaultBg);
     aggregated['bounds-expansion'] = [
@@ -1160,22 +1173,22 @@ function _expToGradient(_id, exps, _properties, palette) {
         return;
     // console.time('exp-to-gradient')
     const stops = [];
-    const size = exps.reduce((l, e) => (e !== undefined && isArray(e) ? l + e[1] : l + 1), 0);
+    const size = exps.reduce((l, e) => (e !== undefined && Array.isArray(e) ? l + e[1] : l + 1), 0);
     // Nothing to divide the width between: no gradient, not NaN widths.
     if (!(size > 0))
         return undefined;
     const delta = 1 / size;
     exps.forEach((exp, _i) => {
         const p = stops.length - 1;
-        const realExp = isArray(exp) ? exp[0] : exp;
+        const realExp = Array.isArray(exp) ? exp[0] : exp;
         if (stops.length !== 0 && stops[p].exp === realExp) {
             // A [value, count] pair is count shares of the width, merged or not.
-            const share = isArray(exp) ? delta * exp[1] : delta;
+            const share = Array.isArray(exp) ? delta * exp[1] : delta;
             stops[p].stop += share;
             stops[p].width += share;
         }
         else {
-            if (isArray(exp)) {
+            if (Array.isArray(exp)) {
                 stops.push({
                     start: stops[p]?.stop || 0,
                     stop: (stops[p]?.stop || 0) + delta * exp[1],
@@ -1513,6 +1526,64 @@ class ReactomeEvent extends CustomEvent {
     }
 }
 
+/**
+ * `fn`, run at most once every `wait` milliseconds: lodash's throttle(fn, wait),
+ * which this replaces (see memoize.ts for why).
+ *
+ * A port of lodash's algorithm -- its throttle is its debounce with `leading`,
+ * `trailing` and `maxWait = wait` -- rather than a simpler timer. The first call
+ * runs at once; calls inside a window run `fn` once more when it ends; and a
+ * window's end follows the last call, as lodash's does. throttle.spec.ts holds
+ * the two to the same timings.
+ */
+function throttle(fn, wait) {
+    let lastCallTime;
+    let lastInvokeTime = 0;
+    let timer;
+    let pending = false;
+    const invoke = (time) => {
+        pending = false;
+        lastInvokeTime = time;
+        fn();
+    };
+    const shouldInvoke = (time) => {
+        if (lastCallTime === undefined)
+            return true;
+        const sinceCall = time - lastCallTime;
+        return sinceCall >= wait || sinceCall < 0 || time - lastInvokeTime >= wait;
+    };
+    const remainingWait = (time) => Math.min(wait - (time - (lastCallTime ?? time)), wait - (time - lastInvokeTime));
+    const timerExpired = () => {
+        const time = Date.now();
+        if (shouldInvoke(time)) {
+            timer = undefined;
+            if (pending)
+                invoke(time);
+            return;
+        }
+        timer = setTimeout(timerExpired, remainingWait(time));
+    };
+    return () => {
+        const time = Date.now();
+        const invoking = shouldInvoke(time);
+        pending = true;
+        lastCallTime = time;
+        if (invoking) {
+            if (timer === undefined) {
+                lastInvokeTime = time;
+                timer = setTimeout(timerExpired, wait);
+                invoke(time);
+                return;
+            }
+            clearTimeout(timer);
+            timer = setTimeout(timerExpired, wait);
+            invoke(time);
+            return;
+        }
+        timer ??= setTimeout(timerExpired, wait);
+    };
+}
+
 cytoscape.use(Layers);
 /**
  * Below this zoom the interactor count badge is not drawn at all.
@@ -1733,7 +1804,7 @@ class Interactivity {
                 elem.innerHTML = node.data('html') || '';
                 elem.style.display = 'flex';
                 const video = elem.children[0];
-                elem.render = _.throttle(() => {
+                elem.render = throttle(() => {
                     if (isElementInViewport(elem)) {
                         // console.log('rendering', name)
                         if (this.videoLayer?.node.style.opacity !== '0' &&
