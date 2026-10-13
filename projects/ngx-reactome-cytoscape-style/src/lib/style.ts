@@ -910,7 +910,7 @@ export class Style {
   }
 
   clearCache() {
-    this.imageBuilder.cache.clear!();
+    this.imageBuilder.cache.clear();
     clearDrawersCache();
   }
 

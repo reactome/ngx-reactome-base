@@ -13,15 +13,13 @@
   "peerDependencies": {
     "cytoscape": "^3.30.0",
     "cytoscape-layers": "^3.0.0",
-    "chroma-js": "^3.1.2",
-    "lodash": "^4.17.21"
+    "chroma-js": "^3.1.2"
   },
   "dependencies": {
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@types/chroma-js": "^3.1.1",
-    "@types/lodash": "^4.17.0"
+    "@types/chroma-js": "^3.1.1"
   },
   "sideEffects": false
 }
