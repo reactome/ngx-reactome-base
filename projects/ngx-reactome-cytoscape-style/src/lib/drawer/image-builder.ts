@@ -44,11 +44,16 @@ export const imageBuilder = (properties: Properties, style: Style) =>
       // A polymer is its shape with an offset copy behind it: the copies only.
       // The shape's own layers are added below like any other node's -- added
       // here as well, they were drawn twice.
+      //
+      // The background is copied even when optional. Optional means the node's
+      // own shape draws the body, so that layer is never added below -- but
+      // the polymer's copy is still this function's to draw. Skipping it left a
+      // protein, molecule or RNA polymer with no copy at all, drawn as a plain
+      // entity. And since cytoscape paints every layer over the node's body,
+      // the copy only reads as behind it if the body's shape is painted again
+      // over the copy: an optional background goes in once more after it.
       if (node.hasClass('Polymer')) {
-        const drawn = [
-          drawer.background && !drawer.background.optional ? drawer.background : undefined,
-          ...(drawer.decorators || []),
-        ].filter((layer) => !!layer);
+        const drawn = [drawer.background, ...(drawer.decorators || [])].filter((layer) => !!layer);
         for (const originalLayer of drawn) {
           const polymerLayer = { ...originalLayer };
           polymerLayer['background-position-x'] =
@@ -66,6 +71,7 @@ export const imageBuilder = (properties: Properties, style: Style) =>
             '</g>';
           layers.push(polymerLayer);
         }
+        if (drawer.background?.optional) layers.push(drawer.background);
       }
 
       if (node.hasClass('flag') && drawer.flag) layers.push(drawer.flag);
@@ -120,7 +126,12 @@ export const imageBuilder = (properties: Properties, style: Style) =>
       // console.timeEnd(`build-image-${node.id()}`)
       return aggregated;
     },
-    (node) => `${node.id()}-${node.classes().toString()}-s:${node.selected()}`
+    // Everything the drawing depends on: on id, classes and selection alone, a
+    // node resized or given new analysis values without a cache clear kept the
+    // drawing it had.
+    (node) =>
+      `${node.id()}-${node.classes().toString()}-s:${node.selected()}` +
+      `-${node.data('width')}x${node.data('height')}-e:${JSON.stringify(node.data('exp') ?? null)}`
   );
 
 const defaultBg: Image = {
@@ -232,10 +243,10 @@ function _expToGradient(
 }
 
 /**
- * Kept per palette, and keyed on the node's values as well as its id: keyed on
- * the id alone it was shared by every diagram on the page, so a node took the
- * colours of whichever node with that id was drawn first, and kept them after
- * its values changed.
+ * Kept per palette, and keyed on the node's values: keyed on the id it was
+ * shared by every diagram on the page, so a node took the colours of whichever
+ * node with that id was drawn first, and kept them after its values changed.
+ * The values are all the gradient is drawn from, so nodes sharing them share it.
  */
 let gradients = new WeakMap<chroma.Scale, Map<string, string | undefined>>();
 function expToGradient(
@@ -247,7 +258,9 @@ function expToGradient(
   if (!exps || !palette) return undefined;
   let cache = gradients.get(palette);
   if (!cache) gradients.set(palette, (cache = new Map<string, string | undefined>()));
-  const key = `${id}|${JSON.stringify(exps)}`;
+  // The values alone: the gradient is drawn from them and the palette, never
+  // the id, so nodes with the same values share one.
+  const key = JSON.stringify(exps);
   if (!cache.has(key)) cache.set(key, _expToGradient(id, exps, properties, palette));
   return cache.get(key);
 }
@@ -322,6 +335,7 @@ export function clearDrawersCache() {
     value.cache.clear();
   }
   OMMITED_ICON.cache.clear();
+  CROSS.cache.clear();
 }
 
 function aggregate<T extends object, K extends keyof T>(
@@ -386,7 +400,10 @@ export const CROSS = memoize(
       'background-image-opacity': 1,
     };
   },
-  (_p, { width, height }) => `${width}x${height}`
+  // Keyed on everything it draws with: on size alone, a theme switch kept the
+  // old theme's colour, and two styles on one page shared the first cross.
+  (properties, { width, height }) =>
+    `${width}x${height}|${extract(properties.global.negative)}|${extract(properties.global.thickness)}`
 );
 
 export const OMMITED_ICON = memoize(
@@ -398,5 +415,6 @@ export const OMMITED_ICON = memoize(
       10
     );
   },
-  (_p) => ''
+  // Keyed on its colour, for the same reason as CROSS.
+  (properties) => String(extract(properties.global.onSurface))
 );

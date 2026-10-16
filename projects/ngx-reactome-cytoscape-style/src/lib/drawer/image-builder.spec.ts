@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import cytoscape from 'cytoscape';
 import chroma from 'chroma-js';
 import { Style } from '../style';
-import { clearDrawersCache, imageBuilder } from './image-builder';
+import { clearDrawersCache, CROSS, imageBuilder, OMMITED_ICON } from './image-builder';
+import { Properties } from '../properties';
 
 /**
  * The image builder's caches.
@@ -22,15 +23,22 @@ function aStyle() {
   return style;
 }
 
-type NodeSpec = { id?: string; width: number; height: number; classes?: string[]; exp?: unknown };
+type NodeSpec = {
+  id?: string;
+  width: number;
+  height: number;
+  classes?: string[];
+  exp?: unknown;
+  kind?: string;
+};
 
-function aNode({ id = '1', width, height, classes = [], exp }: NodeSpec) {
+function aNode({ id = '1', width, height, classes = [], exp, kind = 'Complex' }: NodeSpec) {
   const cy = cytoscape({
     headless: true,
     elements: [
       {
         data: { id, width, height, displayName: 'X', ...(exp ? { exp } : {}) },
-        classes: ['Complex', 'PhysicalEntity', ...classes],
+        classes: [kind, 'PhysicalEntity', ...classes],
       },
     ],
   });
@@ -95,6 +103,73 @@ describe('the image builder', () => {
     // The shape's own layers once, behind them its offset copies: not the shape
     // drawn twice over.
     expect(polymer.length).toBe(plain.length + shadows.length);
+  });
+
+  // A protein, molecule or RNA draws its body with the node's own shape, so
+  // its background layer is optional -- never drawn as a layer. The offset
+  // copy behind a polymer of one was skipped with it, so every such polymer,
+  // and the legend's Polymer key, looked like a single plain entity (review
+  // of the changes since WebsiteAngular #373).
+  for (const kind of ['Protein', 'Molecule', 'RNA']) {
+    it(`draws a polymer of a ${kind} with its offset copy, the shape once`, () => {
+      clearDrawersCache();
+      const style = aStyle();
+      const plain = images(style, aNode({ id: '6', width: 100, height: 40, kind }));
+      const polymer = images(
+        style,
+        aNode({ id: '7', width: 100, height: 40, kind, classes: ['Polymer'] })
+      );
+      const shadows = polymer.filter((l) => decodeURIComponent(l).includes('style="filter:'));
+      expect(shadows.length, 'an offset copy').toBeGreaterThan(0);
+      // Cytoscape paints every layer over the node's own body, so the copy can
+      // only look as if it is behind if the body's own shape is painted again
+      // over it: the original background, right after the copy -- once.
+      expect(polymer.length).toBe(plain.length + shadows.length + 1);
+      const filtered = polymer.map((l) => decodeURIComponent(l).includes('style="filter:'));
+      const lastShadow = filtered.lastIndexOf(true);
+      const unfiltered = polymer.filter((l) => !decodeURIComponent(l).includes('style="filter:'));
+      expect(lastShadow, 'the original comes after the copy').toBeLessThan(polymer.length - 1);
+      expect(
+        unfiltered.filter((l) => l === polymer[lastShadow + 1]).length,
+        'and is drawn once'
+      ).toBe(1);
+    });
+  }
+
+  // The cross and the omitted icon were cached on size alone (the icon on
+  // nothing), and the cache was never cleared: after a switch to the dark
+  // theme, crossed-out nodes kept the light theme's red, and two styles on
+  // one page shared whichever cross was drawn first.
+  it('draws a cross in the colour it is asked for, not the first one cached', () => {
+    clearDrawersCache();
+    const with_ = (negative: string) =>
+      ({ global: { negative, thickness: 2, onSurface: negative } }) as unknown as Properties;
+    const size = { width: 100, height: 40 } as Parameters<typeof CROSS>[1];
+    expect(CROSS(with_('#ba1a1a'), size)['background-image']).toContain('#ba1a1a');
+    expect(CROSS(with_('#ea2323'), size)['background-image']).toContain('#ea2323');
+    expect(OMMITED_ICON(with_('#ba1a1a'))).not.toBe(OMMITED_ICON(with_('#ea2323')));
+  });
+
+  it('forgets every cached cross when the drawers are cleared', () => {
+    const size = { width: 100, height: 40 } as Parameters<typeof CROSS>[1];
+    CROSS({ global: { negative: '#000000', thickness: 2 } } as unknown as Properties, size);
+    clearDrawersCache();
+    expect(CROSS.cache.size).toBe(0);
+  });
+
+  // The drawing a node gets is remembered per builder by its id, classes and
+  // selection -- not its size or analysis values, so a node resized or given
+  // new values without the cache being cleared kept its old drawing.
+  it('draws a node again when its size or values change', () => {
+    clearDrawersCache();
+    const build = imageBuilder(aStyle().properties, aStyle());
+    const node = aNode({ id: '8', width: 100, height: 40, exp: [0.1] });
+    const first = build(node)['background-image'];
+    node.data('width', 300);
+    expect(build(node)['background-image']).not.toEqual(first);
+    const resized = build(node)['background-image'];
+    node.data('exp', [0.9]);
+    expect(build(node)['background-image']).not.toEqual(resized);
   });
 
   it('paints the whole node when the same value repeats with counts', () => {
