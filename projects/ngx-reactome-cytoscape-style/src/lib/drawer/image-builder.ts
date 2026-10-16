@@ -47,9 +47,11 @@ export const imageBuilder = (properties: Properties, style: Style) =>
       //
       // The background is copied even when optional. Optional means the node's
       // own shape draws the body, so that layer is never added below -- but
-      // the copy behind is still this function's to draw. Skipping it left a
+      // the polymer's copy is still this function's to draw. Skipping it left a
       // protein, molecule or RNA polymer with no copy at all, drawn as a plain
-      // entity.
+      // entity. And since cytoscape paints every layer over the node's body,
+      // the copy only reads as behind it if the body's shape is painted again
+      // over the copy: an optional background goes in once more after it.
       if (node.hasClass('Polymer')) {
         const drawn = [drawer.background, ...(drawer.decorators || [])].filter((layer) => !!layer);
         for (const originalLayer of drawn) {
@@ -69,6 +71,7 @@ export const imageBuilder = (properties: Properties, style: Style) =>
             '</g>';
           layers.push(polymerLayer);
         }
+        if (drawer.background?.optional) layers.push(drawer.background);
       }
 
       if (node.hasClass('flag') && drawer.flag) layers.push(drawer.flag);

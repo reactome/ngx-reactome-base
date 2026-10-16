@@ -121,7 +121,18 @@ describe('the image builder', () => {
       );
       const shadows = polymer.filter((l) => decodeURIComponent(l).includes('style="filter:'));
       expect(shadows.length, 'an offset copy').toBeGreaterThan(0);
-      expect(polymer.length).toBe(plain.length + shadows.length);
+      // Cytoscape paints every layer over the node's own body, so the copy can
+      // only look as if it is behind if the body's own shape is painted again
+      // over it: the original background, right after the copy -- once.
+      expect(polymer.length).toBe(plain.length + shadows.length + 1);
+      const filtered = polymer.map((l) => decodeURIComponent(l).includes('style="filter:'));
+      const lastShadow = filtered.lastIndexOf(true);
+      const unfiltered = polymer.filter((l) => !decodeURIComponent(l).includes('style="filter:'));
+      expect(lastShadow, 'the original comes after the copy').toBeLessThan(polymer.length - 1);
+      expect(
+        unfiltered.filter((l) => l === polymer[lastShadow + 1]).length,
+        'and is drawn once'
+      ).toBe(1);
     });
   }
 
