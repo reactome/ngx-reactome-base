@@ -520,6 +520,12 @@ export class Interactivity {
         selector: '.Molecule',
         // Not only when a node moves: a node hidden or shown changes no
         // position, and its structure has to follow it.
+        //
+        // Known cost: the zoom handlers write styles to these nodes, so this
+        // also redoes the layer once per rendered zoom frame (cytoscape-layers
+        // batches the events per render). It only shows on diagrams with many
+        // molecules; catching show and hide alone would need every place that
+        // hides a node to say so, which this does not depend on.
         updateOn: 'position style',
         queryEachTime: false,
       }
@@ -725,11 +731,13 @@ export class Interactivity {
   }
 
   interpolate(x: number, points: P[]): number {
-    if (x < points.at(0)!.x) return points.at(0)!.y;
-    if (x > points.at(-1)!.x) return points.at(-1)!.y;
+    // Ends inclusive, so a curve of one point is that point's value.
+    if (x <= points.at(0)!.x) return points.at(0)!.y;
+    if (x >= points.at(-1)!.x) return points.at(-1)!.y;
     for (let i = 0; i + 1 < points.length; i++) {
       const y = this.lerp(x, points[i], points[i + 1]);
-      if (y) return y;
+      // An exact 0 is an answer, as the curves' own 0-valued points are.
+      if (y !== undefined) return y;
     }
     console.assert(false, 'Should not arrive here');
     return 0;
