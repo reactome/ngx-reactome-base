@@ -1506,7 +1506,8 @@ function setDefaults(properties = {}, css) {
         .setDefault('edit', false)
         .setDefault('compare', true)
         .setDefault('analysis', true)
-        .setDefault('interactors', true);
+        .setDefault('interactors', true)
+        .setDefault('structures', () => cssNumber(css, '--structures', 1) !== 0);
     return {
         global,
         compartment,
@@ -1639,8 +1640,11 @@ class Interactivity {
         // from this collection as the layer is drawn.
         this.withoutStructure = cy.collection();
         this.updateProteins();
-        this.initStructureVideo(cy);
-        this.initStructureMolecule(cy);
+        // With structures off there are no layers, and no label is shrunk for one.
+        if (this.structuresShown()) {
+            this.initStructureVideo(cy);
+            this.initStructureMolecule(cy);
+        }
         // After the layers, so its first run sets their opacity for this zoom.
         // It ran first, and the molecule layer stayed at full opacity until the
         // reader zoomed.
@@ -1984,7 +1988,12 @@ class Interactivity {
         Object.values(this.onZoom).forEach((onZoom) => onZoom());
     }
     updateProteins() {
-        this.structureContainers = this.cy.nodes('.Protein').or('.Molecule').not(this.withoutStructure);
+        this.structureContainers = this.structuresShown()
+            ? this.cy.nodes('.Protein').or('.Molecule').not(this.withoutStructure)
+            : this.cy.collection();
+    }
+    structuresShown() {
+        return extract(this.properties.features.structures) !== false;
     }
     initZoom(cy) {
         const allShadows = cy.edges('[?pathway]');

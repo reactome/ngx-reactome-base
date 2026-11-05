@@ -127,6 +127,13 @@ interface Properties extends PropertiesType {
         compare: Property<boolean>;
         interactors: Property<boolean>;
         analysis: Property<boolean>;
+        /**
+         * A protein's or molecule's structure (a video or picture in an HTML layer
+         * beside its label, which shrinks to make room). On by default; off where the
+         * diagram is exported, since the layers are not part of the drawing and a
+         * label shrunk for one is left beside empty space. CSS: `--structures: 0`.
+         */
+        structures: Property<boolean>;
     };
 }
 type UserProperties = Partial<{
@@ -168,6 +175,7 @@ declare class Interactivity {
     /** Nodes whose structure could not be found: never counted back in. */
     private withoutStructure;
     updateProteins(): void;
+    private structuresShown;
     initZoom(cy: cytoscape.Core): void;
     margin: number;
     p(x: number, y: number): P;
