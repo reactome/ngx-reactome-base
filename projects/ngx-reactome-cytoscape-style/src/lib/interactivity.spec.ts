@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import cytoscape from 'cytoscape';
 import { Interactivity } from './interactivity';
 
 /**
@@ -60,5 +61,42 @@ describe('interpolate', () => {
         { x: 40, y: 9 },
       ])
     ).toBe(9);
+  });
+});
+
+/**
+ * Which nodes get their label shrunk for a structure. An export turns structures
+ * off (`--structures: 0`): the structure layers are not part of the drawing, and
+ * whether a lazy load had restored a label by the time of the export was chance.
+ */
+describe('structure containers', () => {
+  const containers = (structures: boolean) => {
+    const cy = cytoscape({
+      headless: true,
+      elements: [
+        { data: { id: 'p' }, classes: 'Protein' },
+        { data: { id: 'm' }, classes: 'Molecule' },
+        { data: { id: 'c' }, classes: 'Complex' },
+      ],
+    });
+    // The class's own methods, without the constructor's DOM layers.
+    const self: Interactivity = Object.assign(
+      Object.create(Interactivity.prototype) as Interactivity,
+      {
+        cy,
+        properties: { features: { structures } },
+        withoutStructure: cy.collection(),
+      }
+    );
+    self.updateProteins();
+    return self.structureContainers.map((n) => n.id()).sort();
+  };
+
+  it('holds the proteins and molecules when structures are shown', () => {
+    expect(containers(true)).toEqual(['m', 'p']);
+  });
+
+  it('holds nothing when structures are off', () => {
+    expect(containers(false)).toEqual([]);
   });
 });

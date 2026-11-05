@@ -114,6 +114,13 @@ export interface Properties extends PropertiesType {
     compare: Property<boolean>;
     interactors: Property<boolean>;
     analysis: Property<boolean>;
+    /**
+     * A protein's or molecule's structure (a video or picture in an HTML layer
+     * beside its label, which shrinks to make room). On by default; off where the
+     * diagram is exported, since the layers are not part of the drawing and a
+     * label shrunk for one is left beside empty space. CSS: `--structures: 0`.
+     */
+    structures: Property<boolean>;
   };
 }
 
@@ -294,7 +301,8 @@ export function setDefaults(properties: UserProperties = {}, css: CSSStyleDeclar
     .setDefault('edit', false)
     .setDefault('compare', true)
     .setDefault('analysis', true)
-    .setDefault('interactors', true);
+    .setDefault('interactors', true)
+    .setDefault('structures', () => cssNumber(css, '--structures', 1) !== 0);
 
   return {
     global,

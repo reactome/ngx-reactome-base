@@ -35,8 +35,11 @@ export class Interactivity {
     // from this collection as the layer is drawn.
     this.withoutStructure = cy.collection();
     this.updateProteins();
-    this.initStructureVideo(cy);
-    this.initStructureMolecule(cy);
+    // With structures off there are no layers, and no label is shrunk for one.
+    if (this.structuresShown()) {
+      this.initStructureVideo(cy);
+      this.initStructureMolecule(cy);
+    }
     // After the layers, so its first run sets their opacity for this zoom.
     // It ran first, and the molecule layer stayed at full opacity until the
     // reader zoomed.
@@ -550,7 +553,13 @@ export class Interactivity {
   private withoutStructure!: cytoscape.NodeCollection;
 
   updateProteins() {
-    this.structureContainers = this.cy.nodes('.Protein').or('.Molecule').not(this.withoutStructure);
+    this.structureContainers = this.structuresShown()
+      ? this.cy.nodes('.Protein').or('.Molecule').not(this.withoutStructure)
+      : this.cy.collection();
+  }
+
+  private structuresShown(): boolean {
+    return extract(this.properties.features.structures) !== false;
   }
 
   initZoom(cy: cytoscape.Core) {

@@ -22,6 +22,14 @@ describe('the style properties', () => {
     expect(extract(style.properties.features.interactors)).toBe(false);
   });
 
+  it('shows structures unless a page turns them off', () => {
+    expect(extract(styleWith().properties.features.structures)).toBe(true);
+    expect(extract(styleWith({ '--structures': '0' }).properties.features.structures)).toBe(false);
+    expect(
+      extract(styleWith({}, { features: { structures: false } }).properties.features.structures)
+    ).toBe(false);
+  });
+
   it('takes a CSS value of 0 as 0', () => {
     const style = styleWith({ '--compartment-opacity': '0' });
     expect(extract(style.properties.compartment.opacity)).toBe(0);
