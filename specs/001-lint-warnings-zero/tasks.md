@@ -31,7 +31,7 @@ Paths are under `projects/` unless they start with a file at the root.
       `template/button-has-type` (1, the legend's handle, not in a form, in
       `diagram.component.html`). With them the `@ts-ignore` on the component's
       import of the style library (1 of `ban-ts-comment`'s 22), which suppresses
-      nothing (measured). 332 → 325 (#TBD). `updateStyle`'s ternaries became
+      nothing (measured). 332 → 325 (#28). `updateStyle`'s ternaries became
       `if`s and the select handler's ids one conditional, neither changing
       what runs; the handle's `type="button"` changes nothing outside a form.
       Seen failing: `main`'s three files, linted under the promoted rules,
