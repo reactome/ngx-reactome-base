@@ -1,5 +1,27 @@
 # Reactome Cytoscape Style
 
+## The diagram component: `DIAGRAM_CONFIG_TOKEN`
+
+`DiagramService`, which `<cr-diagram>` uses to load diagrams, injects
+`DIAGRAM_CONFIG_TOKEN`, so an app showing the component must provide it, or
+Angular fails to create the service (`NullInjectorError`). Its one setting,
+`diagramUrl`, is where the diagram files are loaded from: for a diagram `id`,
+`${diagramUrl}/${id}.json` (the layout) and `${diagramUrl}/${id}.graph.json`
+(the graph). Without `diagramUrl`, they come from Reactome's current release,
+`https://reactome.org/download/current/diagram`.
+
+```typescript
+import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideHttpClient(),
+    { provide: DIAGRAM_CONFIG_TOKEN, useValue: { diagramUrl: 'https://example.org/diagram' } },
+    // or, for Reactome's current release: { provide: DIAGRAM_CONFIG_TOKEN, useValue: {} }
+  ],
+});
+```
+
 ## Usage
 
 To use reactome-cytoscape-style, use the following:

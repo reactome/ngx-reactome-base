@@ -13,6 +13,7 @@ import {
 import { Edge as GraphEdge, Graph, Node as GraphNode } from '../model/graph.model';
 import { Style, Types } from 'ngx-reactome-cytoscape-style';
 import legend from '../../assets/json/legend.json';
+import { uniqueEdgeId } from './edge-id';
 import { array } from 'vectorious';
 
 import cytoscape from 'cytoscape';
@@ -237,6 +238,15 @@ export class DiagramService {
           .filter((entry) => entry !== undefined);
 
         const idToGraphNodes = new Map([...mappingList]);
+        // Each node's own graph node, for its stId. idToGraphNodes maps a node
+        // with one child (a homomultimer) to that child, for its accession; read
+        // for the stId as well, it made clicking TP53 Tetramer select TP53
+        // (issue #14, bug 4).
+        const idToOwnGraphNode = new Map(
+          graph.nodes.flatMap((node) =>
+            (node.diagramIds ?? []).map((id): [number, GraphNode] => [id, node])
+          )
+        );
         const idToGraphEdges = new Map(graph.edges.map((edge) => [edge.dbId, edge]));
 
         const dbIdToGraphEdge = new Map<number, GraphEdge>(
@@ -268,7 +278,7 @@ export class DiagramService {
             left: scale(prop.x),
             top: scale(prop.y),
             right: scale(prop.x + prop.width),
-            bottom: scale(prop.x + prop.height),
+            bottom: scale(prop.y + prop.height),
           });
 
           const innerCR = 10;
@@ -340,7 +350,7 @@ export class DiagramService {
           }
           if (!item.isFadeOut)
             replacement =
-              posToNormalEdge.get(pointToStr(item.position)) ||
+              posToNormalEdge.get(pointToStr(item.position))?.id.toString() ||
               normalEdges
                 .find((edge) => squaredDist(scale(edge.position), scale(item.position)) < 5 ** 2)
                 ?.id.toString();
@@ -420,7 +430,7 @@ export class DiagramService {
                 displayName: item.displayName.replace(/([/,:;-])/g, '$1\u200b'),
                 height: height,
                 width: width,
-                graph: idToGraphNodes.get(item.id),
+                graph: idToOwnGraphNode.get(item.id),
                 acc: uniprotId,
                 html,
                 isFadeOut,
@@ -670,17 +680,10 @@ export class DiagramService {
     target: Edge | Node,
     edgeIds: Map<string, number>
   ) {
-    let edgeId = `${source.id} --${this.edgeTypeToStr.get(connector.type)} ${target.id}`;
-
-    if (edgeIds.has(edgeId)) {
-      let count = edgeIds.get(edgeId)!;
-      edgeIds.set(edgeId, count++);
-      edgeId += ` (${count})`;
-      console.warn('Conflicting edge id: ', edgeId);
-    } else {
-      edgeIds.set(edgeId, 0);
-    }
-    return edgeId;
+    const edgeId = `${source.id} --${this.edgeTypeToStr.get(connector.type)} ${target.id}`;
+    const unique = uniqueEdgeId(edgeId, edgeIds);
+    if (unique !== edgeId) console.warn('Conflicting edge id: ', unique);
+    return unique;
   }
 
   private addEdgeInfo(
@@ -903,6 +906,11 @@ function avoidOverlap(definitions: cytoscape.NodeDefinition[]) {
   const layout = nodes.layout({
     name: 'fcose',
     nodeRepulsion: 15,
+    // Only the labels are laid out here, so gravity pulled them towards one
+    // another: in Cell Cycle Checkpoints, as the unit tests draw it, two moved
+    // over 1000px from their sub-pathways (issue #14). Overlapping labels are
+    // still pushed apart.
+    gravity: 0,
     animate: false,
     fit: true,
     packComponents: false,
