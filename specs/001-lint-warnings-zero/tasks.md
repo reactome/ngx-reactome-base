@@ -132,11 +132,17 @@ files they touch, one pull request each; they run before T009–T011 (see
       at its sub-pathway (two of Cell Cycle Checkpoints' three had moved over
       1000px, as the tests draw it) and overlapping labels are still pushed
       apart. 316 → 315: the counter's non-null assertion went with it.
-- [ ] T022 [Bugs] `services/dark.service.ts`, **#15**: a stored theme that is
+- [x] T022 [Bugs] `services/dark.service.ts`, **#15**: a stored theme that is
       not valid JSON reads as light (`false`) instead of stopping the service
       (moved here from T005). Whether it stops toggling `body.dark` on the host
       page is decided by how the curator tool relies on it: if removing it would
-      change the host's look, it is recorded as a decision, not made.
+      change the host's look, it is recorded as a decision, not made. Done
+      (#35): only a stored `true` reads as dark, as WebsiteAngular's own
+      service (its T013); a value that is not JSON, or JSON that is not a
+      boolean (`1`, `"true"`, `null`), reads as light, where the first stopped
+      the service and the others were kept as they were. The `body.dark` toggle
+      is unchanged and recorded for the user (see "Bugs found on the way").
+      315 → 314: the parse's unsafe assignment went with it.
 - [ ] T023 [Cleanup] Issue #14's "Cleanup" list, not part of the bug fixes:
       cores created inside NgZone (change detection every frame), vectorious
       geometry's cost in the transform, `<video>` without `preload="none"` and
@@ -155,9 +161,10 @@ lines in the style library.
       state's `UrlParam<any>` becomes the union of its values),
       `diagram.service.ts` (4: `DIAGRAM_CONFIG_TOKEN` becomes an
       `InjectionToken<DiagramConfig>`, an exported type, said in the pull
-      request), `dark.service.ts` (1: the stored theme, `JSON.parse`d, read as
-      a boolean; what a value that is not one means is T022's fix). Touches `diagram.service.ts`, which
-      `dev_curator` has changed. 309 → 290.
+      request), ~~`dark.service.ts` (1: the stored theme, `JSON.parse`d, read as
+      a boolean; what a value that is not one means is T022's fix)~~ (done in
+      T022). Touches `diagram.service.ts`, which `dev_curator` has changed.
+      309 → 290, less the one T022 cleared.
 - [ ] T006 [US2] The style library's property helpers:
       `ngx-reactome-cytoscape-style/src/lib/properties-utils.ts` (3:
       `Property<any>`, and `propertyMapper`'s result typed as its mapper's), and
@@ -277,7 +284,30 @@ named, and fixed only where it changes nothing a user sees.
   service is created. WebsiteAngular's own service now reads only `true` as
   dark (its T013). Decided (16 Nov): a stored value that is not valid JSON
   reads as light (`false`), with a test seen failing on the old code; in T022
-  (issue #14, #15).
+  (issue #14, #15). Fixed in T022 (#35): only a stored `true` is dark.
+- **The diagram's dark-mode switch themes the host's whole page**
+  (`ngx-reactome-diagram/src/lib/services/dark.service.ts`, `isDark`'s
+  setter): it adds or removes `dark` on the host page's `<body>`, and writes
+  the host's `is-dark` key in local storage. The diagram itself does not need
+  either: its own colours follow `[class.dark]` on its container
+  (`diagram.component.html`), and its cores restyle on `$dark`. What reads
+  `body.dark`: in these libraries, `ngx-reactome-style`'s `theme` mixin, whose
+  default dark selector is `body.dark` (a host that includes it, as
+  WebsiteAngular does, turns its whole page's Material theme dark), and
+  `ngx-reactome-cytoscape-style`'s `configure-diagrams` mixin, whose `.dark`
+  rules (molecule images inverted) match under any `.dark` ancestor, the body
+  included. In the curator tool (`reactome/curator-tool-frontend`, its main
+  branch, 16 Nov): nothing. It uses neither mixin, has no `.dark` selector,
+  and sets its own light Material theme; it sets `diagram.dark.isDark = false`
+  on each load and has a `toggleDarkMode` action that flips it, so today that
+  action also puts `dark` on its body, which none of its styles read.
+  WebsiteAngular does not use this library's diagram (it has its own
+  `DarkService`, which also sets `body.dark`, on purpose, for its page). So
+  stopping the toggle, or moving it to the diagram's container, would change
+  nothing the curator tool's sources style, but would change the page of any
+  host that includes `ngx-reactome-style`'s theme with its default selector.
+  Kept as it is in T022. To decide: whether the diagram stops touching the
+  host's body (and its `is-dark` key), leaving the page's theme to the host.
 - **A flag or selection by a number never matches an accession made of
   digits** (`ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`,
   `getElements`): the state reads `?flag=30616` as the number 30616, and an

@@ -1,6 +1,19 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
+/**
+ * Whether a theme stored under `is-dark` means dark: only a stored `true` does.
+ * The key is a generic name another script on the host page may write, so a value
+ * that is not JSON, or not a boolean, reads as light rather than stopping the service.
+ */
+function storedAsDark(stored: string): boolean {
+  try {
+    return JSON.parse(stored) === true;
+  } catch {
+    return false;
+  }
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -20,7 +33,7 @@ export class DarkService {
     // });
 
     const localValue = localStorage.getItem('is-dark');
-    if (localValue) this.isDark = JSON.parse(localValue);
+    if (localValue) this.isDark = storedAsDark(localValue);
     else if (window.matchMedia('(prefers-color-scheme)').media !== 'not all') {
       this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
