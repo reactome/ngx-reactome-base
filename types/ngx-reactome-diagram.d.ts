@@ -65,6 +65,14 @@ declare class DarkService {
     static ɵprov: i0.ɵɵInjectableDeclaration<DarkService>;
 }
 
+/**
+ * A diagram that could not be loaded: its id, and the HTTP status of the
+ * failed request (0 for a network error, or a failure that is not HTTP's).
+ */
+interface DiagramLoadFailure {
+    diagramId: string;
+    status: number;
+}
 declare class DiagramComponent implements AfterViewInit, OnChanges {
     private diagram;
     dark: DarkService;
@@ -88,6 +96,11 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     private _ignore;
     private loading?;
     reactomeEvents$: Observable<ReactomeEvent>;
+    /**
+     * A diagram that could not be loaded. The diagram shown stays, and the
+     * failure is still logged.
+     */
+    readonly loadFailed: i0.OutputEmitterRef<DiagramLoadFailure>;
     diagramId: string;
     usedbId: boolean;
     set blockRouterChange(block: boolean);
@@ -131,13 +144,16 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     diagramSelect2state: Subscription;
     diagramUnselect2state: Subscription;
     legend2state: Subscription;
+    /** The diagram's elements of a legend element's kind; none before a diagram is drawn. */
+    private legendMatches;
     logProteins(): void;
     /**
      * Somehow DiagramService cannot be exported for use out of this package. Therefore, use this method to get this instance.
      */
     getDiagramService(): DiagramService;
     static ɵfac: i0.ɵɵFactoryDeclaration<DiagramComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<DiagramComponent, "cr-diagram", never, { "diagramId": { "alias": "id"; "required": false; }; "usedbId": { "alias": "usedbId"; "required": false; }; "blockRouterChange": { "alias": "blockRouterChange"; "required": false; }; }, { "reactomeEvents$": "reactomeEvents$"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<DiagramComponent, "cr-diagram", never, { "diagramId": { "alias": "id"; "required": false; }; "usedbId": { "alias": "usedbId"; "required": false; }; "blockRouterChange": { "alias": "blockRouterChange"; "required": false; }; }, { "reactomeEvents$": "reactomeEvents$"; "loadFailed": "loadFailed"; }, never, never, true, never>;
 }
 
 export { DIAGRAM_CONFIG_TOKEN, DiagramComponent, DiagramService };
+export type { DiagramLoadFailure };

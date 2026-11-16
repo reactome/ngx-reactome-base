@@ -1,8 +1,8 @@
 import { __decorate } from 'tslib';
 import * as i0 from '@angular/core';
-import { InjectionToken, inject, Injectable, ChangeDetectorRef, DestroyRef, Input, Output, ViewChild, Component } from '@angular/core';
+import { InjectionToken, inject, Injectable, ChangeDetectorRef, DestroyRef, output, Input, Output, ViewChild, Component } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { of, forkJoin, map, BehaviorSubject, distinctUntilChanged, Subject, filter, share, delay } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
 import { Style, ReactomeEventTypes, interactivityOf } from 'ngx-reactome-cytoscape-style';
 import { array } from 'vectorious';
 import cytoscape from 'cytoscape';
@@ -1931,6 +1931,11 @@ let DiagramComponent = class DiagramComponent {
         // way round, one it made counted as the last, and the user's same event
         // after it was dropped as a repeat (issue #14, bug 8).
         filter(() => !this._ignore), distinctUntilChanged((prev, current) => prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId), share());
+        /**
+         * A diagram that could not be loaded. The diagram shown stays, and the
+         * failure is still logged.
+         */
+        this.loadFailed = output();
         this.diagramId = '';
         // Flag to control if dbId should be used as primary ids
         // This should be useful in the context of the curator tool since
@@ -2057,24 +2062,13 @@ let DiagramComponent = class DiagramComponent {
                 this.state.set('select', '');
             }
         });
-        // Not before a diagram is drawn: the legend's events read it, and threw.
+        // A click sets the flag even before a diagram is drawn: the state is drawn
+        // when the diagram arrives (displayNetwork). Only a hover reads the diagram,
+        // and before one is drawn has nothing to mark (reading it threw, T020).
         this.legend2state = this.reactomeEvents$
-            .pipe(filter((e) => e.detail.cy === this.legend && this.cy !== undefined), filter(() => !this._ignore))
-            .subscribe((e) => {
-            const event = e;
+            .pipe(filter((e) => e.detail.cy === this.legend), filter(() => !this._ignore))
+            .subscribe((event) => {
             const classes = event.detail.element.classes();
-            let matchingElement = this.cy.elements(`.${classes[0]}`);
-            if (event.detail.type === 'PhysicalEntity' || event.detail.type === 'Pathway') {
-                if (classes.includes('drug'))
-                    matchingElement = matchingElement.nodes('.drug');
-                else
-                    matchingElement = matchingElement.not('.drug');
-            }
-            else if (event.detail.type === 'reaction') {
-                const reaction = event.detail.element.nodes('.reaction');
-                matchingElement = this.cy.nodes(`.${reaction.classes()[0]}`);
-                matchingElement = matchingElement.add(matchingElement.connectedEdges());
-            }
             switch (event.type) {
                 case ReactomeEventTypes.select:
                     this.state.set('flag', [
@@ -2087,10 +2081,10 @@ let DiagramComponent = class DiagramComponent {
                     this.stateToDiagram();
                     break;
                 case ReactomeEventTypes.hover:
-                    matchingElement.addClass('hover');
+                    this.legendMatches(event)?.addClass('hover');
                     break;
                 case ReactomeEventTypes.leave:
-                    matchingElement.removeClass('hover');
+                    this.legendMatches(event)?.removeClass('hover');
                     break;
             }
         });
@@ -2146,8 +2140,12 @@ let DiagramComponent = class DiagramComponent {
         this.loading = this.diagram.getDiagram(id).subscribe({
             next: (elements) => this.displayNetwork(elements),
             // The diagram shown stays. Unhandled, the failure reached the host only
-            // as an uncaught error (issue #14, bug 3).
-            error: (error) => console.error(`Diagram ${id} could not be loaded`, error),
+            // as an uncaught error (issue #14, bug 3); now it is told, by `loadFailed`.
+            error: (error) => {
+                console.error(`Diagram ${id} could not be loaded`, error);
+                const status = error instanceof HttpErrorResponse ? error.status : 0;
+                this.loadFailed.emit({ diagramId: id, status });
+            },
         });
     }
     displayNetwork(elements) {
@@ -2486,6 +2484,26 @@ let DiagramComponent = class DiagramComponent {
         this.legend.panningEnabled(false);
         this.legend.zoomingEnabled(false);
     }
+    /** The diagram's elements of a legend element's kind; none before a diagram is drawn. */
+    legendMatches(event) {
+        const cy = this.cy;
+        if (cy === undefined)
+            return undefined;
+        const classes = event.detail.element.classes();
+        let matchingElement = cy.elements(`.${classes[0]}`);
+        if (event.detail.type === 'PhysicalEntity' || event.detail.type === 'Pathway') {
+            if (classes.includes('drug'))
+                matchingElement = matchingElement.nodes('.drug');
+            else
+                matchingElement = matchingElement.not('.drug');
+        }
+        else if (event.detail.type === 'reaction') {
+            const reaction = event.detail.element.nodes('.reaction');
+            matchingElement = cy.nodes(`.${reaction.classes()[0]}`);
+            matchingElement = matchingElement.add(matchingElement.connectedEdges());
+        }
+        return matchingElement;
+    }
     logProteins() {
         // eslint-disable-next-line no-console -- logging is what it is called for
         console.debug(new Set(this.cy.nodes('.Protein').map((node) => node.data('acc') || node.data('iAcc'))));
@@ -2497,7 +2515,7 @@ let DiagramComponent = class DiagramComponent {
         return this.diagram;
     }
     static { this.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.2.26", ngImport: i0, type: DiagramComponent, deps: [], target: i0.ɵɵFactoryTarget.Component }); }
-    static { this.ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.2.26", type: DiagramComponent, isStandalone: true, selector: "cr-diagram", inputs: { diagramId: ["id", "diagramId"], usedbId: "usedbId", blockRouterChange: "blockRouterChange" }, outputs: { reactomeEvents$: "reactomeEvents$" }, viewQueries: [{ propertyName: "cytoscapeContainer", first: true, predicate: ["cytoscape"], descendants: true }, { propertyName: "compareContainer", first: true, predicate: ["cytoscapeCompare"], descendants: true }, { propertyName: "legendContainer", first: true, predicate: ["legend"], descendants: true }], usesOnChanges: true, ngImport: i0, template: "<div class=\"variables\" [class.dark]=\"dark.isDark\" #container>\n  <div id=\"cytoscape\" #cytoscape></div>\n  <div id=\"disease-container\" class=\"drag-container\" #compareContainer [style.display]=\"comparing ? 'flex' : 'none'\">\n    <div\n      id=\"handle-limits\"\n      (mouseup)=\"dragEnd()\"\n      (mouseleave)=\"dragEnd()\"\n      (mousemove)=\"dragMove($event, compareContainer, container)\"\n      [class.active]=\"compareDragging\"\n    >\n      <span id=\"disease-handle\" class=\"drag-handle\" (mousedown)=\"dragStart()\"></span>\n    </div>\n\n    <div id=\"cytoscape-compare\" #cytoscapeCompare class=\"drag-content\"></div>\n  </div>\n\n  <div id=\"legend-boundary\" [ngStyle]=\"{ '--legend-width': ratio * container.clientHeight + 'px' }\">\n    <div\n      cdkDrag\n      cdkDragLockAxis=\"x\"\n      cdkDragBoundary=\"#legend-boundary\"\n      id=\"legend-container\"\n      (cdkDragMoved)=\"updateLegend()\"\n      [style.height]=\"container.clientHeight + 'px'\"\n    >\n      <button type=\"button\" id=\"legend-handle\" cdkDragHandle>LEGEND</button>\n      <div id=\"legend\" #legend></div>\n    </div>\n  </div>\n\n  <!-- <form id=\"controls\">\n      <button mat-raised-button  (click)=\"getInteractors(ResourceType.STATIC)\">IntAct</button>\n      <button mat-raised-button (click)=\"getInteractors(ResourceType.DISGENET)\">DisGeNet</button>\n      <button mat-raised-button (click)=\"updateStyle()\">Update Style</button>\n      <button mat-raised-button (click)=\"logProteins()\">Log Proteins</button>\n  \n      <mat-form-field appearance=\"outline\">\n        <mat-label>PSICQUIC</mat-label>\n        <mat-select #psicquicSelect [formControl]=\"selectedPsicquicResource\" [hideSingleSelectionIndicator]=true (selectionChange)=\"onPsicquicResourceChange($event.value)\">\n          <mat-option *ngFor=\"let resource of psicquicResources\" [value]=\"resource.name\" [disabled]=\"!resource.active\" (click)=\"psicquicSelect.open()\">\n            <div class=\"option-content\">\n              <span><i>{{ resource.name }}</i></span>\n              <mat-spinner diameter=\"20\" *ngIf=\"isDataFromPsicquicLoading && selectedPsicquicResource.value === resource.name\"></mat-spinner>\n            </div>\n          </mat-option>\n        </mat-select>\n      </mat-form-field>\n  \n      <button mat-raised-button (click)=\"openCustomInteractorDialog()\">Custom resource</button>\n  \n      <mat-slide-toggle [(ngModel)]=\"dark.isDark\" name=\"dark\">Dark mode</mat-slide-toggle>\n      <span>{{(reactomeEvents$ | async)?.detail?.reactomeId}}</span>\n    </form>\n  \n  \n    <mat-selection-list style=\"width: 260px\" *ngIf=\"resourceTokens?.length != 0\" [multiple]=\"false\">\n      <mat-list-option color=\"primary\" *ngFor=\"let resourceToken of resourceTokens\" [value]=\"resourceToken\"\n                       [selected]=\"isSelected(resourceToken)\" (click)=\"onCustomResourceChange(resourceToken)\">\n        <div class=\"option-content\">\n          <div>{{ resourceToken.token?.summary?.name }}</div>\n          <button mat-icon-button color=\"primary\" (click)=\"deleteResource(resourceToken)\">\n            <mat-icon>delete</mat-icon>\n          </button>\n        </div>\n      </mat-list-option>\n    </mat-selection-list> -->\n</div>\n", styles: [".variables{position:absolute;inset:0 0 40px;--compartment-opacity: .08;--structure-opacity: [[130, 0], [150, 100]];--shadow-luminosity: 40;--on-surface: #001f24;--primary: #006782;--on-primary: #ffffff;--on-tertiary: #ffffff;--positive: #0c9509;--negative: #ba1a1a;--negative-contrast: #ea7d7d;--select-node: #6eb3e4;--select-edge: #0561a6;--hover-node: #78e076;--hover-edge: #04b601;--interactor-fill: #68297c;--interactor-stroke: #9f5cb5;--flag: #de75b4;--compartment: #e5834a;--primary-contrast-1: #001f29;--primary-contrast-2: #003545;--primary-contrast-3: #004d62;--primary-contrast-4: #006782;--tertiary-contrast-1: #00315c;--tertiary-contrast-2: #004882;--tertiary-contrast-3: #1660a5;--drug-contrast-1: #3e001d;--drug-contrast-2: #610b33;--drug-contrast-3: #7e2549;--drug-contrast-4: #bb557a}.variables.dark{--compartment-opacity: .08;--shadow-luminosity: 70;--shadow-opacity: [[20, 40], [40, 0]];--on-surface: #97f0ff;--primary: #5cd4ff;--on-primary: #0d1617;--on-tertiary: #0d1317;--positive: #10d70b;--negative: #ea2323;--select-node: #00ffff;--negative-contrast: #8f0000;--select-edge: #1d85cc;--hover-node: #ffff00;--hover-edge: #ffff00;--flag: #da429e;--compartment: #5e232d;--primary-contrast-1: #5cd4ff;--primary-contrast-2: #20b9e5;--primary-contrast-3: #009dc4;--primary-contrast-4: #0081a2;--tertiary-contrast-1: #a48ee0;--tertiary-contrast-2: #9b73d3;--tertiary-contrast-3: #8c63c5;--drug-contrast-1: #ffb1c8;--drug-contrast-2: #f988ae;--drug-contrast-3: #da6e94;--drug-contrast-4: #c4527b}#controls{position:absolute;inset:calc(100vh - 40px) 0 0 0}#controls *{background:var(--surface);color:var(--on-surface)}#controls{background:var(--surface)}#cytoscape{position:absolute;inset:0;background:var(--surface)}#legend-boundary{--legend-width: 400px;--border-width: 2px;--handle-width: 20px;position:absolute;pointer-events:none;right:calc(-1 * var(--legend-width) - var(--border-width));height:100%;width:calc(2 * var(--legend-width) + var(--handle-width))}#legend-boundary #legend-container{position:relative;z-index:1;display:flex;align-items:center;width:fit-content;left:calc(var(--legend-width) - var(--border-width));pointer-events:all;height:100%}#legend-boundary #legend-handle{width:var(--handle-width);text-orientation:upright;writing-mode:vertical-lr;border-radius:8.5px 0 0 8.5px;background:color-mix(in srgb,var(--surface) 80%,transparent);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);border-left:var(--border-width) solid var(--primary);border-top:var(--border-width) solid var(--primary);border-bottom:var(--border-width) solid var(--primary);border-right:0;cursor:ew-resize;color:var(--on-surface)}#legend-boundary #legend{width:var(--legend-width);height:100%;background:color-mix(in srgb,var(--surface) 80%,transparent);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}#legend-boundary #legend:before{content:\"\";height:100%;width:2px;background-color:var(--primary);position:absolute;left:-1px;z-index:4}.drag-container{position:absolute;left:10%;width:100%;pointer-events:all;z-index:1;display:flex;align-items:center;height:100%}#handle-limits{--width: 500px;--height: 500px;position:absolute;left:calc(-.5 * var(--width));top:calc(50% - .5 * var(--height));width:var(--width);height:var(--height);z-index:5;pointer-events:none}#handle-limits.active{pointer-events:all;cursor:ew-resize}.drag-handle{--width: 4px;--height: 30px;position:absolute;left:calc(50% - .5 * var(--width) - 4px);top:calc(50% - .5 * var(--height) - 4px);border-radius:var(--height);width:var(--width);height:var(--height);border:4px solid var(--primary);cursor:ew-resize;color:var(--on-surface);pointer-events:all;filter:drop-shadow(-2px 0px 0px var(--primary-container)) drop-shadow(2px 0px 0px var(--error-container));background:var(--surface)}#cytoscape-compare{box-sizing:border-box;position:absolute;height:100%;width:100%;inset:0;background-color:color-mix(in srgb,var(--error) 5%,color-mix(in srgb,var(--surface) 50%,transparent))}#cytoscape-compare:before{content:\"\";height:100%;width:4px;background-color:var(--primary);filter:drop-shadow(-2px 0px 0px var(--primary-container)) drop-shadow(2px 0px 0px var(--error-container));position:absolute;left:-2px;z-index:4}.option-content{width:100%;display:flex;justify-content:space-between;gap:100px;align-items:center}\n"], dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }, { kind: "directive", type: CdkDrag, selector: "[cdkDrag]", inputs: ["cdkDragData", "cdkDragLockAxis", "cdkDragRootElement", "cdkDragBoundary", "cdkDragStartDelay", "cdkDragFreeDragPosition", "cdkDragDisabled", "cdkDragConstrainPosition", "cdkDragPreviewClass", "cdkDragPreviewContainer", "cdkDragScale"], outputs: ["cdkDragStarted", "cdkDragReleased", "cdkDragEnded", "cdkDragEntered", "cdkDragExited", "cdkDragDropped", "cdkDragMoved"], exportAs: ["cdkDrag"] }, { kind: "directive", type: CdkDragHandle, selector: "[cdkDragHandle]", inputs: ["cdkDragHandleDisabled"] }] }); }
+    static { this.ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "21.2.26", type: DiagramComponent, isStandalone: true, selector: "cr-diagram", inputs: { diagramId: ["id", "diagramId"], usedbId: "usedbId", blockRouterChange: "blockRouterChange" }, outputs: { reactomeEvents$: "reactomeEvents$", loadFailed: "loadFailed" }, viewQueries: [{ propertyName: "cytoscapeContainer", first: true, predicate: ["cytoscape"], descendants: true }, { propertyName: "compareContainer", first: true, predicate: ["cytoscapeCompare"], descendants: true }, { propertyName: "legendContainer", first: true, predicate: ["legend"], descendants: true }], usesOnChanges: true, ngImport: i0, template: "<div class=\"variables\" [class.dark]=\"dark.isDark\" #container>\n  <div id=\"cytoscape\" #cytoscape></div>\n  <div id=\"disease-container\" class=\"drag-container\" #compareContainer [style.display]=\"comparing ? 'flex' : 'none'\">\n    <div\n      id=\"handle-limits\"\n      (mouseup)=\"dragEnd()\"\n      (mouseleave)=\"dragEnd()\"\n      (mousemove)=\"dragMove($event, compareContainer, container)\"\n      [class.active]=\"compareDragging\"\n    >\n      <span id=\"disease-handle\" class=\"drag-handle\" (mousedown)=\"dragStart()\"></span>\n    </div>\n\n    <div id=\"cytoscape-compare\" #cytoscapeCompare class=\"drag-content\"></div>\n  </div>\n\n  <div id=\"legend-boundary\" [ngStyle]=\"{ '--legend-width': ratio * container.clientHeight + 'px' }\">\n    <div\n      cdkDrag\n      cdkDragLockAxis=\"x\"\n      cdkDragBoundary=\"#legend-boundary\"\n      id=\"legend-container\"\n      (cdkDragMoved)=\"updateLegend()\"\n      [style.height]=\"container.clientHeight + 'px'\"\n    >\n      <button type=\"button\" id=\"legend-handle\" cdkDragHandle>LEGEND</button>\n      <div id=\"legend\" #legend></div>\n    </div>\n  </div>\n\n  <!-- <form id=\"controls\">\n      <button mat-raised-button  (click)=\"getInteractors(ResourceType.STATIC)\">IntAct</button>\n      <button mat-raised-button (click)=\"getInteractors(ResourceType.DISGENET)\">DisGeNet</button>\n      <button mat-raised-button (click)=\"updateStyle()\">Update Style</button>\n      <button mat-raised-button (click)=\"logProteins()\">Log Proteins</button>\n  \n      <mat-form-field appearance=\"outline\">\n        <mat-label>PSICQUIC</mat-label>\n        <mat-select #psicquicSelect [formControl]=\"selectedPsicquicResource\" [hideSingleSelectionIndicator]=true (selectionChange)=\"onPsicquicResourceChange($event.value)\">\n          <mat-option *ngFor=\"let resource of psicquicResources\" [value]=\"resource.name\" [disabled]=\"!resource.active\" (click)=\"psicquicSelect.open()\">\n            <div class=\"option-content\">\n              <span><i>{{ resource.name }}</i></span>\n              <mat-spinner diameter=\"20\" *ngIf=\"isDataFromPsicquicLoading && selectedPsicquicResource.value === resource.name\"></mat-spinner>\n            </div>\n          </mat-option>\n        </mat-select>\n      </mat-form-field>\n  \n      <button mat-raised-button (click)=\"openCustomInteractorDialog()\">Custom resource</button>\n  \n      <mat-slide-toggle [(ngModel)]=\"dark.isDark\" name=\"dark\">Dark mode</mat-slide-toggle>\n      <span>{{(reactomeEvents$ | async)?.detail?.reactomeId}}</span>\n    </form>\n  \n  \n    <mat-selection-list style=\"width: 260px\" *ngIf=\"resourceTokens?.length != 0\" [multiple]=\"false\">\n      <mat-list-option color=\"primary\" *ngFor=\"let resourceToken of resourceTokens\" [value]=\"resourceToken\"\n                       [selected]=\"isSelected(resourceToken)\" (click)=\"onCustomResourceChange(resourceToken)\">\n        <div class=\"option-content\">\n          <div>{{ resourceToken.token?.summary?.name }}</div>\n          <button mat-icon-button color=\"primary\" (click)=\"deleteResource(resourceToken)\">\n            <mat-icon>delete</mat-icon>\n          </button>\n        </div>\n      </mat-list-option>\n    </mat-selection-list> -->\n</div>\n", styles: [".variables{position:absolute;inset:0 0 40px;--compartment-opacity: .08;--structure-opacity: [[130, 0], [150, 100]];--shadow-luminosity: 40;--on-surface: #001f24;--primary: #006782;--on-primary: #ffffff;--on-tertiary: #ffffff;--positive: #0c9509;--negative: #ba1a1a;--negative-contrast: #ea7d7d;--select-node: #6eb3e4;--select-edge: #0561a6;--hover-node: #78e076;--hover-edge: #04b601;--interactor-fill: #68297c;--interactor-stroke: #9f5cb5;--flag: #de75b4;--compartment: #e5834a;--primary-contrast-1: #001f29;--primary-contrast-2: #003545;--primary-contrast-3: #004d62;--primary-contrast-4: #006782;--tertiary-contrast-1: #00315c;--tertiary-contrast-2: #004882;--tertiary-contrast-3: #1660a5;--drug-contrast-1: #3e001d;--drug-contrast-2: #610b33;--drug-contrast-3: #7e2549;--drug-contrast-4: #bb557a}.variables.dark{--compartment-opacity: .08;--shadow-luminosity: 70;--shadow-opacity: [[20, 40], [40, 0]];--on-surface: #97f0ff;--primary: #5cd4ff;--on-primary: #0d1617;--on-tertiary: #0d1317;--positive: #10d70b;--negative: #ea2323;--select-node: #00ffff;--negative-contrast: #8f0000;--select-edge: #1d85cc;--hover-node: #ffff00;--hover-edge: #ffff00;--flag: #da429e;--compartment: #5e232d;--primary-contrast-1: #5cd4ff;--primary-contrast-2: #20b9e5;--primary-contrast-3: #009dc4;--primary-contrast-4: #0081a2;--tertiary-contrast-1: #a48ee0;--tertiary-contrast-2: #9b73d3;--tertiary-contrast-3: #8c63c5;--drug-contrast-1: #ffb1c8;--drug-contrast-2: #f988ae;--drug-contrast-3: #da6e94;--drug-contrast-4: #c4527b}#controls{position:absolute;inset:calc(100vh - 40px) 0 0 0}#controls *{background:var(--surface);color:var(--on-surface)}#controls{background:var(--surface)}#cytoscape{position:absolute;inset:0;background:var(--surface)}#legend-boundary{--legend-width: 400px;--border-width: 2px;--handle-width: 20px;position:absolute;pointer-events:none;right:calc(-1 * var(--legend-width) - var(--border-width));height:100%;width:calc(2 * var(--legend-width) + var(--handle-width))}#legend-boundary #legend-container{position:relative;z-index:1;display:flex;align-items:center;width:fit-content;left:calc(var(--legend-width) - var(--border-width));pointer-events:all;height:100%}#legend-boundary #legend-handle{width:var(--handle-width);text-orientation:upright;writing-mode:vertical-lr;border-radius:8.5px 0 0 8.5px;background:color-mix(in srgb,var(--surface) 80%,transparent);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px);border-left:var(--border-width) solid var(--primary);border-top:var(--border-width) solid var(--primary);border-bottom:var(--border-width) solid var(--primary);border-right:0;cursor:ew-resize;color:var(--on-surface)}#legend-boundary #legend{width:var(--legend-width);height:100%;background:color-mix(in srgb,var(--surface) 80%,transparent);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}#legend-boundary #legend:before{content:\"\";height:100%;width:2px;background-color:var(--primary);position:absolute;left:-1px;z-index:4}.drag-container{position:absolute;left:10%;width:100%;pointer-events:all;z-index:1;display:flex;align-items:center;height:100%}#handle-limits{--width: 500px;--height: 500px;position:absolute;left:calc(-.5 * var(--width));top:calc(50% - .5 * var(--height));width:var(--width);height:var(--height);z-index:5;pointer-events:none}#handle-limits.active{pointer-events:all;cursor:ew-resize}.drag-handle{--width: 4px;--height: 30px;position:absolute;left:calc(50% - .5 * var(--width) - 4px);top:calc(50% - .5 * var(--height) - 4px);border-radius:var(--height);width:var(--width);height:var(--height);border:4px solid var(--primary);cursor:ew-resize;color:var(--on-surface);pointer-events:all;filter:drop-shadow(-2px 0px 0px var(--primary-container)) drop-shadow(2px 0px 0px var(--error-container));background:var(--surface)}#cytoscape-compare{box-sizing:border-box;position:absolute;height:100%;width:100%;inset:0;background-color:color-mix(in srgb,var(--error) 5%,color-mix(in srgb,var(--surface) 50%,transparent))}#cytoscape-compare:before{content:\"\";height:100%;width:4px;background-color:var(--primary);filter:drop-shadow(-2px 0px 0px var(--primary-container)) drop-shadow(2px 0px 0px var(--error-container));position:absolute;left:-2px;z-index:4}.option-content{width:100%;display:flex;justify-content:space-between;gap:100px;align-items:center}\n"], dependencies: [{ kind: "ngmodule", type: CommonModule }, { kind: "directive", type: i1.NgStyle, selector: "[ngStyle]", inputs: ["ngStyle"] }, { kind: "directive", type: CdkDrag, selector: "[cdkDrag]", inputs: ["cdkDragData", "cdkDragLockAxis", "cdkDragRootElement", "cdkDragBoundary", "cdkDragStartDelay", "cdkDragFreeDragPosition", "cdkDragDisabled", "cdkDragConstrainPosition", "cdkDragPreviewClass", "cdkDragPreviewContainer", "cdkDragScale"], outputs: ["cdkDragStarted", "cdkDragReleased", "cdkDragEnded", "cdkDragEntered", "cdkDragExited", "cdkDragDropped", "cdkDragMoved"], exportAs: ["cdkDrag"] }, { kind: "directive", type: CdkDragHandle, selector: "[cdkDragHandle]", inputs: ["cdkDragHandleDisabled"] }] }); }
 };
 DiagramComponent = __decorate([
     UntilDestroy({ checkProperties: true })
@@ -2516,7 +2534,7 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.2.26", ngImpo
                 args: ['legend']
             }], reactomeEvents$: [{
                 type: Output
-            }], diagramId: [{
+            }], loadFailed: [{ type: i0.Output, args: ["loadFailed"] }], diagramId: [{
                 type: Input,
                 args: ['id']
             }], usedbId: [{
