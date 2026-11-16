@@ -171,7 +171,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       MDM2 complex containing that (R-HSA-6804885) on Cell Cycle Checkpoints;
       a stId drawn on its own selects only itself, as before, even when it is
       also within a drawn complex (p-T68-CHEK2, R-HSA-113825). Accessions are
-      unchanged (`?flag=P04637` already found the tetramer). Done (#TBD). Lint
+      unchanged (`?flag=P04637` already found the tetramer). Done (#38). Lint
       314, unchanged; dead code 17, unchanged.
 
 ## Phase 2: Values typed "anything" (User Story 2, P2)
@@ -364,7 +364,7 @@ named, and fixed only where it changes nothing a user sees.
   (`?select=R-HSA-69488` selects only TP53 where it is drawn on its own),
   being bug 4 itself. Found in T021. Decided (16 Nov): yes, selecting a
   monomer's stId highlights the complexes containing it, as WebsiteAngular's
-  diagram does. Done in T025 (#TBD): `?select=R-HSA-69488` selects TP53
+  diagram does. Done in T025 (#38): `?select=R-HSA-69488` selects TP53
   Tetramer and the MDM2 complex containing it.
 - **A reaction's counterpart in the compare pane is found without its lines**
   (`diagram.component.ts`, `compareBackgroundSync`). Since T021 a reaction's
