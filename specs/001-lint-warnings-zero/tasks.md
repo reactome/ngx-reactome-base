@@ -92,7 +92,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       the lines' inline underlay and leaves the sub-pathway bands as they were;
       **#12** trivial molecules kept visible by `.trivial.always-visible`, not
       inline opacity; **#13** flagging a reaction type from the legend flags its
-      lines too (#TBD). The bands were hidden on clearing because the zoom
+      lines too (#32). The bands were hidden on clearing because the zoom
       handler ran inside `cy.batch()`, reading their colour before the restyle
       (seen by moving the call back in: the test fails). Only the component
       changed; the style library already had the rules.
