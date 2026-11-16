@@ -17,7 +17,7 @@ Paths are under `projects/` unless they start with a file at the root.
       `no-empty-pattern`, `no-unused-vars`; `@angular-eslint/prefer-standalone`,
       `no-output-native`, `no-output-rename`, `use-lifecycle-interface`;
       `@angular-eslint/template/prefer-control-flow`. Seen failing: a violation
-      of each planted, the check fails. 332 → 332 (#TBD). Planted one per rule
+      of each planted, the check fails. 332 → 332 (#27). Planted one per rule
       in a scratch file: each of the thirteen others was reported as an error and
       `check:lint` failed (on `main`'s configuration, each was a warning).
       Core `no-unused-vars`, planted in a `.ts` file and in a script, was not
