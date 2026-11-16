@@ -10,7 +10,7 @@ import type { MockInstance } from 'vitest';
 import cytoscape from 'cytoscape';
 import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 
-import { DiagramComponent } from './diagram.component';
+import { DiagramComponent, DiagramLoadFailure } from './diagram.component';
 import { DIAGRAM_CONFIG_TOKEN } from '../services/diagram.service';
 import { DarkService } from '../services/dark.service';
 import { DiagramStateService } from '../services/diagram-state.service';
@@ -160,6 +160,60 @@ describe('DiagramComponent, lifecycle', () => {
     });
   });
 
+  describe('a failed load, told to the host', () => {
+    /** What `loadFailed` emits for the component in `fixture`. */
+    const failures = (fixture: ComponentFixture<DiagramComponent>) => {
+      const told: DiagramLoadFailure[] = [];
+      fixture.componentInstance.loadFailed.subscribe((failure) => told.push(failure));
+      return told;
+    };
+
+    it('emits the id and the status, and keeps the diagram shown', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const fixture = await shown('R-HSA-69620');
+      const told = failures(fixture);
+      const before = fixture.componentInstance.cy;
+      const drawn = before.nodes().length;
+      fixture.componentRef.setInput('id', 'R-HSA-0');
+      await fixture.whenStable();
+      http
+        .expectOne(`${BASE}/R-HSA-0.json`)
+        .flush('Not found', { status: 404, statusText: 'Not Found' });
+      await fixture.whenStable();
+      expect(told).toEqual([{ diagramId: 'R-HSA-0', status: 404 }]);
+      expect(fixture.componentInstance.cy).toBe(before);
+      expect(before.destroyed()).toBe(false);
+      expect(before.nodes().length).toBe(drawn);
+      expect(drawn).toBeGreaterThan(0);
+      fixture.destroy();
+    });
+
+    it('emits status 0 for a network error', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const fixture = await shown('R-HSA-69620');
+      const told = failures(fixture);
+      fixture.componentRef.setInput('id', 'R-HSA-0');
+      await fixture.whenStable();
+      http.expectOne(`${BASE}/R-HSA-0.json`).error(new ProgressEvent('error'));
+      await fixture.whenStable();
+      expect(told).toEqual([{ diagramId: 'R-HSA-0', status: 0 }]);
+      fixture.destroy();
+    });
+
+    it('emits status 0 for a failure that is not HTTP', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const fixture = await shown('R-HSA-69620');
+      const told = failures(fixture);
+      fixture.componentRef.setInput('id', 'R-HSA-0');
+      await fixture.whenStable();
+      // Answered, but not a diagram: building its elements throws.
+      requests('R-HSA-0').forEach((request) => request.flush({}));
+      await fixture.whenStable();
+      expect(told).toEqual([{ diagramId: 'R-HSA-0', status: 0 }]);
+      fixture.destroy();
+    });
+  });
+
   describe('bug 11: tearing down', () => {
     it('destroys the diagram, the compare pane and the legend', async () => {
       const fixture = await shown('R-HSA-2206292');
@@ -252,6 +306,37 @@ describe('DiagramComponent, lifecycle', () => {
       const component = TestBed.runInInjectionContext(() => new DiagramComponent());
       const event = legendEvent(component);
       expect(await uncaught(() => component['_reactomeEvents$'].next(event))).toEqual([]);
+    });
+
+    it('a legend click before a diagram has loaded sets the flag, drawn when it arrives', async () => {
+      const fixture = TestBed.createComponent(DiagramComponent);
+      fixture.componentRef.setInput('id', 'R-HSA-69620');
+      await fixture.whenStable();
+      const component = fixture.componentInstance;
+      // The legend is made at once; the diagram is still loading.
+      expect(component.cy).toBeUndefined();
+      const legend = component.legend;
+      const transition = legend.getElementById('transition');
+      expect(transition.nonempty()).toBe(true);
+      component['_reactomeEvents$'].next(
+        new ReactomeEvent(ReactomeEventTypes.select, {
+          element: transition,
+          type: 'reaction',
+          reactomeId: 'transition',
+          cy: legend,
+        })
+      );
+      expect(TestBed.inject(DiagramStateService).get('flag')).toEqual(['class:transition!drug']);
+
+      answer('R-HSA-69620');
+      await fixture.whenStable();
+      const reactions = component.cy.nodes('.transition.reaction');
+      expect(reactions.nonempty()).toBe(true);
+      const lines = reactions.connectedEdges();
+      expect(lines.nonempty()).toBe(true);
+      const unflagged = reactions.add(lines).filter((element) => !element.hasClass('flag'));
+      expect(unflagged.map((element) => element.id())).toEqual([]);
+      fixture.destroy();
     });
 
     it('a diagram event before the legend has loaded does not throw', async () => {

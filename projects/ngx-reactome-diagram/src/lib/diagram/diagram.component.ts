@@ -10,7 +10,9 @@ import {
   SimpleChanges,
   ViewChild,
   inject,
+  output,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { DiagramService } from '../services/diagram.service';
 import cytoscape from 'cytoscape';
 import {
@@ -37,6 +39,15 @@ import { MatDialog } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { withData } from './with-data';
+
+/**
+ * A diagram that could not be loaded: its id, and the HTTP status of the
+ * failed request (0 for a network error, or a failure that is not HTTP's).
+ */
+export interface DiagramLoadFailure {
+  diagramId: string;
+  status: number;
+}
 
 @UntilDestroy({ checkProperties: true })
 @Component({
@@ -85,6 +96,12 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     ),
     share()
   );
+
+  /**
+   * A diagram that could not be loaded. The diagram shown stays, and the
+   * failure is still logged.
+   */
+  readonly loadFailed = output<DiagramLoadFailure>();
 
   @Input('id') diagramId: string = '';
 
@@ -164,8 +181,12 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     this.loading = this.diagram.getDiagram(id).subscribe({
       next: (elements) => this.displayNetwork(elements),
       // The diagram shown stays. Unhandled, the failure reached the host only
-      // as an uncaught error (issue #14, bug 3).
-      error: (error: unknown) => console.error(`Diagram ${id} could not be loaded`, error),
+      // as an uncaught error (issue #14, bug 3); now it is told, by `loadFailed`.
+      error: (error: unknown) => {
+        console.error(`Diagram ${id} could not be loaded`, error);
+        const status = error instanceof HttpErrorResponse ? error.status : 0;
+        this.loadFailed.emit({ diagramId: id, status });
+      },
     });
   }
 
@@ -704,28 +725,16 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       }
     });
 
-  // Not before a diagram is drawn: the legend's events read it, and threw.
+  // A click sets the flag even before a diagram is drawn: the state is drawn
+  // when the diagram arrives (displayNetwork). Only a hover reads the diagram,
+  // and before one is drawn has nothing to mark (reading it threw, T020).
   legend2state = this.reactomeEvents$
     .pipe(
-      filter((e) => e.detail.cy === this.legend && this.cy !== undefined),
+      filter((e) => e.detail.cy === this.legend),
       filter(() => !this._ignore)
     )
-    .subscribe((e) => {
-      const event = e as ReactomeEvent;
+    .subscribe((event) => {
       const classes = event.detail.element.classes();
-      let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection = this.cy.elements(
-        `.${classes[0]}`
-      );
-
-      if (event.detail.type === 'PhysicalEntity' || event.detail.type === 'Pathway') {
-        if (classes.includes('drug')) matchingElement = matchingElement.nodes('.drug');
-        else matchingElement = matchingElement.not('.drug');
-      } else if (event.detail.type === 'reaction') {
-        const reaction = event.detail.element.nodes('.reaction');
-        matchingElement = this.cy.nodes(`.${reaction.classes()[0]}`);
-        matchingElement = matchingElement.add(matchingElement.connectedEdges());
-      }
-
       switch (event.type) {
         case ReactomeEventTypes.select:
           this.state.set('flag', [
@@ -738,13 +747,35 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
           this.stateToDiagram();
           break;
         case ReactomeEventTypes.hover:
-          matchingElement.addClass('hover');
+          this.legendMatches(event)?.addClass('hover');
           break;
         case ReactomeEventTypes.leave:
-          matchingElement.removeClass('hover');
+          this.legendMatches(event)?.removeClass('hover');
           break;
       }
     });
+
+  /** The diagram's elements of a legend element's kind; none before a diagram is drawn. */
+  private legendMatches(
+    event: ReactomeEvent
+  ): cytoscape.NodeCollection | cytoscape.EdgeCollection | undefined {
+    const cy: cytoscape.Core | undefined = this.cy;
+    if (cy === undefined) return undefined;
+    const classes = event.detail.element.classes();
+    let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection = cy.elements(
+      `.${classes[0]}`
+    );
+
+    if (event.detail.type === 'PhysicalEntity' || event.detail.type === 'Pathway') {
+      if (classes.includes('drug')) matchingElement = matchingElement.nodes('.drug');
+      else matchingElement = matchingElement.not('.drug');
+    } else if (event.detail.type === 'reaction') {
+      const reaction = event.detail.element.nodes('.reaction');
+      matchingElement = cy.nodes(`.${reaction.classes()[0]}`);
+      matchingElement = matchingElement.add(matchingElement.connectedEdges());
+    }
+    return matchingElement;
+  }
 
   logProteins() {
     // eslint-disable-next-line no-console -- logging is what it is called for
