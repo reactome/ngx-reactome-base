@@ -120,7 +120,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       (before and after shown in the pull request); `DIAGRAM_CONFIG_TOKEN`
       documented in the library's README. `dev_curator` changes this file's
       element-building code: the pull request keeps its hunks small and lists
-      them. Done (#TBD): an entity's `graph` is its own graph node (TP53
+      them. Done (#34): an entity's `graph` is its own graph node (TP53
       Tetramer selects as R-HSA-3209194, not TP53's R-HSA-69488), and its
       `acc` is still its only child's accession, so flagging P04637 flags the
       tetramer as before (see "Bugs found on the way"); `uniqueEdgeId` in
@@ -266,7 +266,7 @@ named, and fixed only where it changes nothing a user sees.
   known and drawing it being a change to what readers see. Decided (16 Nov):
   fixed, each repeat taking the next number and the first two keeping
   today's ids, with a test seen failing on the old code; in T021 (issue #14).
-  Fixed in T021 (#TBD): a third connector with the same ends is now " (2)".
+  Fixed in T021 (#34): a third connector with the same ends is now " (2)".
 - **The exported event type says text where a number is sent**
   (`ngx-reactome-cytoscape-style/src/lib/model/reactome-event.model.ts`): see
   open question 2. Decided (16 Nov): the type follows what is sent
