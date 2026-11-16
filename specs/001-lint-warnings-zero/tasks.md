@@ -96,15 +96,20 @@ files they touch, one pull request each; they run before T009–T011 (see
       handler ran inside `cy.batch()`, reading their colour before the restyle
       (seen by moving the call back in: the test fails). Only the component
       changed; the style library already had the rules.
-- [ ] T020 [Bugs] The component's lifecycle, `diagram/diagram.component.ts` and
-      `.html`: **#3** `loadDiagram` drops a response superseded by a later
-      request and reports a failed one; **#11** the cytoscape cores (main,
-      compare, legend) and the `$dark` subscription torn down on destroy;
-      **#14** the component marked for check after `comparing = true` (zoneless
-      hosts); `legend2state` waits for a diagram before reading `cy`, and
-      `diagram2legend` for the legend before reading it (found in T017: an event
-      before the legend has loaded throws); `CdkDragHandle` imported so only the
-      handle drags the legend.
+- [x] T020 [Bugs] The component's lifecycle, `diagram/diagram.component.ts`:
+      **#3** `loadDiagram` cancels the request a later one (or an emptied id)
+      replaces, and a failed load is reported with `console.error`, the diagram
+      shown staying (the component has no error output: see "Bugs found on the
+      way"); **#11** the cores (main, compare, legend), the `$dark`
+      subscription and a load in flight torn down on destroy, and a compare
+      pane left by a diagram replaced with one that has none destroyed and no
+      longer flagged or selected (cytoscape already destroyed a main core
+      replaced in its container); **#14** confirmed in a zoneless test (the
+      pane stayed `display: none`), and fixed with `markForCheck()` after
+      `comparing` is set; `legend2state` ignores the legend until a diagram is
+      drawn, as it did before apart from the error, and `diagram2legend` the
+      diagram until the legend is made; `CdkDragHandle` imported, so only the
+      handle drags the legend (#33).
 - [ ] T021 [Bugs] `services/diagram.service.ts`: **#4** a graph node with
       one child keeps its own stId (a homomultimer is not its monomer);
       `getEdgeId`'s counter advances, each repeat taking the next number and
@@ -265,6 +270,17 @@ named, and fixed only where it changes nothing a user sees.
   molecule), so the two never compare equal, before T018 and after. To
   decide: matching a number against an accession's text would make such
   flags start working, a change beyond issue #14's bug 1. Found in T018.
+- **A diagram that fails to load reaches the host only on the console**
+  (`ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`,
+  `loadDiagram`). Before T020 the failure was unhandled, an uncaught error;
+  the component has no output or state for problems, so T020 reports it with
+  `console.error` and keeps the diagram shown. To decide: whether the host
+  gets it as an output (an error event with the id and the HTTP status, say),
+  which would be a new output on an exported component. Found in T020.
+- **A legend click before the diagram has loaded does nothing**
+  (`diagram.component.ts`, `legend2state`). It threw before T020, and now is
+  ignored, which is what a user saw before. To decide: whether it should set
+  the flag instead, to be drawn when the diagram arrives. Found in T020.
 
 ## Silenced lines
 

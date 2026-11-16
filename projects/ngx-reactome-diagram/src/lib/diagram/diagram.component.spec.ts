@@ -1,3 +1,4 @@
+import { ChangeDetectorRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -24,6 +25,8 @@ describe('DiagramComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: DIAGRAM_CONFIG_TOKEN, useValue: {} },
+        // Made without its view, the component has no change detector of its own.
+        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } },
       ],
     });
   }

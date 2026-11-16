@@ -1,4 +1,4 @@
-import { ElementRef } from '@angular/core';
+import { ChangeDetectorRef, ElementRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -48,6 +48,8 @@ describe('DiagramComponent, selecting', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: DIAGRAM_CONFIG_TOKEN, useValue: { diagramUrl: BASE } },
+        // Made without its view, the component has no change detector of its own.
+        { provide: ChangeDetectorRef, useValue: { markForCheck: () => undefined } },
       ],
     });
     component = TestBed.runInInjectionContext(() => new DiagramComponent());
