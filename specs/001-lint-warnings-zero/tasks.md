@@ -150,6 +150,16 @@ files they touch, one pull request each; they run before T009–T011 (see
       forcing `@angular/forms` and `@angular/material` into the peer
       dependencies, dead code (`randomNetwork`, `roundness.ts`,
       `assets/data/*.txt`). To be split when taken up.
+- [x] T024 [Bugs] Two of T020's findings, decided on 16 Nov (see "Bugs found
+      on the way"), `diagram/diagram.component.ts`: a diagram that fails to
+      load is told to the host by a new output, `loadFailed`
+      (`DiagramLoadFailure`, `{ diagramId, status }`, exported; documented in
+      the library's README), the `console.error` and the diagram shown kept;
+      a legend click before the diagram has loaded sets the flag in the state,
+      drawn when the diagram arrives (`displayNetwork` applies the state since
+      T018), where it was dropped; only a hover still needs the diagram.
+      Purely additive: no other input or output changes. Done (#36). Lint
+      314, unchanged; dead code 17, unchanged.
 
 ## Phase 2: Values typed "anything" (User Story 2, P2)
 
@@ -237,11 +247,13 @@ lines in the style library.
 ## Dependencies
 
 - T001–T003 first, done. T004 waits on the curator tool's owner and takes
-  whichever of T017–T020 have merged into `diagram.component.ts` as they are.
+  whichever of T017–T020 and T024 have merged into `diagram.component.ts` as
+  they are (T024's `loadFailed` is already an `output()`).
 - T017–T022 (issue #14) next, in order, before the typing tasks that touch the
   same code: T017 before T005 (both `diagram-state.service.ts`), T022 before
-  T005 (`dark.service.ts`), T018–T020 before T011 (`diagram.component.ts`),
-  T021 before T014 (`diagram.service.ts`), and all of them before T009–T011.
+  T005 (`dark.service.ts`), T018–T020 and T024 before T011
+  (`diagram.component.ts`), T021 before T014 (`diagram.service.ts`), and all of
+  them before T009–T011.
 - T005–T008 then T009–T011, T012, T013–T015, T016, as numbered. T023 when
   taken up; it blocks nothing.
 
@@ -306,8 +318,9 @@ named, and fixed only where it changes nothing a user sees.
   stopping the toggle, or moving it to the diagram's container, would change
   nothing the curator tool's sources style, but would change the page of any
   host that includes `ngx-reactome-style`'s theme with its default selector.
-  Kept as it is in T022. To decide: whether the diagram stops touching the
-  host's body (and its `is-dark` key), leaving the page's theme to the host.
+  Kept as it is in T022. Decided (16 Nov): keep it as it is. Nothing known is
+  harmed, and removing it could surprise a host that uses `ngx-reactome-style`'s
+  theme mixin with its default selector.
 - **A flag or selection by a number never matches an accession made of
   digits** (`ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`,
   `getElements`): the state reads `?flag=30616` as the number 30616, and an
@@ -319,13 +332,16 @@ named, and fixed only where it changes nothing a user sees.
   (`ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`,
   `loadDiagram`). Before T020 the failure was unhandled, an uncaught error;
   the component has no output or state for problems, so T020 reports it with
-  `console.error` and keeps the diagram shown. To decide: whether the host
-  gets it as an output (an error event with the id and the HTTP status, say),
-  which would be a new output on an exported component. Found in T020.
+  `console.error` and keeps the diagram shown. Found in T020. Decided (16
+  Nov) and done (#36, T024): a new output, `loadFailed`, emits
+  `{ diagramId, status }` (the HTTP status, 0 for a network error or one that
+  is not HTTP's); the `console.error` and the diagram shown stay.
 - **A legend click before the diagram has loaded does nothing**
   (`diagram.component.ts`, `legend2state`). It threw before T020, and now is
-  ignored, which is what a user saw before. To decide: whether it should set
-  the flag instead, to be drawn when the diagram arrives. Found in T020.
+  ignored, which is what a user saw before. Found in T020. Decided (16 Nov)
+  and done (#36, T024): it sets the flag in the state, as a click after the
+  load does, and the diagram draws it when it arrives; a hover before then
+  still marks nothing.
 - **A homomultimer still carries its monomer's accession**
   (`ngx-reactome-diagram/src/lib/services/diagram.service.ts`, the entity
   nodes' `acc`). T021 gave it its own stId (bug 4), but kept `acc` as its only
@@ -333,15 +349,16 @@ named, and fixed only where it changes nothing a user sees.
   as before. Its own graph node has no accession, so taking it from there
   would stop that. The monomer's stId, though, no longer finds the tetramer
   (`?select=R-HSA-69488` selects only TP53 where it is drawn on its own),
-  being bug 4 itself. To decide: whether an accession, or a monomer's stId,
-  should find the multimers of it. Found in T021.
+  being bug 4 itself. Found in T021. Decided (16 Nov): yes, selecting a
+  monomer's stId highlights the complexes containing it, as WebsiteAngular's
+  diagram does; its own task (to follow).
 - **A reaction's counterpart in the compare pane is found without its lines**
   (`diagram.component.ts`, `compareBackgroundSync`). Since T021 a reaction's
   `replacement` is its faded counterpart's id, so hovering or selecting it
   marks that reaction in the other pane, where it marked nothing. A
   connector's `replacement` is a number, which also brings the reaction's
-  lines (`[reactionId=…]`); a reaction's id as text does not. To decide:
-  whether the counterpart's lines are marked too. Found in T021.
+  lines (`[reactionId=…]`); a reaction's id as text does not. Found in T021.
+  Decided (16 Nov): leave it as it is unless curators ask.
 
 ## Silenced lines
 

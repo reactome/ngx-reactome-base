@@ -22,6 +22,39 @@ bootstrapApplication(AppComponent, {
 });
 ```
 
+## The diagram component's inputs and outputs
+
+Inputs:
+
+- `id`: the diagram to show (a pathway's stable id). Changing it loads that
+  diagram; an empty one loads nothing.
+- `usedbId`: when `true`, elements are selected and reported by their database
+  id rather than their stable id.
+- `blockRouterChange`: when `true`, changes to the component's state
+  (selection, flags) are not written to the page's address.
+
+Outputs:
+
+- `reactomeEvents$`: the user's hovers, clicks, selections and the like on the
+  diagram and its legend, as `ReactomeEvent`s.
+- `loadFailed`: a diagram that could not be loaded, as a `DiagramLoadFailure`,
+  `{ diagramId: string; status: number }`. `status` is the HTTP status of the
+  failed request (404 for a diagram that does not exist), or 0 for a network
+  error or a failure that is not HTTP's. The diagram shown before stays, and
+  the failure is also logged with `console.error`.
+
+```html
+<cr-diagram [id]="diagramId" (loadFailed)="onLoadFailed($event)"></cr-diagram>
+```
+
+```typescript
+import type { DiagramLoadFailure } from 'ngx-reactome-diagram';
+
+onLoadFailed({ diagramId, status }: DiagramLoadFailure) {
+  this.message = status === 404 ? `No diagram for ${diagramId}` : `${diagramId} could not be loaded`;
+}
+```
+
 ## Usage
 
 To use reactome-cytoscape-style, use the following:
