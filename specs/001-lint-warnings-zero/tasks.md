@@ -137,7 +137,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       (moved here from T005). Whether it stops toggling `body.dark` on the host
       page is decided by how the curator tool relies on it: if removing it would
       change the host's look, it is recorded as a decision, not made. Done
-      (#TBD): only a stored `true` reads as dark, as WebsiteAngular's own
+      (#35): only a stored `true` reads as dark, as WebsiteAngular's own
       service (its T013); a value that is not JSON, or JSON that is not a
       boolean (`1`, `"true"`, `null`), reads as light, where the first stopped
       the service and the others were kept as they were. The `body.dark` toggle
@@ -284,7 +284,7 @@ named, and fixed only where it changes nothing a user sees.
   service is created. WebsiteAngular's own service now reads only `true` as
   dark (its T013). Decided (16 Nov): a stored value that is not valid JSON
   reads as light (`false`), with a test seen failing on the old code; in T022
-  (issue #14, #15). Fixed in T022 (#TBD): only a stored `true` is dark.
+  (issue #14, #15). Fixed in T022 (#35): only a stored `true` is dark.
 - **The diagram's dark-mode switch themes the host's whole page**
   (`ngx-reactome-diagram/src/lib/services/dark.service.ts`, `isDark`'s
   setter): it adds or removes `dark` on the host page's `<body>`, and writes
