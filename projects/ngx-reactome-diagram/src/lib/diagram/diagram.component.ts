@@ -300,6 +300,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
               // Non physical entity
               elements = elements.or(`.${clazz}`);
             }
+            // A reaction type is found as its nodes; its lines go with them, or
+            // flagging it from the legend marked specks (issue #14, bug 13).
+            elements = elements.or(elements.nodes('.reaction').connectedEdges());
           } else if (this.usedbId) {
             // A dbId may come as text; it is compared as the number it is.
             const dbId = /^\d+$/.test(token) ? Number(token) : token;
@@ -358,15 +361,22 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       cy.batch(() => {
         this.setSubPathwayVisibility(false, cy);
         cy.elements().removeClass('flag');
-        toFlag.addClass('flag').edges().style({ 'underlay-opacity': 1 });
+        // The stylesheet's `edge.flag` rule draws the halo. Written inline, it
+        // outlived the flag: cleared, the lines kept an opaque underlay, black
+        // without the class's colour (issue #14, bug 2).
+        toFlag.addClass('flag').edges().removeStyle('underlay-opacity');
       });
 
       return toFlag;
     } else {
       cy.batch(() => {
-        this.setSubPathwayVisibility(true, cy);
         cy.elements().removeClass('flag');
+        cy.edges().not('[?color]').style({ 'underlay-opacity': 0 });
       });
+      // Outside the batch: the zoom handler this hands the bands back to reads
+      // their colour, which a batch has not yet restyled, and read black it
+      // hid them all (issue #14, bug 2).
+      this.setSubPathwayVisibility(true, cy);
 
       return cy.collection();
     }
@@ -379,7 +389,8 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
     if (visible) {
       shadowNodes.style({ opacity: 1 });
-      trivials.style({ opacity: 1 });
+      // Back to the zoom handler, which owns their opacity again from here.
+      trivials.removeClass('always-visible');
       shadowEdges.addClass('shadow');
       // The handlers bound to this graph: cy.data('reactome').interactivity is
       // whichever graph its Style was bound to last.
@@ -393,8 +404,13 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       shadowEdges.removeClass('shadow');
       const onZoomShadow = interactivityOf(cy)?.onZoom.shadow;
       if (onZoomShadow) cy.off('zoom', onZoomShadow);
-      trivials.style({ opacity: 1 });
-      cy.edges().style({ 'underlay-opacity': 0 });
+      // A class, not an inline opacity: a restyle runs the zoom handler, which
+      // rewrote the inline value and faded them out while flagged; it leaves
+      // `.always-visible` alone (issue #14, bug 12). The inline value it last
+      // wrote goes first, since an inline style beats the class's rule.
+      trivials.removeStyle('opacity').addClass('always-visible');
+      // Not a flagged line: hiding the bands must not take the flag's halo.
+      cy.edges().not('.flag').style({ 'underlay-opacity': 0 });
     }
   }
 
