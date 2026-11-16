@@ -1747,6 +1747,17 @@ class DiagramStateService {
             analysis: { value: null, otherTokens: ['ANALYSIS'] },
             analysisProfile: { value: null },
         };
+        // What each parameter is when the address does not name it: text, a
+        // boolean, null or an empty list, copied when used.
+        this.defaults = new Map([
+            ['select', ''],
+            ['flag', []],
+            ['path', []],
+            ['flagInteractors', false],
+            ['overlay', ''],
+            ['analysis', null],
+            ['analysisProfile', null],
+        ]);
         this._state$ = new BehaviorSubject(this.state);
         this.state$ = this._state$.asObservable();
         this.onChange = Object.keys(this.state).reduce((properties, prop) => {
@@ -1778,6 +1789,16 @@ class DiagramStateService {
                     // read from the address reached no one and an unchanged one did.
                     change = change || formerValue?.toString() !== param.value?.toString();
                 }
+                else if (!this.blockRouterChange && this.defaults.has(mainToken)) {
+                    const initial = this.defaults.get(mainToken);
+                    if (String(param.value) === String(initial))
+                        continue;
+                    // Gone from the address, so back to its default: it was kept, and a
+                    // selection or flag removed from the address stayed. Not while the
+                    // router is blocked, when the address is not where the state lives.
+                    param.value = Array.isArray(initial) ? [] : initial;
+                    change = true;
+                }
             }
             if (change)
                 this._state$.next(this.state);
@@ -1801,16 +1822,26 @@ class DiagramStateService {
             });
         }
     }
+    // Merged into the host's address: replacing the query string and dropping
+    // the fragment took the host's own parameters with them. A parameter with no
+    // value is removed, under its aliases too, or an alias left behind would
+    // bring the value back on the next read.
     onPropertyModified() {
+        const queryParams = {};
+        for (const [token, param] of Object.entries(this.state)) {
+            const set = param.value && param.value.length !== 0;
+            for (const alias of param.otherTokens ?? [])
+                queryParams[alias] = null;
+            queryParams[token] = !set
+                ? null
+                : Array.isArray(param.value)
+                    ? param.value.join(',')
+                    : param.value;
+        }
         return this.router.navigate([], {
-            queryParams: {
-                ...Object.entries(this.state)
-                    .filter(([_token, param]) => param.value && param.value.length !== 0)
-                    .reduce((acc, [token, param]) => ({
-                    ...acc,
-                    [token]: Array.isArray(param.value) ? param.value.join(',') : param.value,
-                }), {}),
-            },
+            queryParams,
+            queryParamsHandling: 'merge',
+            preserveFragment: true,
         });
     }
     static { this.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "21.2.26", ngImport: i0, type: DiagramStateService, deps: [], target: i0.ɵɵFactoryTarget.Injectable }); }
@@ -1949,6 +1980,22 @@ let DiagramComponent = class DiagramComponent {
             const uniqueSet = new Set(reactomeIds);
             reactomeIds = Array.from(uniqueSet);
             this.state.set('select', reactomeIds[0] || '');
+        });
+        // Deselecting the selected element clears the selection. It was kept, so
+        // selecting the same element again changed nothing, and the next redraw from
+        // the state brought the cleared selection back (issue #14, bug 10). Checked
+        // once the event is handled: clicking another element deselects this one
+        // first, and a redraw from the state deselects and reselects it.
+        this.diagramUnselect2state = this.reactomeEvents$
+            .pipe(filter((e) => e.detail.cy !== this.legend && e.type === ReactomeEventTypes.unselect), delay(0))
+            .subscribe((e) => {
+            if (e.detail.cy.elements(':selected').nonempty())
+                return;
+            const element = e.detail.element;
+            const id = element.data(this.usedbId ? 'reactomeId' : 'graph.stId');
+            if (id !== undefined && String(id) === String(this.state.get('select'))) {
+                this.state.set('select', '');
+            }
         });
         this.legend2state = this.reactomeEvents$
             .pipe(filter((e) => e.detail.cy === this.legend), filter(() => !this._ignore))

@@ -123,6 +123,7 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     compareBackgroundSync: rxjs.Subscription;
     diagram2legend: rxjs.Subscription;
     diagramSelect2state: rxjs.Subscription;
+    diagramUnselect2state: rxjs.Subscription;
     legend2state: rxjs.Subscription;
     logProteins(): void;
     /**
