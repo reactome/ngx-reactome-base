@@ -1142,6 +1142,27 @@ class DiagramService {
             // for the stId as well, it made clicking TP53 Tetramer select TP53
             // (issue #14, bug 4).
             const idToOwnGraphNode = new Map(graph.nodes.flatMap((node) => (node.diagramIds ?? []).map((id) => [id, node])));
+            // Each drawn complex's or set's leaves, the entities at the bottom of
+            // its children: what a stId drawn only inside them is found by, as in
+            // WebsiteAngular's diagram (a monomer's stId finds its multimers).
+            const addLeaves = (node, leaves, seen) => {
+                if (seen.has(node.dbId))
+                    return;
+                seen.add(node.dbId);
+                const children = (node.children ?? [])
+                    .map((child) => dbIdToGraphNode.get(child))
+                    .filter((child) => child !== undefined);
+                if (children.length === 0)
+                    leaves.add(node);
+                children.forEach((child) => addLeaves(child, leaves, seen));
+            };
+            idToOwnGraphNode.forEach((node) => {
+                if (!node.children?.length)
+                    return;
+                const leaves = new Set();
+                addLeaves(node, leaves, new Set());
+                node.leaves = [...leaves];
+            });
             const idToGraphEdges = new Map(graph.edges.map((edge) => [edge.dbId, edge]));
             const dbIdToGraphEdge = new Map(graph.edges.map((edge) => [edge.dbId, edge]));
             const hasFadeOut = data.nodes.some((node) => node.isFadeOut);
@@ -1904,6 +1925,18 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.2.26", ngImpo
 function withData(cy, field, value) {
     return cy.elements().filter((element) => element.data(field) === value);
 }
+/**
+ * The nodes whose graph leaves (`graph.leaves`, the entities at the bottom of
+ * a complex's or set's children) include the stId `stId`: the drawn complexes
+ * containing an entity, compared in code as `withData` is.
+ */
+function withLeaf(cy, stId) {
+    return cy.nodes().filter((node) => {
+        const leaves = node.data('graph.leaves');
+        return (Array.isArray(leaves) &&
+            leaves.some((leaf) => typeof leaf === 'object' && leaf !== null && 'stId' in leaf && leaf.stId === stId));
+    });
+}
 
 let DiagramComponent = class DiagramComponent {
     // There are many issues having URL changes for selection state or other
@@ -2273,7 +2306,13 @@ let DiagramComponent = class DiagramComponent {
                 if (token.trim().length === 0)
                     return;
                 if (token.startsWith('R-')) {
-                    elements = elements.or(withData(cy, 'graph.stId', token));
+                    let own = withData(cy, 'graph.stId', token);
+                    // Not drawn on its own: the drawn complexes containing it, as in
+                    // WebsiteAngular's diagram. A monomer drawn only in its multimers
+                    // found nothing once they had their own stIds (T021, issue #14 bug 4).
+                    if (own.empty())
+                        own = withLeaf(cy, token);
+                    elements = elements.or(own);
                 }
                 else {
                     const matchArray = token.match(this.classRegex);
