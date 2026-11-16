@@ -957,6 +957,27 @@ var legend = {
 	"Reaction Attributes GeoGebra": "https://www.geogebra.org/calculator/hgu6afmu"
 };
 
+/**
+ * A connector's id, unique in its diagram.
+ *
+ * The id is made from its ends and its type, so two connectors with the same
+ * ends and type would share one; cytoscape refuses a second element with an id
+ * it already has, and the diagram would not draw. Each repeat is numbered: the
+ * second " (1)", the third " (2)", and so on. `seen` counts the repeats of each
+ * id so far. The count was stored before it was incremented, so every repeat
+ * after the first was " (1)" again (issue #14).
+ */
+function uniqueEdgeId(id, seen) {
+    const repeats = seen.get(id);
+    if (repeats === undefined) {
+        seen.set(id, 0);
+        return id;
+    }
+    const n = repeats + 1;
+    seen.set(id, n);
+    return `${id} (${n})`;
+}
+
 cytoscape.use(cytoscapeFcose);
 // Above the service: when the constructor named it in @Inject, declared after
 // it, the decorator read it before it existed.
@@ -1116,6 +1137,11 @@ class DiagramService {
             })
                 .filter((entry) => entry !== undefined);
             const idToGraphNodes = new Map([...mappingList]);
+            // Each node's own graph node, for its stId. idToGraphNodes maps a node
+            // with one child (a homomultimer) to that child, for its accession; read
+            // for the stId as well, it made clicking TP53 Tetramer select TP53
+            // (issue #14, bug 4).
+            const idToOwnGraphNode = new Map(graph.nodes.flatMap((node) => (node.diagramIds ?? []).map((id) => [id, node])));
             const idToGraphEdges = new Map(graph.edges.map((edge) => [edge.dbId, edge]));
             const dbIdToGraphEdge = new Map(graph.edges.map((edge) => [edge.dbId, edge]));
             const hasFadeOut = data.nodes.some((node) => node.isFadeOut);
@@ -1133,7 +1159,7 @@ class DiagramService {
                     left: scale(prop.x),
                     top: scale(prop.y),
                     right: scale(prop.x + prop.width),
-                    bottom: scale(prop.x + prop.height),
+                    bottom: scale(prop.y + prop.height),
                 });
                 const innerCR = 10;
                 let outerCR;
@@ -1195,7 +1221,7 @@ class DiagramService {
                 }
                 if (!item.isFadeOut)
                     replacement =
-                        posToNormalEdge.get(pointToStr(item.position)) ||
+                        posToNormalEdge.get(pointToStr(item.position))?.id.toString() ||
                             normalEdges
                                 .find((edge) => squaredDist(scale(edge.position), scale(item.position)) < 5 ** 2)
                                 ?.id.toString();
@@ -1273,7 +1299,7 @@ class DiagramService {
                             displayName: item.displayName.replace(/([/,:;-])/g, '$1\u200b'),
                             height: height,
                             width: width,
-                            graph: idToGraphNodes.get(item.id),
+                            graph: idToOwnGraphNode.get(item.id),
                             acc: uniprotId,
                             html,
                             isFadeOut,
@@ -1472,17 +1498,11 @@ class DiagramService {
         return undefined;
     }
     getEdgeId(source, connector, target, edgeIds) {
-        let edgeId = `${source.id} --${this.edgeTypeToStr.get(connector.type)} ${target.id}`;
-        if (edgeIds.has(edgeId)) {
-            let count = edgeIds.get(edgeId);
-            edgeIds.set(edgeId, count++);
-            edgeId += ` (${count})`;
-            console.warn('Conflicting edge id: ', edgeId);
-        }
-        else {
-            edgeIds.set(edgeId, 0);
-        }
-        return edgeId;
+        const edgeId = `${source.id} --${this.edgeTypeToStr.get(connector.type)} ${target.id}`;
+        const unique = uniqueEdgeId(edgeId, edgeIds);
+        if (unique !== edgeId)
+            console.warn('Conflicting edge id: ', unique);
+        return unique;
     }
     addEdgeInfo(edge, points, direction, stop) {
         const stopPos = posToStr(edge, stop);
@@ -1683,6 +1703,11 @@ function avoidOverlap(definitions) {
     const layout = nodes.layout({
         name: 'fcose',
         nodeRepulsion: 15,
+        // Only the labels are laid out here, so gravity pulled them towards one
+        // another: in Cell Cycle Checkpoints, as the unit tests draw it, two moved
+        // over 1000px from their sub-pathways (issue #14). Overlapping labels are
+        // still pushed apart.
+        gravity: 0,
         animate: false,
         fit: true,
         packComponents: false,
