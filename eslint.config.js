@@ -84,9 +84,9 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      // Migrated in full with ng generate @angular/core:inject-migration, so
-      // any new constructor injection is a step backwards.
-      '@angular-eslint/prefer-inject': 'warn',
+      // Migrated in full with ng generate @angular/core:inject-migration (spec
+      // 001 T003), so any new constructor injection is a step backwards.
+      '@angular-eslint/prefer-inject': 'error',
       // Migrated in full (signal inputs, outputs and queries, by Angular's own
       // migrations, and every signal field readonly), so a decorator input or
       // a reassignable signal field is new.

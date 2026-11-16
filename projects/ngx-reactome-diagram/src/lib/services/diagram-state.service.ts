@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from 'rxjs';
 import { isArray } from 'lodash';
@@ -25,6 +25,8 @@ type ObservableState = { [K in keyof State as `${K & string}$`]: Observable<Stat
   providedIn: 'root',
 })
 export class DiagramStateService {
+  private router = inject(Router);
+
   private ignore = false;
   blockRouterChange = false;
 
@@ -52,10 +54,9 @@ export class DiagramStateService {
     {} as ObservableState
   );
 
-  constructor(
-    route: ActivatedRoute,
-    private router: Router
-  ) {
+  constructor() {
+    const route = inject(ActivatedRoute);
+
     route.queryParamMap.subscribe((params) => {
       if (this.ignore) return;
       let change = false;

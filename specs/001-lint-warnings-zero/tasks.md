@@ -36,12 +36,17 @@ Paths are under `projects/` unless they start with a file at the root.
       what runs; the handle's `type="button"` changes nothing outside a form.
       Seen failing: `main`'s three files, linted under the promoted rules,
       gave six errors (one per warning) and `check:lint` failed.
-- [ ] T003 [US1] `@angular-eslint/prefer-inject` (8): `DiagramComponent` (4),
+- [x] T003 [US1] `@angular-eslint/prefer-inject` (8): `DiagramComponent` (4),
       `DiagramService` (2), `DiagramStateService` (2), by Angular's
       `inject-migration`; then promote. The services' constructors take no
       arguments afterwards: a consumer constructing one with `new` (none known)
       would change, said in the pull request. Touches `diagram.service.ts`,
-      which `dev_curator` has changed. 325 → 317.
+      which `dev_curator` has changed. 325 → 316 (#TBD): one more than
+      planned, the configuration's `any` parameter, now read in the
+      constructor straight from `inject` rather than kept in a private field.
+      The public `dark` and `dialog` stay public. `dev_curator`'s changes to
+      `diagram.service.ts` do not touch its constructor. Seen failing: `main`'s
+      three files gave eight `prefer-inject` errors and `check:lint` failed.
 - [ ] T004 [US1] The diagram component's inputs, queries and output, by
       Angular's migrations: `prefer-signals` (6: three `@ViewChild`, three
       `@Input`), `prefer-output-emitter-ref` (1, `reactomeEvents$`, through
