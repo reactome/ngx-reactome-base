@@ -41,7 +41,7 @@ Paths are under `projects/` unless they start with a file at the root.
       `inject-migration`; then promote. The services' constructors take no
       arguments afterwards: a consumer constructing one with `new` (none known)
       would change, said in the pull request. Touches `diagram.service.ts`,
-      which `dev_curator` has changed. 325 → 316 (#TBD): one more than
+      which `dev_curator` has changed. 325 → 316 (#29): one more than
       planned, the configuration's `any` parameter, now read in the
       constructor straight from `inject` rather than kept in a private field.
       The public `dark` and `dialog` stay public. `dev_curator`'s changes to
