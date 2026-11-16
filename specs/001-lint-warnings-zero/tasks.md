@@ -75,7 +75,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       parameters and their aliases, and keeps the fragment; **#10** deselecting
       the selected element clears `select`, once the event is handled and
       nothing else is selected (clicking another element deselects first)
-      (#TBD).
+      (#30).
 - [ ] T018 [Bugs] Selection in `diagram/diagram.component.ts`: **#1** data
       selectors quoted and escaped (`[acc="…"]`, `[reactomeId="…"]`; a number
       matched as a number); **#6** a click on an element with no graph data
