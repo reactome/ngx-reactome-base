@@ -40,6 +40,18 @@ export class DiagramStateService {
     analysisProfile: { value: null },
   };
 
+  // What each parameter is when the address does not name it: text, a
+  // boolean, null or an empty list, copied when used.
+  private readonly defaults = new Map<string, string | boolean | null | []>([
+    ['select', ''],
+    ['flag', []],
+    ['path', []],
+    ['flagInteractors', false],
+    ['overlay', ''],
+    ['analysis', null],
+    ['analysisProfile', null],
+  ]);
+
   private _state$ = new BehaviorSubject<State>(this.state);
   public state$ = this._state$.asObservable();
   public onChange: ObservableState = Object.keys(this.state).reduce(
@@ -76,6 +88,14 @@ export class DiagramStateService {
           // Changed when it differs from before. This was inverted, so a state
           // read from the address reached no one and an unchanged one did.
           change = change || formerValue?.toString() !== param.value?.toString();
+        } else if (!this.blockRouterChange && this.defaults.has(mainToken)) {
+          const initial = this.defaults.get(mainToken);
+          if (String(param.value) === String(initial)) continue;
+          // Gone from the address, so back to its default: it was kept, and a
+          // selection or flag removed from the address stayed. Not while the
+          // router is blocked, when the address is not where the state lives.
+          param.value = Array.isArray(initial) ? [] : initial;
+          change = true;
         }
       }
       if (change) this._state$.next(this.state);
@@ -102,19 +122,25 @@ export class DiagramStateService {
     }
   }
 
+  // Merged into the host's address: replacing the query string and dropping
+  // the fragment took the host's own parameters with them. A parameter with no
+  // value is removed, under its aliases too, or an alias left behind would
+  // bring the value back on the next read.
   onPropertyModified() {
+    const queryParams: Record<string, unknown> = {};
+    for (const [token, param] of Object.entries(this.state)) {
+      const set = param.value && param.value.length !== 0;
+      for (const alias of param.otherTokens ?? []) queryParams[alias] = null;
+      queryParams[token] = !set
+        ? null
+        : Array.isArray(param.value)
+          ? param.value.join(',')
+          : param.value;
+    }
     return this.router.navigate([], {
-      queryParams: {
-        ...Object.entries(this.state)
-          .filter(([_token, param]) => param.value && param.value.length !== 0)
-          .reduce(
-            (acc, [token, param]) => ({
-              ...acc,
-              [token]: Array.isArray(param.value) ? param.value.join(',') : param.value,
-            }),
-            {}
-          ),
-      },
+      queryParams,
+      queryParamsHandling: 'merge',
+      preserveFragment: true,
     });
   }
 }

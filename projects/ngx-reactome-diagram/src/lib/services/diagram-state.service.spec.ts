@@ -54,4 +54,38 @@ describe('DiagramStateService', () => {
     // Once on subscribing, and not again.
     expect(emitted).toBe(1);
   });
+
+  // Issue #14, bug 5.
+  it('resets a state the address no longer has', async () => {
+    const selected: unknown[] = [];
+    service.onChange.select$.subscribe((select) => selected.push(select));
+    await router.navigateByUrl('/?select=R-HSA-1');
+    expect(service.get('select')).toBe('R-HSA-1');
+    await router.navigateByUrl('/');
+    expect(service.get('select')).toBe('');
+    expect(selected.at(-1)).toBe('');
+  });
+
+  it("keeps the host's other parameters and its fragment when it writes", async () => {
+    await router.navigateByUrl('/?host=1#part');
+    service.set('select', 'R-HSA-2');
+    await vi.waitFor(() => expect(router.url).toContain('select=R-HSA-2'));
+    expect(router.url).toBe('/?host=1&select=R-HSA-2#part');
+  });
+
+  it('removes a parameter it clears under any of its names, and only those', async () => {
+    await router.navigateByUrl('/?FLG=PKM&host=1');
+    expect(service.get('flag')).toEqual(['PKM']);
+    service.set('flag', []);
+    await vi.waitFor(() => expect(router.url).not.toContain('FLG'));
+    expect(router.url).toContain('host=1');
+    expect(service.get('flag')).toEqual([]);
+  });
+
+  it('resets nothing from the address while the router is blocked', async () => {
+    service.blockRouterChange = true;
+    service.set('select', 'R-HSA-2');
+    await router.navigateByUrl('/?host=1');
+    expect(service.get('select')).toBe('R-HSA-2');
+  });
 });
