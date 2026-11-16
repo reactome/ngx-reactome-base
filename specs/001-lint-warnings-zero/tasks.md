@@ -87,12 +87,15 @@ files they touch, one pull request each; they run before T009–T011 (see
       state selection fits the view, not the compare pane (#31). The library's
       other built selectors take values from the diagram's own data, not the
       address: they are named in T010 and T011.
-- [ ] T019 [Bugs] How flagging looks, `diagram/diagram.component.ts` (and
+- [x] T019 [Bugs] How flagging looks, `diagram/diagram.component.ts` (and
       the style library where the classes live): **#2** clearing a flag removes
       the lines' inline underlay and leaves the sub-pathway bands as they were;
       **#12** trivial molecules kept visible by `.trivial.always-visible`, not
       inline opacity; **#13** flagging a reaction type from the legend flags its
-      lines too.
+      lines too (#32). The bands were hidden on clearing because the zoom
+      handler ran inside `cy.batch()`, reading their colour before the restyle
+      (seen by moving the call back in: the test fails). Only the component
+      changed; the style library already had the rules.
 - [ ] T020 [Bugs] The component's lifecycle, `diagram/diagram.component.ts` and
       `.html`: **#3** `loadDiagram` drops a response superseded by a later
       request and reports a failed one; **#11** the cytoscape cores (main,
