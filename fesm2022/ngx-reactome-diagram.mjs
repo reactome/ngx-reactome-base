@@ -1854,6 +1854,18 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.2.26", ngImpo
                 }]
         }], ctorParameters: () => [] });
 
+/**
+ * The elements whose data `field` (a path such as `graph.stId` allowed) is
+ * exactly `value`, compared in code rather than through a selector. A value
+ * written into a selector unquoted (`[acc=PKM]`) is an invalid selector, which
+ * cytoscape treats as matching everything, so `?flag=PKM` flagged the whole
+ * diagram; and cytoscape does not unescape a quoted one, so no quoting is safe
+ * for every value (issue #14, bug 1). Use this for any value from outside.
+ */
+function withData(cy, field, value) {
+    return cy.elements().filter((element) => element.data(field) === value);
+}
+
 let DiagramComponent = class DiagramComponent {
     constructor() {
         this.diagram = inject(DiagramService);
@@ -1866,7 +1878,11 @@ let DiagramComponent = class DiagramComponent {
         this.isDataFromPsicquicLoading = false;
         this._reactomeEvents$ = new Subject();
         this._ignore = false;
-        this.reactomeEvents$ = this._reactomeEvents$.asObservable().pipe(distinctUntilChanged((prev, current) => prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId), filter(() => !this._ignore), share());
+        this.reactomeEvents$ = this._reactomeEvents$.asObservable().pipe(
+        // The component's own events are dropped before the repeats: the other
+        // way round, one it made counted as the last, and the user's same event
+        // after it was dropped as a repeat (issue #14, bug 8).
+        filter(() => !this._ignore), distinctUntilChanged((prev, current) => prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId), share());
         this.diagramId = '';
         // Flag to control if dbId should be used as primary ids
         // This should be useful in the context of the curator tool since
@@ -1973,13 +1989,16 @@ let DiagramComponent = class DiagramComponent {
             if (e.detail.type === 'reaction') {
                 elements = e.detail.cy.elements('node.reaction:selected');
             }
-            let reactomeIds = this.usedbId
+            const ids = this.usedbId
                 ? elements.map((el) => el.data('reactomeId'))
                 : elements.map((el) => el.data('graph.stId'));
-            // Make sure reactomeIds don't contain duplicated element
-            const uniqueSet = new Set(reactomeIds);
-            reactomeIds = Array.from(uniqueSet);
-            this.state.set('select', reactomeIds[0] || '');
+            // An element with no graph data (the faded normal pathway of a disease
+            // diagram) has no id, and leaves the selection as it was: it set it to
+            // '', which unselected everything (issue #14, bug 6).
+            const reactomeIds = Array.from(new Set(ids)).filter((id) => id !== undefined && id !== null && id !== '');
+            if (reactomeIds.length === 0)
+                return;
+            this.state.set('select', reactomeIds[0]);
         });
         // Deselecting the selected element clears the selection. It was kept, so
         // selecting the same element again changed nothing, and the next redraw from
@@ -2098,7 +2117,9 @@ let DiagramComponent = class DiagramComponent {
         this.reactomeStyle.bindToCytoscape(this.cy);
         this.reactomeStyle.clearCache();
         this.loadCompare(elements, container);
-        this.stateToDiagram();
+        // As the state's own changes are shown: zoomed to, and not sent to the
+        // host as if clicked (issue #14, bug 7).
+        this.avoidSideEffect(() => this.stateToDiagram());
         // Fire an event after this network is displayed.
         const event = new CustomEvent('network_displayed');
         container.dispatchEvent(event);
@@ -2186,7 +2207,7 @@ let DiagramComponent = class DiagramComponent {
                 if (token.trim().length === 0)
                     return;
                 if (token.startsWith('R-')) {
-                    elements = elements.or(`[graph.stId="${token}"]`);
+                    elements = elements.or(withData(cy, 'graph.stId', token));
                 }
                 else {
                     const matchArray = token.match(this.classRegex);
@@ -2206,16 +2227,17 @@ let DiagramComponent = class DiagramComponent {
                         }
                     }
                     else if (this.usedbId) {
-                        // It is possible dbId is encoded in string
-                        elements = elements.or(`[reactomeId=${token}]`);
+                        // A dbId may come as text; it is compared as the number it is.
+                        const dbId = /^\d+$/.test(token) ? Number(token) : token;
+                        elements = elements.or(withData(cy, 'reactomeId', dbId));
                     }
                     else {
-                        elements = elements.or(`[acc=${token}]`);
+                        elements = elements.or(withData(cy, 'acc', token));
                     }
                 }
             }
             else {
-                elements = elements.or(`[acc=${token}]`).or(`[reactomeId=${token}]`);
+                elements = elements.or(withData(cy, 'acc', token)).or(withData(cy, 'reactomeId', token));
             }
         });
         return elements;
@@ -2233,7 +2255,9 @@ let DiagramComponent = class DiagramComponent {
         if ('connectedNodes' in selected) {
             selected = selected.add(selected.connectedNodes());
         }
-        if (this._ignore) {
+        // Only the view is fitted; the compare pane follows it (syncViewports).
+        // Fitting the pane too fitted the view to the pane (issue #14, bug 9).
+        if (this._ignore && cy === this.cy) {
             cy.animate({
                 fit: {
                     eles: selected,
