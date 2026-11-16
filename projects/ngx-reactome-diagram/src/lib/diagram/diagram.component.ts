@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { DiagramService } from '../services/diagram.service';
 import cytoscape from 'cytoscape';
-// @ts-ignore
 import {
   interactivityOf,
   ReactomeEvent,
@@ -487,9 +486,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   };
 
   updateStyle() {
-    this.cy ? setTimeout(() => this.reactomeStyle?.update(this.cy), 5) : null;
-    this.cyCompare ? setTimeout(() => this.reactomeStyle?.update(this.cyCompare), 5) : null;
-    this.legend ? setTimeout(() => this.reactomeStyle?.update(this.legend), 5) : null;
+    if (this.cy) setTimeout(() => this.reactomeStyle?.update(this.cy), 5);
+    if (this.cyCompare) setTimeout(() => this.reactomeStyle?.update(this.cyCompare), 5);
+    if (this.legend) setTimeout(() => this.reactomeStyle?.update(this.legend), 5);
   }
 
   compareDragging = false;
@@ -605,9 +604,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       if (e.detail.type === 'reaction') {
         elements = e.detail.cy.elements('node.reaction:selected');
       }
-      let reactomeIds = [];
-      if (this.usedbId) reactomeIds = elements.map((el) => el.data('reactomeId'));
-      else reactomeIds = elements.map((el) => el.data('graph.stId'));
+      let reactomeIds = this.usedbId
+        ? elements.map((el) => el.data('reactomeId'))
+        : elements.map((el) => el.data('graph.stId'));
       // Make sure reactomeIds don't contain duplicated element
       const uniqueSet = new Set(reactomeIds);
       reactomeIds = Array.from(uniqueSet);

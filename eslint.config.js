@@ -84,8 +84,6 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unused-expressions': 'warn',
-      'prefer-const': 'warn',
       // Migrated in full with ng generate @angular/core:inject-migration, so
       // any new constructor injection is a step backwards.
       '@angular-eslint/prefer-inject': 'warn',
@@ -121,7 +119,6 @@ module.exports = tseslint.config(
       // All twelve removed, so a new empty hook is a new mistake.
       '@angular-eslint/no-empty-lifecycle-method': 'error',
       '@typescript-eslint/ban-ts-comment': 'warn',
-      'no-useless-assignment': 'warn',
       // Clean, and warned only because they were never promoted: the ratchet
       // held them at zero, but a new one showed in an editor and in the
       // pre-commit lint as a warning, which is read as allowed. Errors now
@@ -141,6 +138,12 @@ module.exports = tseslint.config(
       '@angular-eslint/no-output-rename': 'error',
       'no-unused-vars': 'error',
       'no-empty-pattern': 'error',
+      // The last ones went in spec 001 T002: a ternary used as a statement for
+      // its side effect (the diagram's updateStyle), a value assigned and then
+      // overwritten unread, a let never reassigned.
+      '@typescript-eslint/no-unused-expressions': 'error',
+      'no-useless-assignment': 'error',
+      'prefer-const': 'error',
     },
   },
   {
@@ -157,9 +160,10 @@ module.exports = tseslint.config(
       '@angular-eslint/template/no-negated-async': 'error',
       // Clean (no *ngIf, *ngFor or *ngSwitch left), so an error (spec 001 T001).
       '@angular-eslint/template/prefer-control-flow': 'error',
-      // A <button> with no type submits its form. Most here are outside forms,
-      // where it does nothing, so warned and held rather than required.
-      '@angular-eslint/template/button-has-type': 'warn',
+      // A <button> with no type submits the form it is in. The one here (the
+      // legend's handle) is in none, so saying `type="button"` changed nothing;
+      // a new one has to say what it does (spec 001 T002).
+      '@angular-eslint/template/button-has-type': 'error',
     },
   },
   {

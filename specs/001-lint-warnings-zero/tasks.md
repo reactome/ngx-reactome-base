@@ -24,14 +24,18 @@ Paths are under `projects/` unless they start with a file at the root.
       reported by itself on either configuration, being off for every file
       (only typescript-eslint's, already an error, caught the `.ts` one), as
       the plan said.
-- [ ] T002 [US1] The diagram library's small rules, then promote the four:
+- [x] T002 [US1] The diagram library's small rules, then promote the four:
       `prefer-const` (1, `ngx-reactome-diagram/src/lib/services/roundness.ts`),
       `no-useless-assignment` (1) and `no-unused-expressions` (3, `updateStyle`'s
       ternaries) in `ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`,
       `template/button-has-type` (1, the legend's handle, not in a form, in
       `diagram.component.html`). With them the `@ts-ignore` on the component's
       import of the style library (1 of `ban-ts-comment`'s 22), which suppresses
-      nothing (measured). 332 → 325.
+      nothing (measured). 332 → 325 (#28). `updateStyle`'s ternaries became
+      `if`s and the select handler's ids one conditional, neither changing
+      what runs; the handle's `type="button"` changes nothing outside a form.
+      Seen failing: `main`'s three files, linted under the promoted rules,
+      gave six errors (one per warning) and `check:lint` failed.
 - [ ] T003 [US1] `@angular-eslint/prefer-inject` (8): `DiagramComponent` (4),
       `DiagramService` (2), `DiagramStateService` (2), by Angular's
       `inject-migration`; then promote. The services' constructors take no
@@ -131,7 +135,8 @@ lines in the style library.
    and `element: NodeSingular`; the handlers send a number and, on an edge's
    hover, a collection. Correct the exported type to what is sent (a change
    WebsiteAngular may need to follow), or keep the type and convert what is
-   sent (a behaviour change)?
+   sent (a behaviour change)? Decided (16 Nov): correct the type to what is
+   sent.
 
 ## Bugs found on the way
 
@@ -144,17 +149,19 @@ named, and fixed only where it changes nothing a user sees.
   rises: every conflict after the first is named " (1)" again, and cytoscape
   refuses a second element with an id, so such a diagram would fail to draw.
   The same code in WebsiteAngular was found in its T017 and kept, none being
-  known and drawing it being a change to what readers see. To decide; seen in
-  T014.
+  known and drawing it being a change to what readers see. Decided (16 Nov):
+  fixed, each repeat taking the next number and the first two keeping
+  today's ids, with a test seen failing on the old code; in T014.
 - **The exported event type says text where a number is sent**
   (`ngx-reactome-cytoscape-style/src/lib/model/reactome-event.model.ts`): see
-  open question 2. Seen in T009.
+  open question 2. Decided (16 Nov): the type follows what is sent
+  (`reactomeId` a number, `element` a collection); in T009 and T010.
 - **A stored theme that is not JSON stops the diagram's theme service**
   (`ngx-reactome-diagram/src/lib/services/dark.service.ts`): the stored value
   is `JSON.parse`d unguarded, so anything else in `is-dark` throws while the
   service is created. WebsiteAngular's own service now reads only `true` as
-  dark (its T013). To decide in T005: reading anything but `true` or `false` as
-  "not set" changes nothing the library itself writes.
+  dark (its T013). Decided (16 Nov): a stored value that is not valid JSON
+  reads as light (`false`), with a test seen failing on the old code; in T005.
 
 ## Silenced lines
 
