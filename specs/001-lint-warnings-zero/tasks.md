@@ -109,7 +109,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       `comparing` is set; `legend2state` ignores the legend until a diagram is
       drawn, as it did before apart from the error, and `diagram2legend` the
       diagram until the legend is made; `CdkDragHandle` imported, so only the
-      handle drags the legend (#TBD).
+      handle drags the legend (#33).
 - [ ] T021 [Bugs] `services/diagram.service.ts`: **#4** a graph node with
       one child keeps its own stId (a homomultimer is not its monomer);
       `getEdgeId`'s counter advances, each repeat taking the next number and
