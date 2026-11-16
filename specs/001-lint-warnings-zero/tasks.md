@@ -110,7 +110,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       drawn, as it did before apart from the error, and `diagram2legend` the
       diagram until the legend is made; `CdkDragHandle` imported, so only the
       handle drags the legend (#33).
-- [ ] T021 [Bugs] `services/diagram.service.ts`: **#4** a graph node with
+- [x] T021 [Bugs] `services/diagram.service.ts`: **#4** a graph node with
       one child keeps its own stId (a homomultimer is not its monomer);
       `getEdgeId`'s counter advances, each repeat taking the next number and
       the first two keeping today's ids (as WebsiteAngular's `uniqueEdgeId`;
@@ -120,7 +120,18 @@ files they touch, one pull request each; they run before T009–T011 (see
       (before and after shown in the pull request); `DIAGRAM_CONFIG_TOKEN`
       documented in the library's README. `dev_curator` changes this file's
       element-building code: the pull request keeps its hunks small and lists
-      them.
+      them. Done (#TBD): an entity's `graph` is its own graph node (TP53
+      Tetramer selects as R-HSA-3209194, not TP53's R-HSA-69488), and its
+      `acc` is still its only child's accession, so flagging P04637 flags the
+      tetramer as before (see "Bugs found on the way"); `uniqueEdgeId` in
+      `services/edge-id.ts`; the bottom edge from `prop.y` changes the outer
+      corner radius of three of the fixtures' eight compartments, by 2px; a
+      reaction's `replacement` is its faded counterpart's id, as an entity's
+      is, where it was the raw Edge, which the compare pane could not find;
+      `avoidOverlap` runs without gravity, so a label that overlaps none stays
+      at its sub-pathway (two of Cell Cycle Checkpoints' three had moved over
+      1000px, as the tests draw it) and overlapping labels are still pushed
+      apart. 316 → 315: the counter's non-null assertion went with it.
 - [ ] T022 [Bugs] `services/dark.service.ts`, **#15**: a stored theme that is
       not valid JSON reads as light (`false`) instead of stopping the service
       (moved here from T005). Whether it stops toggling `body.dark` on the host
@@ -184,7 +195,9 @@ lines in the style library.
       number or an object with a `reactomeId`, read as what the diagram service
       writes (measured on the fixtures); the select subscription's ids as the
       readers give them. 100 → 54. `[reactionId=${replacedBy}]` goes through
-      `withData` once `replacedBy` is typed (found in T018).
+      `withData` once `replacedBy` is typed (found in T018). Since T021 the
+      service writes no object there (a reaction's `replacement` was a raw
+      Edge), so the object branch is no longer reached.
 - [ ] T012 [US2] Promote `no-explicit-any` and the five `no-unsafe-*` rules
       to `error` (their counts are zero). Seen failing: an `any` planted in a
       service. 54 warnings left, all `no-non-null-assertion`.
@@ -195,13 +208,14 @@ lines in the style library.
       `interactivity.ts` (9: the graph's container (3), the video layer, a
       video's sources, the zoom curve's ends (4)),
       `drawer/image-builder.ts` (2), `style.ts` (1). 54 → 42.
-- [ ] T014 [US3] `no-non-null-assertion` in the diagram's services (25):
-      `diagram.service.ts` (23: map look-ups while building elements; a part of
+- [ ] T014 [US3] `no-non-null-assertion` in the diagram's services (24):
+      `diagram.service.ts` (22: map look-ups while building elements; a part of
       the diagram that is not there stops the drawing with an error naming it,
       as it stopped it with a `TypeError` before), `diagram-state.service.ts`
-      (2). The edge-id counter is T021's fix, not this task's. Touches
+      (2). The edge-id counter's assertion went with T021's fix, so this
+      phase's counts are one lower than written. Touches
       `diagram.service.ts`, which `dev_curator` has changed; if
-      the 23 make too large a diff against it, split by method. 42 → 17.
+      the 22 make too large a diff against it, split by method. 42 → 17.
 - [ ] T015 [US3] `no-non-null-assertion` in the diagram component (17: the
       view children's elements (7) and the cytoscape instances (10), mostly in
       the compare view), then promote the rule. 17 → 0.
@@ -252,6 +266,7 @@ named, and fixed only where it changes nothing a user sees.
   known and drawing it being a change to what readers see. Decided (16 Nov):
   fixed, each repeat taking the next number and the first two keeping
   today's ids, with a test seen failing on the old code; in T021 (issue #14).
+  Fixed in T021 (#TBD): a third connector with the same ends is now " (2)".
 - **The exported event type says text where a number is sent**
   (`ngx-reactome-cytoscape-style/src/lib/model/reactome-event.model.ts`): see
   open question 2. Decided (16 Nov): the type follows what is sent
@@ -281,6 +296,22 @@ named, and fixed only where it changes nothing a user sees.
   (`diagram.component.ts`, `legend2state`). It threw before T020, and now is
   ignored, which is what a user saw before. To decide: whether it should set
   the flag instead, to be drawn when the diagram arrives. Found in T020.
+- **A homomultimer still carries its monomer's accession**
+  (`ngx-reactome-diagram/src/lib/services/diagram.service.ts`, the entity
+  nodes' `acc`). T021 gave it its own stId (bug 4), but kept `acc` as its only
+  child's (TP53 Tetramer's is P04637), so `?flag=P04637` flags the tetramer,
+  as before. Its own graph node has no accession, so taking it from there
+  would stop that. The monomer's stId, though, no longer finds the tetramer
+  (`?select=R-HSA-69488` selects only TP53 where it is drawn on its own),
+  being bug 4 itself. To decide: whether an accession, or a monomer's stId,
+  should find the multimers of it. Found in T021.
+- **A reaction's counterpart in the compare pane is found without its lines**
+  (`diagram.component.ts`, `compareBackgroundSync`). Since T021 a reaction's
+  `replacement` is its faded counterpart's id, so hovering or selecting it
+  marks that reaction in the other pane, where it marked nothing. A
+  connector's `replacement` is a number, which also brings the reaction's
+  lines (`[reactionId=…]`); a reaction's id as text does not. To decide:
+  whether the counterpart's lines are marked too. Found in T021.
 
 ## Silenced lines
 

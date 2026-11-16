@@ -77,6 +77,37 @@ function drawn<T extends cytoscape.ElementDefinition>(
 }
 
 const all = (e: cytoscape.ElementsDefinition) => [...e.nodes, ...e.edges];
+const scaled = (p: { x: number; y: number }) => ({ x: p.x * 2, y: p.y * 2 });
+const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  Math.hypot(a.x - b.x, a.y - b.y);
+
+/** The graph's entities, as the drawing reads them. */
+type GraphEntity = { stId: string; diagramIds?: number[]; children?: number[] };
+
+/**
+ * Where each sub-pathway's label starts, before labels are laid out apart: the
+ * reaction of the sub-pathway nearest the average of them all.
+ */
+function labelAnchors(layout: typeof checkpoints, graph: typeof checkpointsGraph) {
+  const reactions = new Map(layout.edges.map((r) => [r.reactomeId, scaled(r.position)]));
+  const events = new Map(graph.subpathways.map((s) => [s.dbId, s.events]));
+  return new Map(
+    layout.shadows.map((shadow) => {
+      const points = (events.get(shadow.reactomeId) ?? []).flatMap((id) => {
+        const p = reactions.get(id);
+        return p ? [p] : [];
+      });
+      const average = {
+        x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+        y: points.reduce((sum, p) => sum + p.y, 0) / points.length,
+      };
+      const anchor = points.reduce((best, p) =>
+        distance(p, average) < distance(best, average) ? p : best
+      );
+      return [String(shadow.id), anchor];
+    })
+  );
+}
 const classesOf = (d: cytoscape.ElementDefinition) =>
   typeof d.classes === 'string' ? d.classes.split(' ') : (d.classes ?? []);
 
@@ -152,6 +183,40 @@ describe('DiagramService, drawing real pathways', () => {
         }
       });
 
+      it('gives every entity the graph node that names it (issue #14, bug 4)', async () => {
+        const byId = new Map(
+          (await elementsOf(id, layout, graph)).nodes.map((n) => [n.data.id, n])
+        );
+        const wrong: string[] = [];
+        for (const entity of graph.nodes as GraphEntity[]) {
+          for (const diagramId of entity.diagramIds ?? []) {
+            const stId = (drawn(byId, diagramId).data['graph'] as GraphEntity | undefined)?.stId;
+            if (stId !== entity.stId) wrong.push(`${diagramId}: ${stId}, not ${entity.stId}`);
+          }
+        }
+        expect(wrong).toEqual([]);
+      });
+
+      it("rounds a compartment's corners by its narrowest margin (issue #14)", async () => {
+        const byId = new Map(
+          (await elementsOf(id, layout, graph)).nodes.map((n) => [n.data.id, n])
+        );
+        const edges = (p: { x: number; y: number; width: number; height: number }) => [
+          p.x * 2,
+          p.y * 2,
+          (p.x + p.width) * 2,
+          (p.y + p.height) * 2,
+        ];
+        for (const compartment of layout.compartments) {
+          if (!('insets' in compartment) || !compartment.insets) continue;
+          const outer = edges(compartment.prop);
+          const inner = edges(compartment.insets);
+          const margin = Math.min(...outer.map((o, i) => Math.abs(o - inner[i])));
+          const node = byId.get(`${compartment.id}-outer`);
+          expect(node?.data['radius'], compartment.displayName).toBe(10 + Math.min(margin, 100));
+        }
+      });
+
       it('draws every reaction as a node of its own', async () => {
         const nodes = new Set((await elementsOf(id, layout, graph)).nodes.map((n) => n.data.id));
         const missing = layout.edges.map((r) => String(r.id)).filter((r) => !nodes.has(r));
@@ -203,6 +268,99 @@ describe('DiagramService, drawing real pathways', () => {
     }
     // Some of what is faded has the disease's version drawn in its place.
     expect(replaced.length, 'faded elements that have a replacement').toBeGreaterThan(0);
+  });
+
+  it("selects a homomultimer as itself, keeping its monomer's accession (issue #14, bug 4)", async () => {
+    const elements = await elementsOf('R-HSA-69620', checkpoints, checkpointsGraph);
+    const byId = new Map(elements.nodes.map((n) => [n.data.id, n]));
+    const tetramer = (checkpointsGraph.nodes as GraphEntity[]).find(
+      (n) => n.stId === 'R-HSA-3209194'
+    );
+    expect(tetramer?.children, 'TP53 Tetramer has one child, TP53').toEqual([69488]);
+    expect(tetramer?.diagramIds?.length, 'TP53 Tetramer is drawn').toBeGreaterThan(0);
+    for (const diagramId of tetramer?.diagramIds ?? []) {
+      const node = drawn(byId, diagramId);
+      expect((node.data['graph'] as GraphEntity).stId).toBe('R-HSA-3209194');
+      // Flagging P04637 flags the tetramer, as it did.
+      expect(node.data['acc']).toBe('P04637');
+    }
+  });
+
+  it('numbers each repeat of a line, so a third with the same ends has an id of its own', async () => {
+    const layout = structuredClone(therapeutics);
+    const node = layout.nodes.find((n) => n.connectors.length > 0);
+    if (!node) throw new Error('the pathway has no connectors');
+    const connectors: unknown[] = node.connectors;
+    connectors.push(structuredClone(node.connectors[0]), structuredClone(node.connectors[0]));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const ids = (await elementsOf('R-HSA-9679191', layout, therapeuticsGraph)).edges.map(
+        (e) => e.data.id
+      );
+      expect(ids.filter((x, i) => ids.indexOf(x) !== i)).toEqual([]);
+      const third = ids.filter((x) => x?.endsWith(' (2)'));
+      expect(third.length).toBe(1);
+      const first = third[0]?.slice(0, -' (2)'.length);
+      expect(ids).toEqual(expect.arrayContaining([first, `${first} (1)`]));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("names a reaction's faded counterpart by its id, as an entity's is (issue #14)", async () => {
+    const elements = await elementsOf('R-HSA-2206292', mpsVII, mpsVIIGraph);
+    const byId = new Map(elements.nodes.map((n) => [n.data.id, n]));
+    const named: string[] = [];
+    for (const reaction of mpsVII.edges) {
+      const replacement: unknown = drawn(byId, reaction.id).data['replacement'];
+      if (replacement === undefined) continue;
+      if (typeof replacement !== 'string') {
+        throw new Error(`the replacement of ${reaction.id} is a ${typeof replacement}, not an id`);
+      }
+      expect(byId.has(replacement), `${replacement} is drawn`).toBe(true);
+      named.push(`${reaction.id} -> ${replacement}`);
+    }
+    expect(named.length, 'reactions drawn over a faded one').toBeGreaterThan(0);
+  });
+
+  it('keeps each sub-pathway label by its sub-pathway (issue #14)', async () => {
+    const elements = await elementsOf('R-HSA-69620', checkpoints, checkpointsGraph);
+    const anchors = labelAnchors(checkpoints, checkpointsGraph);
+    const labels = elements.nodes.filter((n) => classesOf(n).includes('Shadow'));
+    expect(labels.length).toBe(anchors.size);
+    // None of these labels overlaps another, so none moves.
+    const moved = labels.map((n): [string, number] => [
+      String(n.data['displayName']),
+      Math.round(
+        distance(
+          n.position ?? { x: NaN, y: NaN },
+          anchors.get(n.data.id ?? '') ?? { x: NaN, y: NaN }
+        )
+      ),
+    ]);
+    expect(moved).toEqual(labels.map((n): [string, number] => [String(n.data['displayName']), 0]));
+  });
+
+  it('still lays out apart sub-pathway labels that would overlap', async () => {
+    // Every sub-pathway given the same reactions: their labels start in one place.
+    const graph = structuredClone(checkpointsGraph);
+    const shown = checkpoints.shadows.map((s) => s.reactomeId);
+    const events = graph.subpathways.find((s) => s.dbId === shown[0])?.events ?? [];
+    for (const subpathway of graph.subpathways) {
+      if (shown.includes(subpathway.dbId)) subpathway.events = events;
+    }
+    const elements = await elementsOf('R-HSA-69620', checkpoints, graph);
+    const anchor = [...labelAnchors(checkpoints, graph).values()][0];
+    const places = elements.nodes
+      .filter((n) => classesOf(n).includes('Shadow'))
+      .map((n) => n.position ?? { x: NaN, y: NaN });
+    expect(places.length).toBe(3);
+    for (const [i, a] of places.entries()) {
+      expect(distance(a, anchor), 'near where they started').toBeLessThan(300);
+      for (const b of places.slice(i + 1)) {
+        expect(distance(a, b), 'apart from one another').toBeGreaterThan(100);
+      }
+    }
   });
 
   it('labels each sub-pathway once, placed apart from the others', async () => {

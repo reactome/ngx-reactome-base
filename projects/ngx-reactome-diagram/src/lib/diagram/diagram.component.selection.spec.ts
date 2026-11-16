@@ -134,7 +134,8 @@ describe('DiagramComponent, selecting', () => {
       container.addEventListener(ReactomeEventTypes.select, (e) =>
         component['_reactomeEvents$'].next(e as ReactomeEvent)
       );
-      state.set('select', 'R-HSA-69683');
+      // p-S15,S20-TP53 Tetramer, drawn once.
+      state.set('select', 'R-HSA-3222171');
 
       component.displayNetwork(elements);
 
@@ -167,7 +168,7 @@ describe('DiagramComponent, selecting', () => {
       const view = vi.spyOn(component.cy, 'animate');
       const pane = vi.spyOn(component.cyCompare, 'animate');
       component.avoidSideEffect(() =>
-        [component.cy, component.cyCompare].forEach((cy) => component.select('R-HSA-69683', cy))
+        [component.cy, component.cyCompare].forEach((cy) => component.select('R-HSA-3222171', cy))
       );
       expect(view).toHaveBeenCalledTimes(1);
       expect(pane).not.toHaveBeenCalled();
