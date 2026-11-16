@@ -109,6 +109,40 @@ describe('DiagramComponent, selecting', () => {
     });
   });
 
+  describe('an entity drawn only inside complexes (T025)', () => {
+    /** The stIds of what `select` selects. */
+    const selectedBy = (token: string, cy: cytoscape.Core) => {
+      component.select(token, cy);
+      return [
+        ...new Set(cy.$(':selected').map((element) => element.data('graph.stId') as unknown)),
+      ].sort();
+    };
+
+    it('selects, by the monomer, the complexes containing it', async () => {
+      const cy = await headless();
+      // TP53 (R-HSA-69488) is drawn only within TP53 Tetramer, itself within
+      // the MDM2 complex.
+      expect(cy.nodes().filter((node) => node.data('graph.stId') === 'R-HSA-69488').length).toBe(0);
+      expect(selectedBy('R-HSA-69488', cy)).toEqual(['R-HSA-3209194', 'R-HSA-6804885']);
+    });
+
+    it('flags, by the monomer, the complexes containing it', async () => {
+      const cy = await headless();
+      const flagged = component.getElements(['R-HSA-69488'], cy);
+      expect(
+        [...new Set(flagged.map((element) => element.data('graph.stId') as unknown))].sort()
+      ).toEqual(['R-HSA-3209194', 'R-HSA-6804885']);
+    });
+
+    it('selects a stId drawn on its own as before, not the complexes containing it', async () => {
+      const cy = await headless();
+      // p-T68-CHEK2 is drawn on its own, and also within its dimer.
+      expect(selectedBy('R-HSA-113825', cy)).toEqual(['R-HSA-113825']);
+      // So is the tetramer, within the MDM2 complex.
+      expect(selectedBy('R-HSA-3209194', cy)).toEqual(['R-HSA-3209194']);
+    });
+  });
+
   describe('bug 6: clicking an element with no graph data', () => {
     it('leaves the selection as it was', async () => {
       const cy = cytoscape({

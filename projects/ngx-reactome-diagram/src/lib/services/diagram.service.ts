@@ -247,6 +247,24 @@ export class DiagramService {
             (node.diagramIds ?? []).map((id): [number, GraphNode] => [id, node])
           )
         );
+        // Each drawn complex's or set's leaves, the entities at the bottom of
+        // its children: what a stId drawn only inside them is found by, as in
+        // WebsiteAngular's diagram (a monomer's stId finds its multimers).
+        const addLeaves = (node: GraphNode, leaves: Set<GraphNode>, seen: Set<number>) => {
+          if (seen.has(node.dbId)) return;
+          seen.add(node.dbId);
+          const children = (node.children ?? [])
+            .map((child) => dbIdToGraphNode.get(child))
+            .filter((child): child is GraphNode => child !== undefined);
+          if (children.length === 0) leaves.add(node);
+          children.forEach((child) => addLeaves(child, leaves, seen));
+        };
+        idToOwnGraphNode.forEach((node) => {
+          if (!node.children?.length) return;
+          const leaves = new Set<GraphNode>();
+          addLeaves(node, leaves, new Set());
+          node.leaves = [...leaves];
+        });
         const idToGraphEdges = new Map(graph.edges.map((edge) => [edge.dbId, edge]));
 
         const dbIdToGraphEdge = new Map<number, GraphEdge>(

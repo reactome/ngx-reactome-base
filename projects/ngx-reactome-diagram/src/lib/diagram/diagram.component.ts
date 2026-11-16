@@ -38,7 +38,7 @@ import { UntilDestroy } from '@ngneat/until-destroy';
 import { MatDialog } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
-import { withData } from './with-data';
+import { withData, withLeaf } from './with-data';
 
 /**
  * A diagram that could not be loaded: its id, and the HTTP status of the
@@ -345,7 +345,12 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
         // all objects will be selected since [acc=""] matches all elements without acc attribute.
         if (token.trim().length === 0) return;
         if (token.startsWith('R-')) {
-          elements = elements.or(withData(cy, 'graph.stId', token));
+          let own = withData(cy, 'graph.stId', token);
+          // Not drawn on its own: the drawn complexes containing it, as in
+          // WebsiteAngular's diagram. A monomer drawn only in its multimers
+          // found nothing once they had their own stIds (T021, issue #14 bug 4).
+          if (own.empty()) own = withLeaf(cy, token);
+          elements = elements.or(own);
         } else {
           const matchArray = token.match(this.classRegex);
           if (matchArray) {

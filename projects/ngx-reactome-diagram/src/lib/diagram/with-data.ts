@@ -15,3 +15,21 @@ export function withData(
 ): cytoscape.CollectionReturnValue {
   return cy.elements().filter((element) => element.data(field) === value);
 }
+
+/**
+ * The nodes whose graph leaves (`graph.leaves`, the entities at the bottom of
+ * a complex's or set's children) include the stId `stId`: the drawn complexes
+ * containing an entity, compared in code as `withData` is.
+ */
+export function withLeaf(cy: cytoscape.Core, stId: string): cytoscape.CollectionReturnValue {
+  return cy.nodes().filter((node) => {
+    const leaves: unknown = node.data('graph.leaves');
+    return (
+      Array.isArray(leaves) &&
+      leaves.some(
+        (leaf: unknown) =>
+          typeof leaf === 'object' && leaf !== null && 'stId' in leaf && leaf.stId === stId
+      )
+    );
+  });
+}

@@ -22,6 +22,11 @@ export interface Node extends Entity {
   identifier: string;
   parents: number[];
   children: number[];
+  /**
+   * A complex's or set's leaves, the entities at the bottom of its children
+   * (set by the diagram service).
+   */
+  leaves?: Node[];
   schemaClass: string;
   referenceType: string;
 }
