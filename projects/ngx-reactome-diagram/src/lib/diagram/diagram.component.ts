@@ -612,6 +612,25 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       this.state.set('select', reactomeIds[0] || '');
     });
 
+  // Deselecting the selected element clears the selection. It was kept, so
+  // selecting the same element again changed nothing, and the next redraw from
+  // the state brought the cleared selection back (issue #14, bug 10). Checked
+  // once the event is handled: clicking another element deselects this one
+  // first, and a redraw from the state deselects and reselects it.
+  diagramUnselect2state = this.reactomeEvents$
+    .pipe(
+      filter((e) => e.detail.cy !== this.legend && e.type === ReactomeEventTypes.unselect),
+      delay(0)
+    )
+    .subscribe((e) => {
+      if (e.detail.cy.elements(':selected').nonempty()) return;
+      const element: cytoscape.SingularElementArgument = e.detail.element;
+      const id: unknown = element.data(this.usedbId ? 'reactomeId' : 'graph.stId');
+      if (id !== undefined && String(id) === String(this.state.get('select'))) {
+        this.state.set('select', '');
+      }
+    });
+
   legend2state = this.reactomeEvents$
     .pipe(
       filter((e) => e.detail.cy === this.legend),

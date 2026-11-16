@@ -56,6 +56,70 @@ Paths are under `projects/` unless they start with a file at the root.
       fields become signals, a change for any code reading them directly. Waits
       on the curator tool's owner (open question 1). 317 → 309.
 
+## Phase 1b: Bugs from issue #14
+
+The deep review of the diagram library (issue #14) found fifteen bugs and a
+smaller list. The user decided on 16 Nov that they are fixed, curator-visible
+behaviour changes included where they are the fix; anything beyond the listed
+bug is recorded for a decision, not made. Each fix has a unit test seen failing
+on the code before it, its failing output in the pull request, which says
+"Part of #14"; the issue's boxes are ticked once it merges. Grouped by the
+files they touch, one pull request each; they run before T009–T011 (see
+"Dependencies"). Paths are under `projects/ngx-reactome-diagram/src/lib/`.
+
+- [x] T017 [Bugs] The URL state, `services/diagram-state.service.ts`, with
+      one handler in `diagram/diagram.component.ts`: **#5** a parameter
+      removed from the address now resets its state to the default (not while
+      the router is blocked, when the address is not the state's), and a write
+      merges into the host's query string, removing only the state's own
+      parameters and their aliases, and keeps the fragment; **#10** deselecting
+      the selected element clears `select`, once the event is handled and
+      nothing else is selected (clicking another element deselects first)
+      (#30).
+- [ ] T018 [Bugs] Selection in `diagram/diagram.component.ts`: **#1** data
+      selectors quoted and escaped (`[acc="…"]`, `[reactomeId="…"]`; a number
+      matched as a number); **#6** a click on an element with no graph data
+      leaves `select` as it is; **#7** `stateToDiagram()` in `displayNetwork`
+      inside `avoidSideEffect`; **#8** `filter(!_ignore)` before
+      `distinctUntilChanged`; **#9** in compare mode a state selection fits the
+      view, not the compare pane.
+- [ ] T019 [Bugs] How flagging looks, `diagram/diagram.component.ts` (and
+      the style library where the classes live): **#2** clearing a flag removes
+      the lines' inline underlay and leaves the sub-pathway bands as they were;
+      **#12** trivial molecules kept visible by `.trivial.always-visible`, not
+      inline opacity; **#13** flagging a reaction type from the legend flags its
+      lines too.
+- [ ] T020 [Bugs] The component's lifecycle, `diagram/diagram.component.ts`
+      and `.html`: **#3** `loadDiagram` drops a response superseded by a later
+      request and reports a failed one; **#11** the cytoscape cores (main,
+      compare, legend) and the `$dark` subscription torn down on destroy;
+      **#14** the component marked for check after `comparing = true`
+      (zoneless hosts); `legend2state` waits for a diagram before reading
+      `cy`; `CdkDragHandle` imported so only the handle drags the legend.
+- [ ] T021 [Bugs] `services/diagram.service.ts`: **#4** a graph node with
+      one child keeps its own stId (a homomultimer is not its monomer);
+      `getEdgeId`'s counter advances, each repeat taking the next number and
+      the first two keeping today's ids (as WebsiteAngular's `uniqueEdgeId`;
+      moved here from T014); a compartment's vertical radius from `prop.y`;
+      `replacement` stores what its readers expect, not a raw Edge;
+      `avoidOverlap`'s gravity keeps sub-pathway labels by their sub-pathways
+      (before and after shown in the pull request); `DIAGRAM_CONFIG_TOKEN`
+      documented in the library's README. `dev_curator` changes this file's
+      element-building code: the pull request keeps its hunks small and lists
+      them.
+- [ ] T022 [Bugs] `services/dark.service.ts`, **#15**: a stored theme that is
+      not valid JSON reads as light (`false`) instead of stopping the service
+      (moved here from T005). Whether it stops toggling `body.dark` on the host
+      page is decided by how the curator tool relies on it: if removing it would
+      change the host's look, it is recorded as a decision, not made.
+- [ ] T023 [Cleanup] Issue #14's "Cleanup" list, not part of the bug fixes:
+      cores created inside NgZone (change detection every frame), vectorious
+      geometry's cost in the transform, `<video>` without `preload="none"` and
+      requesting `undefined.mov` without an accession, leftover PSICQUIC code
+      forcing `@angular/forms` and `@angular/material` into the peer
+      dependencies, dead code (`randomNetwork`, `roundness.ts`,
+      `assets/data/*.txt`). To be split when taken up.
+
 ## Phase 2: Values typed "anything" (User Story 2, P2)
 
 The five `no-unsafe-*` rules and `no-explicit-any`, with `ban-ts-comment`'s
@@ -67,8 +131,7 @@ lines in the style library.
       `diagram.service.ts` (4: `DIAGRAM_CONFIG_TOKEN` becomes an
       `InjectionToken<DiagramConfig>`, an exported type, said in the pull
       request), `dark.service.ts` (1: the stored theme, `JSON.parse`d, read as
-      a boolean; a stored value that is not one is decided, not changed: see
-      "Bugs found on the way"). Touches `diagram.service.ts`, which
+      a boolean; what a value that is not one means is T022's fix). Touches `diagram.service.ts`, which
       `dev_curator` has changed. 309 → 290.
 - [ ] T006 [US2] The style library's property helpers:
       `ngx-reactome-cytoscape-style/src/lib/properties-utils.ts` (3:
@@ -116,7 +179,8 @@ lines in the style library.
       `diagram.service.ts` (23: map look-ups while building elements; a part of
       the diagram that is not there stops the drawing with an error naming it,
       as it stopped it with a `TypeError` before), `diagram-state.service.ts`
-      (2). Touches `diagram.service.ts`, which `dev_curator` has changed; if
+      (2). The edge-id counter is T021's fix, not this task's. Touches
+      `diagram.service.ts`, which `dev_curator` has changed; if
       the 23 make too large a diff against it, split by method. 42 → 17.
 - [ ] T015 [US3] `no-non-null-assertion` in the diagram component (17: the
       view children's elements (7) and the cytoscape instances (10), mostly in
@@ -128,6 +192,17 @@ lines in the style library.
       warned on 16 Nov is an error; bring `eslint.config.js`'s comments up to
       date (its header still describes warned rules); list the silenced lines
       (SC-004) and the bugs found (SC-005) here.
+
+## Dependencies
+
+- T001–T003 first, done. T004 waits on the curator tool's owner and takes
+  whichever of T017–T020 have merged into `diagram.component.ts` as they are.
+- T017–T022 (issue #14) next, in order, before the typing tasks that touch the
+  same code: T017 before T005 (both `diagram-state.service.ts`), T022 before
+  T005 (`dark.service.ts`), T018–T020 before T011 (`diagram.component.ts`),
+  T021 before T014 (`diagram.service.ts`), and all of them before T009–T011.
+- T005–T008 then T009–T011, T012, T013–T015, T016, as numbered. T023 when
+  taken up; it blocks nothing.
 
 ## Open questions for the user
 
@@ -156,7 +231,7 @@ named, and fixed only where it changes nothing a user sees.
   The same code in WebsiteAngular was found in its T017 and kept, none being
   known and drawing it being a change to what readers see. Decided (16 Nov):
   fixed, each repeat taking the next number and the first two keeping
-  today's ids, with a test seen failing on the old code; in T014.
+  today's ids, with a test seen failing on the old code; in T021 (issue #14).
 - **The exported event type says text where a number is sent**
   (`ngx-reactome-cytoscape-style/src/lib/model/reactome-event.model.ts`): see
   open question 2. Decided (16 Nov): the type follows what is sent
@@ -166,7 +241,8 @@ named, and fixed only where it changes nothing a user sees.
   is `JSON.parse`d unguarded, so anything else in `is-dark` throws while the
   service is created. WebsiteAngular's own service now reads only `true` as
   dark (its T013). Decided (16 Nov): a stored value that is not valid JSON
-  reads as light (`false`), with a test seen failing on the old code; in T005.
+  reads as light (`false`), with a test seen failing on the old code; in T022
+  (issue #14, #15).
 
 ## Silenced lines
 
