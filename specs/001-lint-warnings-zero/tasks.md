@@ -84,7 +84,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       element with no graph data leaves `select` as it is; **#7**
       `stateToDiagram()` in `displayNetwork` inside `avoidSideEffect`; **#8**
       `filter(!_ignore)` before `distinctUntilChanged`; **#9** in compare mode a
-      state selection fits the view, not the compare pane (#TBD). The library's
+      state selection fits the view, not the compare pane (#31). The library's
       other built selectors take values from the diagram's own data, not the
       address: they are named in T010 and T011.
 - [ ] T019 [Bugs] How flagging looks, `diagram/diagram.component.ts` (and
