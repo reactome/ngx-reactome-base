@@ -10,14 +10,20 @@ Paths are under `projects/` unless they start with a file at the root.
 
 ## Phase 1: The small rules (User Story 1, P1)
 
-- [ ] T001 [US1] Promote to `error` the fourteen rules warned with no
+- [x] T001 [US1] Promote to `error` the fourteen rules warned with no
       violations, in `eslint.config.js` alone: `@typescript-eslint/no-empty-object-type`,
       `no-namespace`, `no-require-imports`, `no-wrapper-object-types`,
       `no-extra-non-null-assertion`, `prefer-as-const`; `no-useless-escape`,
       `no-empty-pattern`, `no-unused-vars`; `@angular-eslint/prefer-standalone`,
       `no-output-native`, `no-output-rename`, `use-lifecycle-interface`;
       `@angular-eslint/template/prefer-control-flow`. Seen failing: a violation
-      of each planted, the check fails. 332 → 332.
+      of each planted, the check fails. 332 → 332 (#TBD). Planted one per rule
+      in a scratch file: each of the thirteen others was reported as an error and
+      `check:lint` failed (on `main`'s configuration, each was a warning).
+      Core `no-unused-vars`, planted in a `.ts` file and in a script, was not
+      reported by itself on either configuration, being off for every file
+      (only typescript-eslint's, already an error, caught the `.ts` one), as
+      the plan said.
 - [ ] T002 [US1] The diagram library's small rules, then promote the four:
       `prefer-const` (1, `ngx-reactome-diagram/src/lib/services/roundness.ts`),
       `no-useless-assignment` (1) and `no-unused-expressions` (3, `updateStyle`'s

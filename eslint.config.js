@@ -84,12 +84,8 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-empty-object-type': 'warn',
-      '@typescript-eslint/no-namespace': 'warn',
       '@typescript-eslint/no-unused-expressions': 'warn',
-      '@typescript-eslint/no-require-imports': 'warn',
       'prefer-const': 'warn',
-      'no-useless-escape': 'warn',
       // Migrated in full with ng generate @angular/core:inject-migration, so
       // any new constructor injection is a step backwards.
       '@angular-eslint/prefer-inject': 'warn',
@@ -121,20 +117,30 @@ module.exports = tseslint.config(
         { considerDefaultExhaustiveForUnions: true },
       ],
       '@angular-eslint/no-async-lifecycle-method': 'error',
-      '@angular-eslint/prefer-standalone': 'warn',
-      '@angular-eslint/no-output-native': 'warn',
       '@angular-eslint/no-input-rename': 'warn',
       // All twelve removed, so a new empty hook is a new mistake.
       '@angular-eslint/no-empty-lifecycle-method': 'error',
-      '@angular-eslint/use-lifecycle-interface': 'warn',
       '@typescript-eslint/ban-ts-comment': 'warn',
-      '@typescript-eslint/no-wrapper-object-types': 'warn',
-      '@typescript-eslint/no-extra-non-null-assertion': 'warn',
-      '@typescript-eslint/prefer-as-const': 'warn',
-      '@angular-eslint/no-output-rename': 'warn',
       'no-useless-assignment': 'warn',
-      'no-unused-vars': 'warn',
-      'no-empty-pattern': 'warn',
+      // Clean, and warned only because they were never promoted: the ratchet
+      // held them at zero, but a new one showed in an editor and in the
+      // pre-commit lint as a warning, which is read as allowed. Errors now
+      // (spec 001 T001). Core no-unused-vars is switched off for every file
+      // further down in favour of typescript-eslint's, so its severity reaches
+      // nothing; it matches WebsiteAngular's.
+      '@typescript-eslint/no-empty-object-type': 'error',
+      '@typescript-eslint/no-namespace': 'error',
+      '@typescript-eslint/no-require-imports': 'error',
+      'no-useless-escape': 'error',
+      '@angular-eslint/prefer-standalone': 'error',
+      '@angular-eslint/no-output-native': 'error',
+      '@angular-eslint/use-lifecycle-interface': 'error',
+      '@typescript-eslint/no-wrapper-object-types': 'error',
+      '@typescript-eslint/no-extra-non-null-assertion': 'error',
+      '@typescript-eslint/prefer-as-const': 'error',
+      '@angular-eslint/no-output-rename': 'error',
+      'no-unused-vars': 'error',
+      'no-empty-pattern': 'error',
     },
   },
   {
@@ -149,7 +155,8 @@ module.exports = tseslint.config(
       // `(value | async) !== true`. (The rule's own `=== false` would not be the
       // same -- it is false while pending.)
       '@angular-eslint/template/no-negated-async': 'error',
-      '@angular-eslint/template/prefer-control-flow': 'warn',
+      // Clean (no *ngIf, *ngFor or *ngSwitch left), so an error (spec 001 T001).
+      '@angular-eslint/template/prefer-control-flow': 'error',
       // A <button> with no type submits its form. Most here are outside forms,
       // where it does nothing, so warned and held rather than required.
       '@angular-eslint/template/button-has-type': 'warn',
