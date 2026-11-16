@@ -160,6 +160,19 @@ files they touch, one pull request each; they run before T009–T011 (see
       T018), where it was dropped; only a hover still needs the diagram.
       Purely additive: no other input or output changes. Done (#36). Lint
       314, unchanged; dead code 17, unchanged.
+- [x] T025 [Bugs] A stId drawn only inside complexes, decided on 16 Nov (see
+      "Bugs found on the way", the homomultimer), `services/diagram.service.ts`
+      and `diagram/diagram.component.ts`: each drawn complex's or set's graph
+      node carries its `leaves` (the entities at the bottom of its children),
+      and `getElements` takes an `R-` token with no element of its own to the
+      drawn nodes whose leaves include it (`withLeaf`, `diagram/with-data.ts`),
+      as WebsiteAngular's diagram does (`leafIdToParentIds`). So selecting or
+      flagging TP53, R-HSA-69488, finds TP53 Tetramer (R-HSA-3209194) and the
+      MDM2 complex containing that (R-HSA-6804885) on Cell Cycle Checkpoints;
+      a stId drawn on its own selects only itself, as before, even when it is
+      also within a drawn complex (p-T68-CHEK2, R-HSA-113825). Accessions are
+      unchanged (`?flag=P04637` already found the tetramer). Done (#TBD). Lint
+      314, unchanged; dead code 17, unchanged.
 
 ## Phase 2: Values typed "anything" (User Story 2, P2)
 
@@ -252,8 +265,8 @@ lines in the style library.
 - T017–T022 (issue #14) next, in order, before the typing tasks that touch the
   same code: T017 before T005 (both `diagram-state.service.ts`), T022 before
   T005 (`dark.service.ts`), T018–T020 and T024 before T011
-  (`diagram.component.ts`), T021 before T014 (`diagram.service.ts`), and all of
-  them before T009–T011.
+  (`diagram.component.ts`), T021 and T025 before T014 (`diagram.service.ts`),
+  T025 before T011, and all of them before T009–T011.
 - T005–T008 then T009–T011, T012, T013–T015, T016, as numbered. T023 when
   taken up; it blocks nothing.
 
@@ -351,7 +364,8 @@ named, and fixed only where it changes nothing a user sees.
   (`?select=R-HSA-69488` selects only TP53 where it is drawn on its own),
   being bug 4 itself. Found in T021. Decided (16 Nov): yes, selecting a
   monomer's stId highlights the complexes containing it, as WebsiteAngular's
-  diagram does; its own task (to follow).
+  diagram does. Done in T025 (#TBD): `?select=R-HSA-69488` selects TP53
+  Tetramer and the MDM2 complex containing it.
 - **A reaction's counterpart in the compare pane is found without its lines**
   (`diagram.component.ts`, `compareBackgroundSync`). Since T021 a reaction's
   `replacement` is its faded counterpart's id, so hovering or selecting it
