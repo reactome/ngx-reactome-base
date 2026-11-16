@@ -1,6 +1,8 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
+  DestroyRef,
   ElementRef,
   Input,
   OnChanges,
@@ -18,13 +20,22 @@ import {
   Style,
 } from 'ngx-reactome-cytoscape-style';
 import { DarkService } from '../services/dark.service';
-import { delay, distinctUntilChanged, filter, Observable, share, Subject } from 'rxjs';
+import {
+  delay,
+  distinctUntilChanged,
+  filter,
+  Observable,
+  share,
+  Subject,
+  Subscription,
+} from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { DiagramStateService } from '../services/diagram-state.service';
 import { UntilDestroy } from '@ngneat/until-destroy';
 import { MatDialog } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
-import { CdkDrag } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { withData } from './with-data';
 
 @UntilDestroy({ checkProperties: true })
@@ -33,13 +44,15 @@ import { withData } from './with-data';
   templateUrl: './diagram.component.html',
   styleUrls: ['./diagram.component.scss'],
   standalone: true,
-  imports: [CommonModule, CdkDrag],
+  imports: [CommonModule, CdkDrag, CdkDragHandle],
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
   private diagram = inject(DiagramService);
   dark = inject(DarkService);
   private state = inject(DiagramStateService);
   dialog = inject(MatDialog);
+  private changes = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   title = 'pathway-browser';
   @ViewChild('cytoscape') cytoscapeContainer?: ElementRef<HTMLDivElement>;
@@ -58,6 +71,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   private _reactomeEvents$: Subject<ReactomeEvent> = new Subject<ReactomeEvent>();
   private _ignore = false;
+  private loading?: Subscription;
 
   @Output()
   public reactomeEvents$: Observable<ReactomeEvent> = this._reactomeEvents$.asObservable().pipe(
@@ -86,12 +100,22 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     if (this.state) this.state.blockRouterChange = block;
   }
 
+  constructor() {
+    // Nothing tore these down: a destroyed component's cores went on drawing,
+    // and its theme subscription restyling them (issue #14, bug 11).
+    this.destroyRef.onDestroy(() => {
+      this.loading?.unsubscribe();
+      const cores: (cytoscape.Core | undefined)[] = [this.cy, this.cyCompare, this.legend];
+      cores.forEach((cy) => cy?.destroy());
+    });
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['diagramId']) this.loadDiagram();
   }
 
   ngAfterViewInit(): void {
-    this.dark.$dark.subscribe(this.updateStyle.bind(this));
+    this.dark.$dark.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.updateStyle());
 
     const container = this.cytoscapeContainer!.nativeElement;
     const compareContainer = this.compareContainer!.nativeElement;
@@ -127,12 +151,21 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   }
 
   loadDiagram() {
+    // A request a later one replaces is dropped: answering more slowly, it
+    // replaced the diagram asked for after it (issue #14, bug 3).
+    this.loading?.unsubscribe();
+    this.loading = undefined;
+
     if (!this.cytoscapeContainer) return;
 
     if (!this.diagramId || this.diagramId.trim().length == 0) return; // Nothing to do.
 
-    this.diagram.getDiagram(this.diagramId).subscribe((elements) => {
-      this.displayNetwork(elements);
+    const id = this.diagramId;
+    this.loading = this.diagram.getDiagram(id).subscribe({
+      next: (elements) => this.displayNetwork(elements),
+      // The diagram shown stays. Unhandled, the failure reached the host only
+      // as an uncaught error (issue #14, bug 3).
+      error: (error: unknown) => console.error(`Diagram ${id} could not be loaded`, error),
     });
   }
 
@@ -141,6 +174,14 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     this.comparing =
       elements.nodes?.some((node: any) => node.data['isFadeOut']) ||
       elements.edges?.some((edge: any) => edge.data['isFadeOut']);
+    // Set from a response, which a zoneless host does not check after: the
+    // compare pane stayed hidden (issue #14, bug 14).
+    this.changes.markForCheck();
+    // A new core destroys the one in its container, but a diagram drawn
+    // without a compare pane left the last one's: still drawing, and still
+    // flagged and selected with the new diagram's state (issue #14, bug 11).
+    const replaced: cytoscape.Core | undefined = this.cyCompare;
+    replaced?.destroy();
     this.cy = cytoscape({
       container: container,
       elements: elements,
@@ -234,7 +275,11 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       this.cyCompare.minZoom(this.cy!.minZoom());
       this.cyCompare.maxZoom(this.cy!.maxZoom());
 
+      // A pane destroyed by then, with its diagram replaced or the component
+      // gone, is left alone.
+      const drawnCompare = this.cyCompare;
       setTimeout(() => {
+        if (drawnCompare.destroyed()) return;
         this.syncViewports(this.cy!, container, this.cyCompare, compareContainer);
         this.initialiseReplaceElements();
       });
@@ -247,27 +292,21 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     this._ignore = false;
   }
 
+  /** The diagram and its compare pane, skipping one destroyed or not made. */
+  private drawn(): cytoscape.Core[] {
+    const cores: (cytoscape.Core | undefined)[] = [this.cy, this.cyCompare];
+    return cores.filter((cy): cy is cytoscape.Core => cy !== undefined && !cy.destroyed());
+  }
+
   flagging = this.state.onChange.flag$.subscribe((value) =>
-    this.avoidSideEffect(() =>
-      [this.cy, this.cyCompare].forEach((cy) => {
-        if (cy) {
-          this.flag(value, cy);
-        }
-      })
-    )
+    this.avoidSideEffect(() => this.drawn().forEach((cy) => this.flag(value, cy)))
   );
   selecting = this.state.onChange.select$.subscribe((value) =>
-    this.avoidSideEffect(() =>
-      [this.cy, this.cyCompare].forEach((cy) => {
-        if (cy) {
-          this.select(value, cy);
-        }
-      })
-    )
+    this.avoidSideEffect(() => this.drawn().forEach((cy) => this.select(value, cy)))
   );
 
   private stateToDiagram() {
-    for (const cy of [this.cy, this.cyCompare].filter((cy) => cy !== undefined)) {
+    for (const cy of this.drawn()) {
       this.flag(this.state.get('flag'), cy);
       this.select(this.state.get('select'), cy);
     }
@@ -510,9 +549,13 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   };
 
   updateStyle() {
-    if (this.cy) setTimeout(() => this.reactomeStyle?.update(this.cy), 5);
-    if (this.cyCompare) setTimeout(() => this.reactomeStyle?.update(this.cyCompare), 5);
-    if (this.legend) setTimeout(() => this.reactomeStyle?.update(this.legend), 5);
+    const cores: (cytoscape.Core | undefined)[] = [...this.drawn(), this.legend];
+    for (const cy of cores) {
+      if (!cy) continue;
+      setTimeout(() => {
+        if (!cy.destroyed()) this.reactomeStyle?.update(cy);
+      }, 5);
+    }
   }
 
   compareDragging = false;
@@ -596,8 +639,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   //     }
   //   );
 
+  // Not before the legend is made: read then, it threw (found in T017).
   diagram2legend = this.reactomeEvents$
-    .pipe(filter((e) => e.detail.cy !== this.legend))
+    .pipe(filter((e) => this.legend !== undefined && e.detail.cy !== this.legend))
     .subscribe((event) => {
       const classes = event.detail.element.classes();
       let matchingElement: cytoscape.NodeCollection | cytoscape.EdgeCollection =
@@ -660,9 +704,10 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       }
     });
 
+  // Not before a diagram is drawn: the legend's events read it, and threw.
   legend2state = this.reactomeEvents$
     .pipe(
-      filter((e) => e.detail.cy === this.legend),
+      filter((e) => e.detail.cy === this.legend && this.cy !== undefined),
       filter(() => !this._ignore)
     )
     .subscribe((e) => {
