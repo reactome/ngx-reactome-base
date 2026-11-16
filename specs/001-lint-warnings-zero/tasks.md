@@ -76,26 +76,32 @@ files they touch, one pull request each; they run before T009–T011 (see
       the selected element clears `select`, once the event is handled and
       nothing else is selected (clicking another element deselects first)
       (#30).
-- [ ] T018 [Bugs] Selection in `diagram/diagram.component.ts`: **#1** data
-      selectors quoted and escaped (`[acc="…"]`, `[reactomeId="…"]`; a number
-      matched as a number); **#6** a click on an element with no graph data
-      leaves `select` as it is; **#7** `stateToDiagram()` in `displayNetwork`
-      inside `avoidSideEffect`; **#8** `filter(!_ignore)` before
-      `distinctUntilChanged`; **#9** in compare mode a state selection fits the
-      view, not the compare pane.
+- [x] T018 [Bugs] Selection in `diagram/diagram.component.ts`: **#1** a value
+      from the address no longer written into a selector: matched in code by
+      `withData` (`diagram/with-data.ts`), since cytoscape does not unescape a
+      quoted value either, so no quoting is safe for every value; a database id
+      given as text compared as a number, as before; **#6** a click on an
+      element with no graph data leaves `select` as it is; **#7**
+      `stateToDiagram()` in `displayNetwork` inside `avoidSideEffect`; **#8**
+      `filter(!_ignore)` before `distinctUntilChanged`; **#9** in compare mode a
+      state selection fits the view, not the compare pane (#31). The library's
+      other built selectors take values from the diagram's own data, not the
+      address: they are named in T010 and T011.
 - [ ] T019 [Bugs] How flagging looks, `diagram/diagram.component.ts` (and
       the style library where the classes live): **#2** clearing a flag removes
       the lines' inline underlay and leaves the sub-pathway bands as they were;
       **#12** trivial molecules kept visible by `.trivial.always-visible`, not
       inline opacity; **#13** flagging a reaction type from the legend flags its
       lines too.
-- [ ] T020 [Bugs] The component's lifecycle, `diagram/diagram.component.ts`
-      and `.html`: **#3** `loadDiagram` drops a response superseded by a later
+- [ ] T020 [Bugs] The component's lifecycle, `diagram/diagram.component.ts` and
+      `.html`: **#3** `loadDiagram` drops a response superseded by a later
       request and reports a failed one; **#11** the cytoscape cores (main,
       compare, legend) and the `$dark` subscription torn down on destroy;
-      **#14** the component marked for check after `comparing = true`
-      (zoneless hosts); `legend2state` waits for a diagram before reading
-      `cy`; `CdkDragHandle` imported so only the handle drags the legend.
+      **#14** the component marked for check after `comparing = true` (zoneless
+      hosts); `legend2state` waits for a diagram before reading `cy`, and
+      `diagram2legend` for the legend before reading it (found in T017: an event
+      before the legend has loaded throws); `CdkDragHandle` imported so only the
+      handle drags the legend.
 - [ ] T021 [Bugs] `services/diagram.service.ts`: **#4** a graph node with
       one child keeps its own stId (a homomultimer is not its monomer);
       `getEdgeId`'s counter advances, each repeat taking the next number and
@@ -155,16 +161,22 @@ lines in the style library.
       edge selectors `EventObjectEdge`; ids read through T007's readers. Brings
       `ReactomeEventTarget`'s declared types against what is sent (open
       question 2). 228 → 169.
-- [ ] T010 [US2] `interactivity.ts`, `initSelect` (42), `initClick` (20) and
-      the rest (7: the structure video's and molecule's layers, the zoom
-      curve). 169 → 100.
+- [ ] T010 [US2] `interactivity.ts`, `initSelect` (42), `initClick` (20) and the
+      rest (7: the structure video's and molecule's layers, the zoom curve). 169
+      → 100. The `#${…}` selectors built from element data, here and in
+      `initHover` (`nodeId`, an interactor edge's `id`), become
+      `getElementById`: an id with a space or bracket in it, such as a repeated
+      edge's " (1)", is an invalid selector, and `cy.edges()` given one finds
+      nothing (measured), so such an element is never highlighted (found in
+      T018).
 - [ ] T011 [US2] `ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`
       (46): `displayNetwork` takes the `cytoscape.ElementsDefinition` that
       `getDiagram` returns; the compare view's `add` and `remove` handlers an
       event on one element; `replacedBy`, which the code treats as an id, a
       number or an object with a `reactomeId`, read as what the diagram service
       writes (measured on the fixtures); the select subscription's ids as the
-      readers give them. 100 → 54.
+      readers give them. 100 → 54. `[reactionId=${replacedBy}]` goes through
+      `withData` once `replacedBy` is typed (found in T018).
 - [ ] T012 [US2] Promote `no-explicit-any` and the five `no-unsafe-*` rules
       to `error` (their counts are zero). Seen failing: an `any` planted in a
       service. 54 warnings left, all `no-non-null-assertion`.
@@ -243,6 +255,13 @@ named, and fixed only where it changes nothing a user sees.
   dark (its T013). Decided (16 Nov): a stored value that is not valid JSON
   reads as light (`false`), with a test seen failing on the old code; in T022
   (issue #14, #15).
+- **A flag or selection by a number never matches an accession made of
+  digits** (`ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`,
+  `getElements`): the state reads `?flag=30616` as the number 30616, and an
+  element's `acc` is the graph's identifier, text (`"30616"` for a ChEBI
+  molecule), so the two never compare equal, before T018 and after. To
+  decide: matching a number against an accession's text would make such
+  flags start working, a change beyond issue #14's bug 1. Found in T018.
 
 ## Silenced lines
 

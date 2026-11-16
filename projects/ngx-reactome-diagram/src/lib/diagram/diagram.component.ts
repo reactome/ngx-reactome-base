@@ -25,6 +25,7 @@ import { UntilDestroy } from '@ngneat/until-destroy';
 import { MatDialog } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { CdkDrag } from '@angular/cdk/drag-drop';
+import { withData } from './with-data';
 
 @UntilDestroy({ checkProperties: true })
 @Component({
@@ -60,11 +61,14 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
   @Output()
   public reactomeEvents$: Observable<ReactomeEvent> = this._reactomeEvents$.asObservable().pipe(
+    // The component's own events are dropped before the repeats: the other
+    // way round, one it made counted as the last, and the user's same event
+    // after it was dropped as a repeat (issue #14, bug 8).
+    filter(() => !this._ignore),
     distinctUntilChanged(
       (prev, current) =>
         prev.type === current.type && prev.detail.reactomeId === current.detail.reactomeId
     ),
-    filter(() => !this._ignore),
     share()
   );
 
@@ -151,7 +155,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
 
     this.loadCompare(elements, container);
 
-    this.stateToDiagram();
+    // As the state's own changes are shown: zoomed to, and not sent to the
+    // host as if clicked (issue #14, bug 7).
+    this.avoidSideEffect(() => this.stateToDiagram());
 
     // Fire an event after this network is displayed.
     const event = new CustomEvent('network_displayed');
@@ -279,7 +285,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
         // all objects will be selected since [acc=""] matches all elements without acc attribute.
         if (token.trim().length === 0) return;
         if (token.startsWith('R-')) {
-          elements = elements.or(`[graph.stId="${token}"]`);
+          elements = elements.or(withData(cy, 'graph.stId', token));
         } else {
           const matchArray = token.match(this.classRegex);
           if (matchArray) {
@@ -295,14 +301,15 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
               elements = elements.or(`.${clazz}`);
             }
           } else if (this.usedbId) {
-            // It is possible dbId is encoded in string
-            elements = elements.or(`[reactomeId=${token}]`);
+            // A dbId may come as text; it is compared as the number it is.
+            const dbId = /^\d+$/.test(token) ? Number(token) : token;
+            elements = elements.or(withData(cy, 'reactomeId', dbId));
           } else {
-            elements = elements.or(`[acc=${token}]`);
+            elements = elements.or(withData(cy, 'acc', token));
           }
         }
       } else {
-        elements = elements.or(`[acc=${token}]`).or(`[reactomeId=${token}]`);
+        elements = elements.or(withData(cy, 'acc', token)).or(withData(cy, 'reactomeId', token));
       }
     });
     return elements;
@@ -323,7 +330,9 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       selected = selected.add(selected.connectedNodes());
     }
 
-    if (this._ignore) {
+    // Only the view is fitted; the compare pane follows it (syncViewports).
+    // Fitting the pane too fitted the view to the pane (issue #14, bug 9).
+    if (this._ignore && cy === this.cy) {
       cy.animate({
         fit: {
           eles: selected,
@@ -603,13 +612,17 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
       if (e.detail.type === 'reaction') {
         elements = e.detail.cy.elements('node.reaction:selected');
       }
-      let reactomeIds = this.usedbId
+      const ids = this.usedbId
         ? elements.map((el) => el.data('reactomeId'))
         : elements.map((el) => el.data('graph.stId'));
-      // Make sure reactomeIds don't contain duplicated element
-      const uniqueSet = new Set(reactomeIds);
-      reactomeIds = Array.from(uniqueSet);
-      this.state.set('select', reactomeIds[0] || '');
+      // An element with no graph data (the faded normal pathway of a disease
+      // diagram) has no id, and leaves the selection as it was: it set it to
+      // '', which unselected everything (issue #14, bug 6).
+      const reactomeIds = Array.from(new Set(ids)).filter(
+        (id) => id !== undefined && id !== null && id !== ''
+      );
+      if (reactomeIds.length === 0) return;
+      this.state.set('select', reactomeIds[0]);
     });
 
   // Deselecting the selected element clears the selection. It was kept, so
