@@ -1,5 +1,5 @@
 {
-  "warnings": 315,
+  "warnings": 314,
   "rules": {
     "@angular-eslint/no-input-rename": 1,
     "@angular-eslint/prefer-output-emitter-ref": 1,
@@ -8,7 +8,7 @@
     "@typescript-eslint/no-explicit-any": 8,
     "@typescript-eslint/no-non-null-assertion": 53,
     "@typescript-eslint/no-unsafe-argument": 19,
-    "@typescript-eslint/no-unsafe-assignment": 75,
+    "@typescript-eslint/no-unsafe-assignment": 74,
     "@typescript-eslint/no-unsafe-call": 51,
     "@typescript-eslint/no-unsafe-member-access": 54,
     "@typescript-eslint/no-unsafe-return": 26
