@@ -7,6 +7,7 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { DiagramService } from '../services/diagram.service';
 import cytoscape from 'cytoscape';
@@ -34,6 +35,11 @@ import { CdkDrag } from '@angular/cdk/drag-drop';
   imports: [CommonModule, CdkDrag],
 })
 export class DiagramComponent implements AfterViewInit, OnChanges {
+  private diagram = inject(DiagramService);
+  dark = inject(DarkService);
+  private state = inject(DiagramStateService);
+  dialog = inject(MatDialog);
+
   title = 'pathway-browser';
   @ViewChild('cytoscape') cytoscapeContainer?: ElementRef<HTMLDivElement>;
   @ViewChild('cytoscapeCompare') compareContainer?: ElementRef<HTMLDivElement>;
@@ -42,13 +48,6 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
   comparing: boolean = false;
   selectedPsicquicResource = new FormControl();
   isDataFromPsicquicLoading: boolean = false;
-
-  constructor(
-    private diagram: DiagramService,
-    public dark: DarkService,
-    private state: DiagramStateService,
-    public dialog: MatDialog
-  ) {}
 
   cy!: cytoscape.Core;
   cyCompare!: cytoscape.Core;

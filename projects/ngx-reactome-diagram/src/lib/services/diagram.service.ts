@@ -1,4 +1,4 @@
-import { Inject, Injectable, InjectionToken } from '@angular/core';
+import { Injectable, InjectionToken, inject } from '@angular/core';
 import { forkJoin, map, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import {
@@ -25,8 +25,8 @@ cytoscape.use(cytoscapeFcose);
 
 type RelativePosition = { distances: number[]; weights: number[] };
 
-// Above the service, which names it in its constructor's @Inject: declared
-// after it, the decorator read it before it existed.
+// Above the service: when the constructor named it in @Inject, declared after
+// it, the decorator read it before it existed.
 export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<any>('DIAGRAM_CONFIG_TOKEN');
 
 const posToStr = (edge: Edge, pos: Position) => `${edge.id}-${pos.x},${pos.y}`;
@@ -78,17 +78,16 @@ const closestToAverage = (positions: Position[]): Position => {
   providedIn: 'root',
 })
 export class DiagramService {
+  private http = inject(HttpClient);
+
   extraLine: Map<string, Position> = new Map<string, Position>();
   reverseExtraLine: Map<string, Position> = new Map<string, Position>();
 
-  constructor(
-    private http: HttpClient,
-    @Inject(DIAGRAM_CONFIG_TOKEN) private config: any
-  ) {
+  constructor() {
     // This is a service object. Therefore, we have to extract configure here if any
     // The default stands when the configuration does not name an address; it
     // was overwritten with undefined, and every request went to "undefined/...".
-    this.diagramUrl = this.config?.diagramUrl ?? this.diagramUrl;
+    this.diagramUrl = inject(DIAGRAM_CONFIG_TOKEN)?.diagramUrl ?? this.diagramUrl;
   }
 
   nodeTypeMap = new Map<string, NodeDefinition>([
