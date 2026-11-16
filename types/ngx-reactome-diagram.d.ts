@@ -1,7 +1,7 @@
-import * as rxjs from 'rxjs';
-import { Observable } from 'rxjs';
 import * as i0 from '@angular/core';
 import { InjectionToken, AfterViewInit, OnChanges, ElementRef, SimpleChanges } from '@angular/core';
+import * as rxjs from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import cytoscape from 'cytoscape';
 import { Style, ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { FormControl } from '@angular/forms';
@@ -70,6 +70,8 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     dark: DarkService;
     private state;
     dialog: MatDialog;
+    private changes;
+    private destroyRef;
     title: string;
     cytoscapeContainer?: ElementRef<HTMLDivElement>;
     compareContainer?: ElementRef<HTMLDivElement>;
@@ -84,10 +86,12 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     reactomeStyleCompare: Style;
     private _reactomeEvents$;
     private _ignore;
+    private loading?;
     reactomeEvents$: Observable<ReactomeEvent>;
     diagramId: string;
     usedbId: boolean;
     set blockRouterChange(block: boolean);
+    constructor();
     ngOnChanges(changes: SimpleChanges): void;
     ngAfterViewInit(): void;
     loadDiagram(): void;
@@ -95,8 +99,10 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     private initialiseReplaceElements;
     private loadCompare;
     avoidSideEffect(m: () => any): void;
-    flagging: rxjs.Subscription;
-    selecting: rxjs.Subscription;
+    /** The diagram and its compare pane, skipping one destroyed or not made. */
+    private drawn;
+    flagging: Subscription;
+    selecting: Subscription;
     private stateToDiagram;
     readonly classRegex: RegExp;
     getElements(tokens: (string | number)[], cy: cytoscape.Core): cytoscape.CollectionArgument;
@@ -120,11 +126,11 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     dragEnd(): void;
     dragMove($event: MouseEvent, compareContainer: HTMLDivElement, container: HTMLDivElement): void;
     updateLegend(): void;
-    compareBackgroundSync: rxjs.Subscription;
-    diagram2legend: rxjs.Subscription;
-    diagramSelect2state: rxjs.Subscription;
-    diagramUnselect2state: rxjs.Subscription;
-    legend2state: rxjs.Subscription;
+    compareBackgroundSync: Subscription;
+    diagram2legend: Subscription;
+    diagramSelect2state: Subscription;
+    diagramUnselect2state: Subscription;
+    legend2state: Subscription;
     logProteins(): void;
     /**
      * Somehow DiagramService cannot be exported for use out of this package. Therefore, use this method to get this instance.
