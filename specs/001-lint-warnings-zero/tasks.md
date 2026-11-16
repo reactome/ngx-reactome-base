@@ -158,7 +158,7 @@ files they touch, one pull request each; they run before T009–T011 (see
       a legend click before the diagram has loaded sets the flag in the state,
       drawn when the diagram arrives (`displayNetwork` applies the state since
       T018), where it was dropped; only a hover still needs the diagram.
-      Purely additive: no other input or output changes. Done (#TBD). Lint
+      Purely additive: no other input or output changes. Done (#36). Lint
       314, unchanged; dead code 17, unchanged.
 
 ## Phase 2: Values typed "anything" (User Story 2, P2)
@@ -333,13 +333,13 @@ named, and fixed only where it changes nothing a user sees.
   `loadDiagram`). Before T020 the failure was unhandled, an uncaught error;
   the component has no output or state for problems, so T020 reports it with
   `console.error` and keeps the diagram shown. Found in T020. Decided (16
-  Nov) and done (#TBD, T024): a new output, `loadFailed`, emits
+  Nov) and done (#36, T024): a new output, `loadFailed`, emits
   `{ diagramId, status }` (the HTTP status, 0 for a network error or one that
   is not HTTP's); the `console.error` and the diagram shown stay.
 - **A legend click before the diagram has loaded does nothing**
   (`diagram.component.ts`, `legend2state`). It threw before T020, and now is
   ignored, which is what a user saw before. Found in T020. Decided (16 Nov)
-  and done (#TBD, T024): it sets the flag in the state, as a click after the
+  and done (#36, T024): it sets the flag in the state, as a click after the
   load does, and the diagram draws it when it arrives; a hover before then
   still marks nothing.
 - **A homomultimer still carries its monomer's accession**
