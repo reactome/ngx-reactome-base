@@ -433,9 +433,39 @@ lines in the style library.
   - Seen failing: `main`'s `diagram.service.ts` linted beside this branch's
     gave 22 more warnings and `check:lint` failed (`no-non-null-assertion:
     17 -> 39`).
-- [ ] T015 [US3] `no-non-null-assertion` in the diagram component (17: the
+- [x] T015 [US3] `no-non-null-assertion` in the diagram component (17: the
       view children's elements (7) and the cytoscape instances (10), mostly in
-      the compare view), then promote the rule. 17 → 0.
+      the compare view), then promote the rule. 17 → 0. (#49)
+  - 17, as written: 25 → 8, `no-non-null-assertion` 17 → 0, and promoted to
+    `error`. The 8 left are T004's, on hold; its view children, inputs and
+    output are untouched (no signal queries).
+  - The view children's elements are read through `viewElement`, a function
+    of the module's own: the three are in the template unconditionally, so
+    one missing is a mistake, and throws "DiagramComponent: the diagram
+    element is not in the view yet." where it threw a `TypeError` (as
+    `displayNetwork` called before the view is made did, and still does).
+  - The compare pane is made with the diagram's core handed in and its own
+    held in a `const`: its handlers and its first sync use those, which are
+    the fields' cores for as long as the pane is not destroyed (replacing the
+    diagram destroys the pane first). `updateReplacementVisibility` returns
+    with no compare pane, and `dragMove` once it has moved the divider. Both
+    threw a `TypeError` there, but the divider's handle is in the compare
+    pane, hidden until one is drawn, so no user reached it.
+  - The fields' types are unchanged (`cy!: cytoscape.Core` and the rest), and
+    the built `.d.ts` files are identical to `main`'s.
+  - Seen unchanged: on the three fixtures, drawing, flagging, selecting and
+    clearing from the state, hovering and selecting 40 nodes of each pane,
+    panning the compare pane and the diagram across the replaced elements (its
+    `lastIndex` moving 0, 5, 9, 4), dragging the divider, the legend's select,
+    hover, leave and unselect, the legend resized and the theme switched,
+    replacing the diagram (disease to not and back) and tearing it down gave
+    the same classes, selection, visibility, underlay, opacity, replaced
+    elements, state and events on `main`'s component and this branch's. The
+    one difference: `dragMove` with no compare pane ever drawn, above. The
+    comparison caught a planted change (the compare pane's viewport handler
+    removed).
+  - Seen failing: a `!` planted in the diagram library gave a
+    `no-non-null-assertion` error and `check:lint` failed.
 
 ## Phase 4: Done
 
