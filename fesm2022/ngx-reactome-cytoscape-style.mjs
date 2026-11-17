@@ -1738,53 +1738,61 @@ class Interactivity {
     initHover(cy, mapper = (x) => x) {
         const hoverReaction = this.applyToReaction((col) => col.addClass('hover'), 'hovering');
         const deHoverReaction = this.applyToReaction((col) => col.removeClass('hover'), 'deHovering');
+        // Elements are looked up by id, not with a `#${id}` selector: an id that
+        // is not a valid selector, as an interactor's line whose accession has a
+        // colon in it (ChEBI's) or a space, found nothing, and the line was never
+        // highlighted.
+        const nodeOf = (modification) => {
+            const nodeId = numberData(modification, 'nodeId');
+            return nodeId === undefined ? cy.collection() : cy.getElementById(String(nodeId));
+        };
         const container = cy.container();
         cy.on('mouseover', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'PhysicalEntity',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseover', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'Pathway',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseover', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseover', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseout', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'PhysicalEntity',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseout', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'Pathway',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseout', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseout', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('mouseover', 'node', (e) => mapper(e.target).addClass('hover'))
@@ -1797,10 +1805,10 @@ class Interactivity {
             hoverReaction(mapped.connectedNodes('.reaction'));
         })
             .on('mouseout', 'edge', (e) => deHoverReaction(mapper(e.target).connectedNodes('.reaction')))
-            .on('mouseover', 'node.Modification', (e) => mapper(cy.nodes(`#${e.target.data('nodeId')}`)).addClass('hover'))
-            .on('mouseout', 'node.Modification', (e) => mapper(cy.nodes(`#${e.target.data('nodeId')}`)).removeClass('hover'))
-            .on('mouseover', 'edge.Interactor', (e) => mapper(cy.edges(`#${e.target.data('id')}`)).addClass('hover'))
-            .on('mouseout', 'edge.Interactor', (e) => mapper(cy.edges(`#${e.target.data('id')}`)).removeClass('hover'));
+            .on('mouseover', 'node.Modification', (e) => mapper(nodeOf(e.target)).addClass('hover'))
+            .on('mouseout', 'node.Modification', (e) => mapper(nodeOf(e.target)).removeClass('hover'))
+            .on('mouseover', 'edge.Interactor', (e) => mapper(cy.getElementById(e.target.id())).addClass('hover'))
+            .on('mouseout', 'edge.Interactor', (e) => mapper(cy.getElementById(e.target.id())).removeClass('hover'));
     }
     initSelect(cy, mapper = (x) => x) {
         const selectReaction = this.applyToReaction((col) => col.select(), 'selecting');
