@@ -111,10 +111,15 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
     ngOnChanges(changes: SimpleChanges): void;
     ngAfterViewInit(): void;
     loadDiagram(): void;
-    displayNetwork(elements: any): void;
+    /**
+     * Draws `elements`: what `DiagramService.getDiagram` gives, or a list of
+     * elements (the curator tool draws an empty diagram with `[]`), which is
+     * never compared.
+     */
+    displayNetwork(elements: cytoscape.ElementsDefinition | cytoscape.ElementDefinition[]): void;
     private initialiseReplaceElements;
     private loadCompare;
-    avoidSideEffect(m: () => any): void;
+    avoidSideEffect(m: () => void): void;
     /** The diagram and its compare pane, skipping one destroyed or not made. */
     private drawn;
     flagging: Subscription;

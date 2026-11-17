@@ -1964,6 +1964,31 @@ function withLeaf(cy, stId) {
     });
 }
 
+/** The value under `name` where it is text. */
+function textData(element, name) {
+    const value = element.data(name);
+    return typeof value === 'string' ? value : undefined;
+}
+/** The value under `name` where it is a number. */
+function numberData(element, name) {
+    const value = element.data(name);
+    return typeof value === 'number' ? value : undefined;
+}
+/**
+ * An element's id kept under `name`, as the diagram service writes one: text
+ * (an element's id) or a number (a connector's `replacement`, an edge's id in
+ * the diagram's layout). An empty one (`''`, `0`) reads as none, as it did
+ * when read by truthiness.
+ */
+function idData(element, name) {
+    const value = element.data(name);
+    return (typeof value === 'string' || typeof value === 'number') && value ? value : undefined;
+}
+/** Whether the value under `name` is set, read by truthiness. */
+function isSet(element, name) {
+    return Boolean(element.data(name));
+}
+
 let DiagramComponent = class DiagramComponent {
     // There are many issues having URL changes for selection state or other
     // state changes in the curator tool environment (e.g conflict with tree URL)
@@ -2031,26 +2056,23 @@ let DiagramComponent = class DiagramComponent {
             .subscribe((event) => {
             const src = event.detail.cy;
             const tgt = src === this.cy ? this.cyCompare : this.cy;
-            let replacedBy = event.detail.element.data('replacedBy');
-            replacedBy = replacedBy || event.detail.element.data('replacement');
-            replacedBy =
-                replacedBy ||
-                    (event.detail.element.data('isBackground') &&
-                        !event.detail.element.data('isFadeOut') &&
-                        event.detail.element.data('id'));
-            if (!replacedBy)
+            // The counterpart's id, as the diagram service writes it: text, or a
+            // number for a connector's `replacement`. A reaction's `replacement`
+            // was a raw layout edge, read here for its `reactomeId`; since T021
+            // (#34) it is the counterpart's id, and nothing writes an object there.
+            // An event's element is a node (a line sends its reaction's node), and
+            // a reaction node's ids are text, so the lines are not added today.
+            const element = event.detail.element;
+            const replacedBy = idData(element, 'replacedBy') ??
+                idData(element, 'replacement') ??
+                (isSet(element, 'isBackground') && !isSet(element, 'isFadeOut')
+                    ? idData(element, 'id')
+                    : undefined);
+            if (replacedBy === undefined)
                 return;
-            let replacements = tgt.getElementById(replacedBy);
-            if (event.detail.type === 'reaction') {
-                // Need to check if replaceBy is an object or a number
-                if (typeof replacedBy === 'object') {
-                    // If replacedBy is an object, try to get its id property
-                    replacedBy = replacedBy.reactomeId;
-                }
-                if (typeof replacedBy === 'number')
-                    // Looks like there is a bug in cytoscape. check for object will return all elements.
-                    replacements = replacements.add(tgt.elements(`[reactionId=${replacedBy}]`));
-            }
+            let replacements = tgt.getElementById(String(replacedBy));
+            if (event.detail.type === 'reaction' && typeof replacedBy === 'number')
+                replacements = replacements.add(withData(tgt, 'reactionId', replacedBy));
             this.applyEvent(event, replacements);
         });
         // interactorHandling = this.reactomeEvents$
@@ -2095,12 +2117,12 @@ let DiagramComponent = class DiagramComponent {
                 elements = e.detail.cy.elements('node.reaction:selected');
             }
             const ids = this.usedbId
-                ? elements.map((el) => el.data('reactomeId'))
-                : elements.map((el) => el.data('graph.stId'));
+                ? elements.map((el) => numberData(el, 'reactomeId'))
+                : elements.map((el) => textData(el, 'graph.stId'));
             // An element with no graph data (the faded normal pathway of a disease
             // diagram) has no id, and leaves the selection as it was: it set it to
             // '', which unselected everything (issue #14, bug 6).
-            const reactomeIds = Array.from(new Set(ids)).filter((id) => id !== undefined && id !== null && id !== '');
+            const reactomeIds = Array.from(new Set(ids)).filter((id) => id !== undefined && id !== '');
             if (reactomeIds.length === 0)
                 return;
             this.state.set('select', reactomeIds[0]);
@@ -2207,11 +2229,17 @@ let DiagramComponent = class DiagramComponent {
             },
         });
     }
+    /**
+     * Draws `elements`: what `DiagramService.getDiagram` gives, or a list of
+     * elements (the curator tool draws an empty diagram with `[]`), which is
+     * never compared.
+     */
     displayNetwork(elements) {
         const container = this.cytoscapeContainer.nativeElement;
+        const fadesOut = (element) => Boolean(element.data['isFadeOut']);
         this.comparing =
-            elements.nodes?.some((node) => node.data['isFadeOut']) ||
-                elements.edges?.some((edge) => edge.data['isFadeOut']);
+            !Array.isArray(elements) &&
+                [...(elements.nodes ?? []), ...(elements.edges ?? [])].some(fadesOut);
         // Set from a response, which a zoneless host does not check after: the
         // compare pane stayed hidden (issue #14, bug 14).
         this.changes.markForCheck();
@@ -2250,7 +2278,11 @@ let DiagramComponent = class DiagramComponent {
             });
     }
     loadCompare(elements, container) {
-        const getPosition = (e) => e.is('.Shadow') ? e.data('triggerPosition') : e.boundingBox().x1;
+        // Nothing writes a shadow's `triggerPosition` (none in the fixtures), and
+        // no shadow is replaced or crossed; read absent, it is NaN, which sorts
+        // and compares as the `undefined` read before.
+        const getPosition = (e) => e.is('.Shadow') ? (numberData(e, 'triggerPosition') ?? NaN) : e.boundingBox().x1;
+        const isReplaced = (e) => isSet(e, 'replacedBy') || isSet(e, 'isCrossed');
         if (this.comparing) {
             this.cy.elements('[!isBackground]').style('visibility', 'hidden');
             this.replacedElements = this.cy.elements('[?replacedBy]')
@@ -2261,7 +2293,7 @@ let DiagramComponent = class DiagramComponent {
             this.replacedElementsPosition = this.replacedElements.map(getPosition);
             this.cy.on('add', (e) => {
                 const addedElement = e.target;
-                if (addedElement.data('replacedBy') || addedElement.data('isCrossed')) {
+                if (isReplaced(addedElement)) {
                     const x = getPosition(addedElement);
                     let index = this.replacedElementsPosition.findIndex((x1) => x1 >= x);
                     if (index === -1)
@@ -2506,14 +2538,14 @@ let DiagramComponent = class DiagramComponent {
                     .slice(limitIndex, this.lastIndex)
                     .map((e) => e.style('visibility', 'hidden')) // Hide the range of elements
                     .filter((e) => e.is('.Shadow')) // And if it is an shadow
-                    .forEach((shadow) => shadow.data('edges').style('underlay-padding', 0)); // Hide as well the associated reaction underlay
+                    .forEach((shadow) => subPathwayEdges(shadow).style('underlay-padding', 0)); // Hide as well the associated reaction underlay
             // If at least one element is switched from right to left
             if (limitIndex > this.lastIndex)
                 this.replacedElements
                     .slice(this.lastIndex, limitIndex)
                     .map((e) => e.style('visibility', 'visible')) // Show the range of elements
                     .filter((e) => e.is('.Shadow')) // And if it is an shadow
-                    .forEach((shadow) => shadow.data('edges').style('underlay-padding', this.underlayPadding)); // Show as well the associated reaction underlay
+                    .forEach((shadow) => subPathwayEdges(shadow).style('underlay-padding', this.underlayPadding)); // Show as well the associated reaction underlay
         }
         this.lastIndex = limitIndex;
     }
@@ -2607,6 +2639,17 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.2.26", ngImpo
             }], blockRouterChange: [{
                 type: Input
             }] } });
+/**
+ * A sub-pathway's lines: its pathway's edges, as the style library finds them
+ * (`initSubPathwayColors`, which keeps them on the shadow as `edges`, a value
+ * typed as anything). A shadow without a database id has none.
+ */
+function subPathwayEdges(shadow) {
+    const pathway = numberData(shadow, 'reactomeId');
+    return pathway === undefined
+        ? shadow.cy().collection().edges()
+        : withData(shadow.cy(), 'pathway', pathway).edges();
+}
 
 /*
  * Public API Surface of ngx-reactome-diagram
