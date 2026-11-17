@@ -72,7 +72,10 @@ module.exports = tseslint.config(
       // errors (and failed assertions on the data) are what a library should
       // say there.
       'no-console': ['error', { allow: ['warn', 'error', 'assert'] }],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      // A value asserted present rather than checked: each was narrowed, or
+      // made to fail with a message naming what was missing (spec 001
+      // T013-T015), so a new one is a new mistake.
+      '@typescript-eslint/no-non-null-assertion': 'error',
       // `any` declared, or flowing through the code: diagram data or an event
       // read as any, then passed, returned or dereferenced as if its shape were
       // known. All were typed (spec 001 T005-T011), so a new one is a new
