@@ -225,7 +225,7 @@ lines in the style library.
       `ele.data(name)` holds (text, number, list; anything else absent), with a
       spec, used by the rest of `style.ts` and by
       `ngx-reactome-cytoscape-style/src/lib/drawer/image-builder.ts` (4). T006
-      and T007 together: 41. 290 → 249. 262 → 253 (#TBD): 4 in the image
+      and T007 together: 41. 290 → 249. 262 → 253 (#41): 4 in the image
       builder (`exp`, `width`, `height` and the gradient's argument), 4 in
       `style.ts` (`interactivityOf`'s `cy.scratch`, read as an `Interactivity`
       or nothing; the molecule's corner radius (2); the label colour), and
@@ -433,7 +433,7 @@ named, and fixed only where it changes nothing a user sees.
   styled the element. Now only a global colour is applied; for any other
   value the label keeps the colour of the rules before it. Nothing in these
   libraries or in WebsiteAngular sets `labelColor`, so no diagram drawn
-  today changes. Found in T007 and fixed there (#TBD), with a test seen
+  today changes. Found in T007 and fixed there (#41), with a test seen
   failing on the old code.
 
 ## Silenced lines
