@@ -1058,17 +1058,59 @@ const subPathway = (properties, { width, height, disease }) => {
     };
 };
 
+/** The value under `name` where it is text. */
+function textData(element, name) {
+    const value = element.data(name);
+    return typeof value === 'string' ? value : undefined;
+}
+/** The value under `name` where it is a number. */
+function numberData(element, name) {
+    const value = element.data(name);
+    return typeof value === 'number' ? value : undefined;
+}
+/** The value under `name` where it is a list. */
+function listData(element, name) {
+    const value = element.data(name);
+    return Array.isArray(value) ? value : undefined;
+}
+/**
+ * A node's analysis values (`exp`), where they are a list. An entry that is
+ * not one of them reads as none.
+ */
+function expressionData(node) {
+    return listData(node, 'exp')?.map(toExpression);
+}
+function toExpression(value) {
+    if (typeof value === 'number')
+        return value;
+    if (!Array.isArray(value))
+        return undefined;
+    const pair = value;
+    const [share, count] = pair;
+    return pair.length === 2 &&
+        (typeof share === 'number' || share === undefined) &&
+        typeof count === 'number'
+        ? [share, count]
+        : undefined;
+}
+
 const imageBuilder = (properties, style) => memoize((node) => {
     let layers = [];
     const clazz = node.classes().find((clazz) => classToDrawers.has(clazz));
     if (!clazz)
         return aggregate(layers, defaultBg);
+    // Without a size there is nothing to size its drawing to: a complex, a
+    // set or a gene was drawn with NaN and `undefined` in its SVG.
+    const width = numberData(node, 'width');
+    const height = numberData(node, 'height');
+    if (width === undefined || height === undefined)
+        return aggregate(layers, defaultBg);
     const provider = classToDrawers.get(clazz);
-    const exps = node.data('exp');
+    const exps = expressionData(node);
     const drawerParams = {
         id: node.id(),
-        width: node.data('width'),
-        height: node.data('height'),
+        width,
+        height,
         drug: node.hasClass('drug'),
         disease: node.hasClass('disease'),
         interactor: node.hasClass('Interactor'),
@@ -1378,6 +1420,26 @@ const OMMITED_ICON = memoize((properties) => {
 // Keyed on its colour, for the same reason as CROSS.
 (properties) => String(extract(properties.global.onSurface)));
 
+// Every global colour, so the compiler holds this list to the type.
+const GLOBAL_COLOURS = {
+    surface: true,
+    onSurface: true,
+    primary: true,
+    onPrimary: true,
+    primaryContainer: true,
+    onPrimaryContainer: true,
+    positive: true,
+    negative: true,
+    negativeContrast: true,
+    selectNode: true,
+    selectEdge: true,
+    hoverNode: true,
+    hoverEdge: true,
+    flag: true,
+};
+function isGlobalColour(name) {
+    return Object.hasOwn(GLOBAL_COLOURS, name);
+}
 /** A CSS variable as a number, or the default when it is unset or not a number. 0 is a number. */
 function cssNumber(css, name, defaultValue) {
     const value = Number.parseFloat(css.getPropertyValue(name));
@@ -2197,7 +2259,8 @@ const INTERACTIVITY_KEY = '_reactomeInteractivity';
  * most recently and so may belong to an entirely different cytoscape instance.
  */
 function interactivityOf(cy) {
-    return cy.scratch(INTERACTIVITY_KEY);
+    const interactivity = cy.scratch(INTERACTIVITY_KEY);
+    return interactivity instanceof Interactivity ? interactivity : undefined;
 }
 class Style {
     constructor(container, properties = {}) {
@@ -2378,11 +2441,11 @@ class Style {
                 selector: 'node.InteractorOccurrences[?exp]',
                 css: {
                     'background-color': (node) => {
-                        const exp = node.data('exp');
-                        // console.log(node.data(), exp)
-                        return exp !== undefined
-                            ? this.currentPalette(exp[0]).hex()
-                            : this.pm(this.properties.analysis.notFound, (c) => c);
+                        const exp = expressionData(node);
+                        if (exp === undefined)
+                            return this.pm(this.properties.analysis.notFound, (c) => c);
+                        const first = exp[0];
+                        return this.currentPalette(Array.isArray(first) ? first[0] : first).hex();
                     },
                     'border-width': this.p('global', 'thickness'),
                     'border-color': this.p('interactor', 'fill'),
@@ -2491,7 +2554,13 @@ class Style {
                     'border-color': this.p('molecule', 'stroke'),
                     'border-width': this.p('global', 'thickness'),
                     // @ts-expect-error
-                    'corner-radius': (node) => Math.min(node.data('width'), node.data('height')) / 2,
+                    'corner-radius': (node) => {
+                        const width = numberData(node, 'width');
+                        const height = numberData(node, 'height');
+                        return width === undefined || height === undefined
+                            ? undefined
+                            : Math.min(width, height) / 2;
+                    },
                 },
             },
             {
@@ -2962,7 +3031,15 @@ class Style {
             {
                 selector: '[?labelColor]',
                 css: {
-                    color: (e) => extract(this.p('global', e.data('labelColor'))),
+                    // A name that is not a global colour threw here. An empty colour is
+                    // invalid, so cytoscape leaves the label the colour the rules before
+                    // this one give it.
+                    color: (e) => {
+                        const name = textData(e, 'labelColor');
+                        return name !== undefined && isGlobalColour(name)
+                            ? extract(this.p('global', name))
+                            : '';
+                    },
                 },
             },
             {
