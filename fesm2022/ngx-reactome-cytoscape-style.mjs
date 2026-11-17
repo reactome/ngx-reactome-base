@@ -1738,14 +1738,6 @@ class Interactivity {
     initHover(cy, mapper = (x) => x) {
         const hoverReaction = this.applyToReaction((col) => col.addClass('hover'), 'hovering');
         const deHoverReaction = this.applyToReaction((col) => col.removeClass('hover'), 'deHovering');
-        // Elements are looked up by id, not with a `#${id}` selector: an id that
-        // is not a valid selector, as an interactor's line whose accession has a
-        // colon in it (ChEBI's) or a space, found nothing, and the line was never
-        // highlighted.
-        const nodeOf = (modification) => {
-            const nodeId = numberData(modification, 'nodeId');
-            return nodeId === undefined ? cy.collection() : cy.getElementById(String(nodeId));
-        };
         const container = cy.container();
         cy.on('mouseover', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
@@ -1805,8 +1797,12 @@ class Interactivity {
             hoverReaction(mapped.connectedNodes('.reaction'));
         })
             .on('mouseout', 'edge', (e) => deHoverReaction(mapper(e.target).connectedNodes('.reaction')))
-            .on('mouseover', 'node.Modification', (e) => mapper(nodeOf(e.target)).addClass('hover'))
-            .on('mouseout', 'node.Modification', (e) => mapper(nodeOf(e.target)).removeClass('hover'))
+            // Elements are looked up by id, not with a `#${id}` selector: an id that
+            // is not a valid selector, as an interactor's line whose accession has a
+            // colon in it (ChEBI's) or a space, found nothing, and the line was never
+            // highlighted.
+            .on('mouseover', 'node.Modification', (e) => mapper(nodeOf(cy, e.target)).addClass('hover'))
+            .on('mouseout', 'node.Modification', (e) => mapper(nodeOf(cy, e.target)).removeClass('hover'))
             .on('mouseover', 'edge.Interactor', (e) => mapper(cy.getElementById(e.target.id())).addClass('hover'))
             .on('mouseout', 'edge.Interactor', (e) => mapper(cy.getElementById(e.target.id())).removeClass('hover'));
     }
@@ -1816,55 +1812,55 @@ class Interactivity {
         cy.on('select', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'PhysicalEntity',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('select', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'Pathway',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('select', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('select', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('unselect', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'PhysicalEntity',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('unselect', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'Pathway',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('unselect', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('unselect', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
             .on('select', 'edge', (e) => selectReaction(mapper(e.target).connectedNodes('.reaction')))
             .on('unselect', 'edge', () => selectReaction(mapper(cy.edges(':selected').connectedNodes('.reaction').add(cy.nodes('.reaction:selected'))))) // Avoid single element selection when double-clicking
             .on('select', 'node.reaction', (event) => selectReaction(mapper(event.target)))
-            .on('select', 'node.Modification', (e) => mapper(cy.nodes(`#${e.target.data('nodeId')}`)).select());
+            .on('select', 'node.Modification', (e) => mapper(nodeOf(cy, e.target)).select());
     }
     initClick(cy) {
         const container = cy.container();
@@ -1877,22 +1873,12 @@ class Interactivity {
             container.dispatchEvent(new ReactomeEvent(eventType, {
                 element: e.target,
                 type: 'Interactor',
-                reactomeId: e.target.data('reactomeId'),
+                reactomeId: numberData(e.target, 'reactomeId'),
                 cy,
             }));
         })
-            .on('tap', '.Interactor', (e) => {
-            const prop = e.target.isNode() ? 'accURL' : 'evidenceURLs';
-            const url = e.target.data(prop);
-            if (url)
-                window.open(url);
-        })
-            .on('tap', '.DiseaseInteractor', (e) => {
-            const prop = e.target.isNode() ? 'accURL' : 'evidenceURLs';
-            const url = e.target.data(prop);
-            if (url)
-                window.open(url);
-        })
+            .on('tap', '.Interactor', openInteractorPage)
+            .on('tap', '.DiseaseInteractor', openInteractorPage)
             .on('tap', '.Compartment', () => cy.elements().unselect());
         // .on('tap', e => {
         //   const openClass = 'opened';
@@ -1915,7 +1901,7 @@ class Interactivity {
             elem.render();
         }, {
             init: (elem, node) => {
-                elem.innerHTML = node.data('html') || '';
+                elem.innerHTML = textData(node, 'html') ?? '';
                 elem.style.display = 'flex';
                 const video = elem.children[0];
                 elem.render = throttle(() => {
@@ -1952,8 +1938,12 @@ class Interactivity {
         // Not async: nothing in here awaits, and returning a promise handed every
         // cytoscape listener built from this factory a value it ignores.
         const handler = (action) => (event) => {
-            const videoId = event.target.id();
-            const videoElement = this.videoLayer?.node.querySelector(`#video-${videoId}`);
+            // Compared by id, not found with a `#video-${id}` selector: an
+            // interactor's node is named after its accession, and a ChEBI one's
+            // colon (`interactor-CHEBI:28304`) made that selector invalid, so
+            // hovering the interactor threw.
+            const videoId = `video-${event.target.id()}`;
+            const videoElement = Array.from(this.videoLayer?.node.querySelectorAll('video') ?? []).find((video) => video.id === videoId);
             if (videoElement && videoElement.readyState >= videoElement.HAVE_ENOUGH_DATA) {
                 action(videoElement);
             }
@@ -2214,7 +2204,10 @@ class Interactivity {
         };
         cy.on('zoom', this.onZoom.shadow);
         cy.on('zoom', this.onZoom.protein);
-        const handler = (e) => updateDecorationPosition(e.target);
+        const handler = (e) => {
+            if (e.target.isNode())
+                updateDecorationPosition(e.target);
+        };
         cy.on('mouseover', '.drug', handler)
             .on('mouseout', '.drug', handler)
             .on('unselect', '.drug', handler)
@@ -2256,6 +2249,20 @@ const state = {
     hovering: false,
     deHovering: false,
 };
+/**
+ * A modification's protein, looked up by id rather than with a `#${id}`
+ * selector, which finds nothing for an id that is not a valid selector.
+ */
+function nodeOf(cy, modification) {
+    const nodeId = numberData(modification, 'nodeId');
+    return nodeId === undefined ? cy.collection() : cy.getElementById(String(nodeId));
+}
+/** An interactor's page, from its node, or its evidence, from its line. */
+function openInteractorPage(e) {
+    const url = textData(e.target, e.target.isNode() ? 'accURL' : 'evidenceURLs');
+    if (url)
+        window.open(url);
+}
 class P extends Array {
     constructor(x, y) {
         super(x, y);
