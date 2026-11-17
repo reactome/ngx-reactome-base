@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import cytoscape from 'cytoscape';
 import { Interactivity } from './interactivity';
+import { Style } from './style';
 
 /**
  * The zoom curves' interpolation. It used `if (y) return y`, so an exact 0 --
@@ -98,5 +99,77 @@ describe('structure containers', () => {
 
   it('holds nothing when structures are off', () => {
     expect(containers(false)).toEqual([]);
+  });
+});
+
+/**
+ * A protein's structure video plays while it is hovered. An interactor's node
+ * is named after its accession (`interactor-<acc>`), and a static interactor
+ * has no type, so it is a `Protein`; the video was found with a
+ * `#video-<node id>` selector, which a ChEBI accession's colon made invalid,
+ * so hovering such an interactor threw.
+ */
+describe('structure video', () => {
+  // jsdom cannot draw, and the structure layers need cytoscape's canvas
+  // renderer: a context that measures and draws nothing stands in, as in the
+  // diagram library's specs. Its target is typed as the smallest context the
+  // DOM declares; every other member comes from the proxy.
+  beforeEach(() => {
+    const context: ImageBitmapRenderingContext = {
+      canvas: document.createElement('canvas'),
+      transferFromImageBitmap: () => undefined,
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      () =>
+        new Proxy(context, {
+          get: (_target, name) =>
+            name === 'measureText'
+              ? (text: string) => ({ width: text.length * 6 })
+              : () => ({ addColorStop: () => undefined, data: [] }),
+          set: () => true,
+        })
+    );
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const hovered = (id: string) => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const cy = cytoscape({
+      container,
+      elements: [
+        {
+          data: {
+            id,
+            width: 60,
+            height: 20,
+            html: `<video loop id="video-${id}"><source src="x.webm" type="video/webm"></video>`,
+          },
+          classes: 'Protein PhysicalEntity Interactor',
+          position: { x: 0, y: 0 },
+        },
+      ],
+    });
+    try {
+      new Style(container).bindToCytoscape(cy);
+      const video = container.querySelector('video');
+      if (!video) throw new Error('the video layer drew no video');
+      // As loaded, so the handler plays it.
+      Object.defineProperty(video, 'readyState', { value: video.HAVE_ENOUGH_DATA });
+      const play = vi.spyOn(video, 'play').mockResolvedValue(undefined);
+      cy.getElementById(id).emit('mouseover');
+      return play;
+    } finally {
+      cy.destroy();
+      container.remove();
+    }
+  };
+
+  it('plays for a protein', () => {
+    expect(hovered('11')).toHaveBeenCalledOnce();
+  });
+
+  it('plays for an interactor whose id is not a valid selector', () => {
+    expect(hovered('interactor-CHEBI:28304')).toHaveBeenCalledOnce();
   });
 });

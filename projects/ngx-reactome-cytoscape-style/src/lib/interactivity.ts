@@ -394,11 +394,15 @@ export class Interactivity {
     // Not async: nothing in here awaits, and returning a promise handed every
     // cytoscape listener built from this factory a value it ignores.
     const handler =
-      (action: (video: HTMLVideoElement) => void) => (event: cytoscape.EventObject) => {
-        const videoId = event.target.id();
-        const videoElement = this.videoLayer?.node.querySelector(
-          `#video-${videoId}`
-        ) as HTMLVideoElement;
+      (action: (video: HTMLVideoElement) => void) => (event: cytoscape.EventObjectNode) => {
+        // Compared by id, not found with a `#video-${id}` selector: an
+        // interactor's node is named after its accession, and a ChEBI one's
+        // colon (`interactor-CHEBI:28304`) made that selector invalid, so
+        // hovering the interactor threw.
+        const videoId = `video-${event.target.id()}`;
+        const videoElement = Array.from(this.videoLayer?.node.querySelectorAll('video') ?? []).find(
+          (video) => video.id === videoId
+        );
         if (videoElement && videoElement.readyState >= videoElement.HAVE_ENOUGH_DATA) {
           action(videoElement);
         }
