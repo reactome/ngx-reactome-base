@@ -173,3 +173,42 @@ describe('structure video', () => {
     expect(hovered('interactor-CHEBI:28304')).toHaveBeenCalledOnce();
   });
 });
+
+/**
+ * A graph with no container -- headless -- binds when structures are off, the
+ * structure layers being the only part that needs a page. Its events were sent
+ * to `cy.container()`, which is null there: selecting or hovering an entity, or
+ * opening an interactor badge, threw "Cannot read properties of null (reading
+ * 'dispatchEvent')", out of the caller's `select()`.
+ */
+describe('a graph without a container', () => {
+  const bound = () => {
+    const host = document.createElement('div');
+    host.style.setProperty('--structures', '0');
+    const cy = cytoscape({
+      headless: true,
+      elements: [
+        { data: { id: 'e', reactomeId: 1 }, classes: 'Protein PhysicalEntity' },
+        { data: { id: 'b', reactomeId: 2 }, classes: 'InteractorOccurrences' },
+      ],
+    });
+    new Style(host).bindToCytoscape(cy);
+    return cy;
+  };
+
+  it('selects an entity', () => {
+    const cy = bound();
+    expect(() => cy.$id('e').select()).not.toThrow();
+    expect(cy.$id('e').selected()).toBe(true);
+  });
+
+  it('hovers an entity', () => {
+    expect(() => bound().$id('e').emit('mouseover')).not.toThrow();
+  });
+
+  it('opens an interactor badge', () => {
+    const cy = bound();
+    expect(() => cy.$id('b').emit('tap')).not.toThrow();
+    expect(cy.$id('b').hasClass('opened')).toBe(true);
+  });
+});

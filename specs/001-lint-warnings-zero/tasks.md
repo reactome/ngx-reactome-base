@@ -552,6 +552,16 @@ named, and fixed only where it changes nothing a user sees.
   libraries or in WebsiteAngular sets `labelColor`, so no diagram drawn
   today changes. Found in T007 and fixed there (#41), with a test seen
   failing on the old code.
+- **A graph with no container threw on each select, hover or badge tap**
+  (`ngx-reactome-cytoscape-style/src/lib/interactivity.ts`, `initHover`,
+  `initSelect`, `initClick`): the events were sent to `cy.container()!`, and a
+  headless graph's is null. Such a graph binds when structures are off
+  (`--structures: 0`); with them on, the structure layers refuse it first.
+  Selecting an entity on it, even with `select()`, threw "Cannot read
+  properties of null (reading 'dispatchEvent')". Nothing in these libraries
+  or in WebsiteAngular binds a headless graph, so no user saw it. Now such a
+  graph sends no events and the rest of each handler runs. Found in T013 and
+  fixed there, with a test seen failing on the old code.
 
 ## Silenced lines
 

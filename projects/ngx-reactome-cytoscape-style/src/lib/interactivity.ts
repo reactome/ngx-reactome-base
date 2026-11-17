@@ -63,9 +63,12 @@ export class Interactivity {
   initHover(cy: cytoscape.Core, mapper = <X>(x: X) => x) {
     const hoverReaction = this.applyToReaction((col) => col.addClass('hover'), 'hovering');
     const deHoverReaction = this.applyToReaction((col) => col.removeClass('hover'), 'deHovering');
-    const container = cy.container()!;
+    // A headless graph has no container, and no page to send events to: each
+    // event sent to it threw out of the caller's `select()`, here and in
+    // `initSelect` and `initClick`.
+    const container = cy.container();
     cy.on('mouseover', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
-      container.dispatchEvent(
+      container?.dispatchEvent(
         new ReactomeEvent(ReactomeEventTypes.hover, {
           element: e.target,
           type: 'PhysicalEntity',
@@ -75,7 +78,7 @@ export class Interactivity {
       )
     )
       .on('mouseover', 'node.Pathway', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'Pathway',
@@ -85,7 +88,7 @@ export class Interactivity {
         )
       )
       .on('mouseover', 'node.reaction', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'reaction',
@@ -95,7 +98,7 @@ export class Interactivity {
         )
       )
       .on('mouseover', 'edge.reaction', (e: cytoscape.EventObjectEdge) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
@@ -106,7 +109,7 @@ export class Interactivity {
       )
 
       .on('mouseout', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'PhysicalEntity',
@@ -116,7 +119,7 @@ export class Interactivity {
         )
       )
       .on('mouseout', 'node.Pathway', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'Pathway',
@@ -126,7 +129,7 @@ export class Interactivity {
         )
       )
       .on('mouseout', 'node.reaction', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'reaction',
@@ -136,7 +139,7 @@ export class Interactivity {
         )
       )
       .on('mouseout', 'edge.reaction', (e: cytoscape.EventObjectEdge) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
@@ -189,10 +192,10 @@ export class Interactivity {
 
   initSelect(cy: cytoscape.Core, mapper = <X>(x: X) => x) {
     const selectReaction = this.applyToReaction((col) => col.select(), 'selecting');
-    const container = cy.container()!;
+    const container = cy.container();
 
     cy.on('select', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
-      container.dispatchEvent(
+      container?.dispatchEvent(
         new ReactomeEvent(ReactomeEventTypes.select, {
           element: e.target,
           type: 'PhysicalEntity',
@@ -202,7 +205,7 @@ export class Interactivity {
       )
     )
       .on('select', 'node.Pathway', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'Pathway',
@@ -212,7 +215,7 @@ export class Interactivity {
         )
       )
       .on('select', 'node.reaction', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'reaction',
@@ -222,7 +225,7 @@ export class Interactivity {
         )
       )
       .on('select', 'edge.reaction', (e: cytoscape.EventObjectEdge) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
@@ -233,7 +236,7 @@ export class Interactivity {
       )
 
       .on('unselect', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'PhysicalEntity',
@@ -243,7 +246,7 @@ export class Interactivity {
         )
       )
       .on('unselect', 'node.Pathway', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'Pathway',
@@ -253,7 +256,7 @@ export class Interactivity {
         )
       )
       .on('unselect', 'node.reaction', (e: cytoscape.EventObjectNode) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'reaction',
@@ -263,7 +266,7 @@ export class Interactivity {
         )
       )
       .on('unselect', 'edge.reaction', (e: cytoscape.EventObjectEdge) =>
-        container.dispatchEvent(
+        container?.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
@@ -293,7 +296,7 @@ export class Interactivity {
   }
 
   initClick(cy: cytoscape.Core) {
-    const container = cy.container()!;
+    const container = cy.container();
 
     cy.on('tap', 'node.InteractorOccurrences', (e: cytoscape.EventObjectNode) => {
       const openClass = 'opened';
@@ -301,7 +304,7 @@ export class Interactivity {
         ? ReactomeEventTypes.open
         : ReactomeEventTypes.close;
       e.target.toggleClass(openClass);
-      container.dispatchEvent(
+      container?.dispatchEvent(
         new ReactomeEvent(eventType, {
           element: e.target,
           type: 'Interactor',
