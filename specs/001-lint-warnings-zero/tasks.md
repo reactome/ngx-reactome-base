@@ -435,7 +435,7 @@ lines in the style library.
     17 -> 39`).
 - [x] T015 [US3] `no-non-null-assertion` in the diagram component (17: the
       view children's elements (7) and the cytoscape instances (10), mostly in
-      the compare view), then promote the rule. 17 → 0. (#TBD)
+      the compare view), then promote the rule. 17 → 0. (#49)
   - 17, as written: 25 → 8, `no-non-null-assertion` 17 → 0, and promoted to
     `error`. The 8 left are T004's, on hold; its view children, inputs and
     output are untouched (no signal queries).
