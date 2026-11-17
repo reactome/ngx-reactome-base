@@ -1098,13 +1098,13 @@ const imageBuilder = (properties, style) => memoize((node) => {
     let layers = [];
     const clazz = node.classes().find((clazz) => classToDrawers.has(clazz));
     if (!clazz)
-        return aggregate(layers, defaultBg);
+        return aggregate(layers);
     // Without a size there is nothing to size its drawing to: a complex, a
     // set or a gene was drawn with NaN and `undefined` in its SVG.
     const width = numberData(node, 'width');
     const height = numberData(node, 'height');
     if (width === undefined || height === undefined)
-        return aggregate(layers, defaultBg);
+        return aggregate(layers);
     const provider = classToDrawers.get(clazz);
     const exps = expressionData(node);
     const drawerParams = {
@@ -1185,7 +1185,7 @@ const imageBuilder = (properties, style) => memoize((node) => {
             ? l['background-height']
             : drawerParams.height),
     }));
-    const aggregated = aggregate(layers, defaultBg);
+    const aggregated = aggregate(layers);
     aggregated['bounds-expansion'] = [
         Math.max(...aggregated['bounds-expansion'], 0),
     ];
@@ -1365,12 +1365,28 @@ function clearDrawersCache() {
     OMMITED_ICON.cache.clear();
     CROSS.cache.clear();
 }
-function aggregate(toAggregate, defaultValue) {
-    const aggregate = {};
-    //@ts-expect-error
-    const keys = new Set(Object.keys(defaultValue));
-    keys.forEach((key) => (aggregate[key] = toAggregate.map((t) => t[key] ?? defaultValue[key])));
-    return aggregate;
+/** Each property's value in every layer, a layer without one taking the default's. */
+function aggregate(layers) {
+    const values = (key) => layers.map((layer) => layer[key] ?? defaultBg[key]);
+    return {
+        'background-image': values('background-image'),
+        'background-image-crossorigin': values('background-image-crossorigin'),
+        'background-image-opacity': values('background-image-opacity'),
+        'background-image-smoothing': values('background-image-smoothing'),
+        'background-image-containment': values('background-image-containment'),
+        'background-width': values('background-width'),
+        'background-height': values('background-height'),
+        'background-fit': values('background-fit'),
+        'background-repeat': values('background-repeat'),
+        'background-position-x': values('background-position-x'),
+        'background-position-y': values('background-position-y'),
+        'background-offset-x': values('background-offset-x'),
+        'background-offset-y': values('background-offset-y'),
+        'background-width-relative-to': values('background-width-relative-to'),
+        'background-height-relative-to': values('background-height-relative-to'),
+        'background-clip': values('background-clip'),
+        'bounds-expansion': values('bounds-expansion'),
+    };
 }
 const RX = (properties, { height }, clazz) => {
     const t = extract(properties.global.thickness);
@@ -1985,11 +2001,10 @@ class Interactivity {
         this.structureContainers = this.structureContainers.not(node);
     }
     initStructureMolecule(cy) {
-        // @ts-expect-error
-        const layers = cy.layers();
-        this.moleculeLayer = layers.append('html');
+        const layersPlugin = layers(cy);
+        this.moleculeLayer = layersPlugin.append('html');
         this.moleculeLayer.node.classList.add('molecule');
-        layers.renderPerNode(this.moleculeLayer, (elem, node) => {
+        layersPlugin.renderPerNode(this.moleculeLayer, (elem, node) => {
             elem.style.visibility = node.visible() ? 'visible' : 'hidden';
         }, {
             init: (elem, node) => {
@@ -2298,7 +2313,7 @@ class Style {
         });
     }
     getStyleSheet() {
-        return [
+        const rules = [
             {
                 selector: '*',
                 css: {
@@ -2342,9 +2357,7 @@ class Style {
                     'text-opacity': 1,
                     'text-valign': 'bottom',
                     'text-halign': 'right',
-                    // @ts-expect-error
                     'text-margin-x': 'data(textX)',
-                    // @ts-expect-error
                     'text-margin-y': 'data(textY)',
                 },
             },
@@ -2389,24 +2402,15 @@ class Style {
                     'text-valign': 'center',
                     'text-wrap': 'wrap',
                     'text-max-width': (node) => node.data('width') + 'px',
-                    // @ts-expect-error
                     'background-image-smoothing': 'no no no no no no no no',
-                    // @ts-expect-error
                     'background-image': (node) => this.imageBuilder(node)['background-image'],
-                    // @ts-expect-error
-                    'background-position-y': (node) => this.imageBuilder(node)['background-position-y'] || [],
-                    // @ts-expect-error
-                    'background-position-x': (node) => this.imageBuilder(node)['background-position-x'] || [],
-                    // @ts-expect-error
-                    'background-height': (node) => this.imageBuilder(node)['background-height'] || '100%',
-                    // @ts-expect-error
-                    'background-width': (node) => this.imageBuilder(node)['background-width'] || '100%',
-                    // @ts-expect-error
-                    'background-clip': (node) => this.imageBuilder(node)['background-clip'] || 'node',
-                    // @ts-expect-error
-                    'background-image-containment': (node) => this.imageBuilder(node)['background-image-containment'] || 'inside',
-                    // @ts-expect-error
-                    'background-image-opacity': (node) => this.imageBuilder(node)['background-image-opacity'] || 1,
+                    'background-position-y': (node) => this.imageBuilder(node)['background-position-y'],
+                    'background-position-x': (node) => this.imageBuilder(node)['background-position-x'],
+                    'background-height': (node) => this.imageBuilder(node)['background-height'],
+                    'background-width': (node) => this.imageBuilder(node)['background-width'],
+                    'background-clip': (node) => this.imageBuilder(node)['background-clip'],
+                    'background-image-containment': (node) => this.imageBuilder(node)['background-image-containment'],
+                    'background-image-opacity': (node) => this.imageBuilder(node)['background-image-opacity'],
                     'bounds-expansion': (node) => this.imageBuilder(node)['bounds-expansion'][0] || 0,
                     color: this.p('global', 'onPrimary'),
                 },
@@ -2553,7 +2557,6 @@ class Style {
                     'background-color': this.p('molecule', 'fill'),
                     'border-color': this.p('molecule', 'stroke'),
                     'border-width': this.p('global', 'thickness'),
-                    // @ts-expect-error
                     'corner-radius': (node) => {
                         const width = numberData(node, 'width');
                         const height = numberData(node, 'height');
@@ -2626,7 +2629,6 @@ class Style {
                 css: {
                     'background-opacity': 0,
                     shape: 'round-rectangle',
-                    // @ts-expect-error
                     'corner-radius': 999999,
                     'border-width': 0, // Avoid disease border
                     'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => this.pm(this.properties.cell.thickness, (ct) => node.width() - t * 2 - ct * 2 + 'px')),
@@ -2652,7 +2654,6 @@ class Style {
             {
                 selector: 'node.SUB.Pathway',
                 css: {
-                    //@ts-expect-error
                     'corner-radius': 99999,
                     shape: 'round-rectangle',
                     'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => `${node.width() - (6 * t + 36) * 2}px`),
@@ -2791,7 +2792,6 @@ class Style {
                     'mid-source-arrow-color': this.p('global', 'onSurface'),
                     'mid-target-arrow-color': this.p('global', 'onSurface'),
                     'source-arrow-color': this.p('global', 'onSurface'),
-                    // @ts-expect-error
                     'source-arrow-width': '100%',
                     'target-arrow-width': '100%',
                     'font-size': this.p('font', 'size'),
@@ -2815,7 +2815,6 @@ class Style {
                     'arrow-scale': 1,
                     'source-arrow-color': this.p('global', 'hoverEdge'),
                     'target-arrow-color': this.p('global', 'hoverEdge'),
-                    // @ts-expect-error
                     'source-arrow-width': '50%',
                     'target-arrow-width': '50%',
                     'z-index': 2,
@@ -2829,7 +2828,6 @@ class Style {
                     'arrow-scale': 1,
                     'source-arrow-color': this.p('global', 'selectEdge'),
                     'target-arrow-color': this.p('global', 'selectEdge'),
-                    // @ts-expect-error
                     'source-arrow-width': '50%',
                     'target-arrow-width': '50%',
                     'z-index': 3,
@@ -2957,7 +2955,6 @@ class Style {
                     'segment-weights': 'data(weights)',
                     'segment-radius': 30,
                     'radius-type': 'influence-radius',
-                    // @ts-expect-error
                     'edge-distances': 'endpoints',
                 },
             },
@@ -3024,7 +3021,6 @@ class Style {
             {
                 selector: 'edge[?sourceOffset]',
                 css: {
-                    // @ts-expect-error
                     'source-text-offset': 'data(sourceOffset)',
                 },
             },
@@ -3117,6 +3113,10 @@ class Style {
                 },
             },
         ];
+        // The one hand-over to cytoscape's types, unchecked: `Rule` is theirs
+        // widened by the values cytoscape takes and its types leave out (see
+        // `NodeCss` and `EdgeCss`). Typed as theirs, those rules would not compile.
+        return rules;
     }
     clearCache() {
         this.imageBuilder.cache.clear();
