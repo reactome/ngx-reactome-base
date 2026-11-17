@@ -363,6 +363,42 @@ describe('DiagramService, drawing real pathways', () => {
     }
   });
 
+  describe('stops, naming it, at a part the diagram does not contain', () => {
+    // It stopped there before too, with "Cannot read properties of undefined".
+    const MISSING = 999999999;
+
+    it('a line to a reaction not in it', async () => {
+      const layout = structuredClone(therapeutics);
+      const connector = layout.nodes.flatMap((n) => n.connectors)[0];
+      if (!connector) throw new Error('the pathway has no connectors');
+      connector.edgeId = MISSING;
+      await expect(elementsOf('R-HSA-9679191', layout, therapeuticsGraph)).rejects.toThrow(
+        `The diagram names the edge ${MISSING}, not in it.`
+      );
+    });
+
+    it('a link from an entity not in it', async () => {
+      const layout = structuredClone(therapeutics);
+      const link = layout.links[0];
+      if (!link) throw new Error('the pathway has no links');
+      link.inputs[0].id = MISSING;
+      await expect(elementsOf('R-HSA-9679191', layout, therapeuticsGraph)).rejects.toThrow(
+        `The diagram names the node ${MISSING}, not in it.`
+      );
+    });
+
+    it('a sub-pathway reaction not in it', async () => {
+      const graph = structuredClone(checkpointsGraph);
+      const shown = checkpoints.shadows[0]?.reactomeId;
+      const subpathway = graph.subpathways.find((s) => s.dbId === shown);
+      if (!subpathway) throw new Error('the pathway has no sub-pathway drawn');
+      subpathway.events.push(MISSING);
+      await expect(elementsOf('R-HSA-69620', checkpoints, graph)).rejects.toThrow(
+        `The diagram names the reaction ${MISSING}, not in it.`
+      );
+    });
+  });
+
   it('labels each sub-pathway once, placed apart from the others', async () => {
     const elements = await elementsOf('R-HSA-69620', checkpoints, checkpointsGraph);
     const labels = elements.nodes.filter((n) => classesOf(n).includes('Shadow'));

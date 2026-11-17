@@ -25,6 +25,8 @@ type EdgeTypeDefinition = Types.EdgeTypeDefinition;
 cytoscape.use(cytoscapeFcose);
 
 type RelativePosition = { distances: number[]; weights: number[] };
+// A node definition whose id is given, for code that finds the node by it.
+type IdentifiedNode = cytoscape.NodeDefinition & { data: { id: string } };
 
 // What an app provides for DIAGRAM_CONFIG_TOKEN.
 export interface DiagramConfig {
@@ -36,6 +38,14 @@ export interface DiagramConfig {
 // Above the service: when the constructor named it in @Inject, declared after
 // it, the decorator read it before it existed.
 export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<DiagramConfig>('DIAGRAM_CONFIG_TOKEN');
+
+// A part the diagram must contain. One that is not there stops the drawing, as
+// it did before with a TypeError, but naming the part.
+function lookUp<K, V>(map: Map<K, V>, key: K, what: string): V {
+  const value = map.get(key);
+  if (value === undefined) throw new Error(`The diagram names ${what} ${String(key)}, not in it.`);
+  return value;
+}
 
 const posToStr = (edge: Edge, pos: Position) => `${edge.id}-${pos.x},${pos.y}`;
 
@@ -492,7 +502,7 @@ export class DiagramService {
         });
 
         //sub pathways
-        const shadowNodes: cytoscape.NodeDefinition[] = data?.shadows.map((item) => {
+        const shadowNodes: IdentifiedNode[] = data?.shadows.map((item) => {
           return {
             data: {
               id: item.id + '',
@@ -503,10 +513,9 @@ export class DiagramService {
             },
             classes: ['Shadow'],
             position: closestToAverage(
-              subpathwayIdToEventIds
-                .get(item.reactomeId)!
-                .map((reactionId) => reactomeIdToEdge.get(reactionId)!)
-                .map((edge) => scale(edge!.position))
+              lookUp(subpathwayIdToEventIds, item.reactomeId, 'the subpathway')
+                .map((reactionId) => lookUp(reactomeIdToEdge, reactionId, 'the reaction'))
+                .map((edge) => scale(edge.position))
             ),
           };
         });
@@ -525,7 +534,7 @@ export class DiagramService {
          */
         const edges: cytoscape.EdgeDefinition[] = data.nodes.flatMap((node) => {
           return node.connectors.map((connector) => {
-            const reaction = idToEdges.get(connector.edgeId)!;
+            const reaction = lookUp(idToEdges, connector.edgeId, 'the edge');
 
             const reactionP = scale(reaction.position);
             const nodeP = scale(node.position);
@@ -545,9 +554,8 @@ export class DiagramService {
             this.addEdgeInfo(reaction, points, 'backward', sourceP);
             this.addEdgeInfo(reaction, points, 'forward', targetP);
 
-            let [from, to] = [points.shift()!, points.pop()!];
-            from = from ?? nodeP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
-            to = to ?? reactionP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+            const from = points.shift() ?? nodeP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+            let to = points.pop() ?? reactionP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
             if (connector.type === 'CATALYST') {
               to = scale(connector.endShape.centre);
             }
@@ -555,7 +563,7 @@ export class DiagramService {
             // points = addRoundness(from, to, points);
             const relatives = this.absoluteToRelative(from, to, points);
 
-            const classes = [...this.edgeTypeMap.get(connector.type)!];
+            const classes = [...lookUp(this.edgeTypeMap, connector.type, 'the connector type')];
             if (reaction.isDisease) classes.push('disease');
             if (node.trivial) classes.push('trivial');
             if (eventIdToSubPathwayId.has(reaction.reactomeId)) classes.push('shadow');
@@ -591,7 +599,10 @@ export class DiagramService {
                 (otherConnector) =>
                   otherConnector !== connector &&
                   otherConnector.isFadeOut &&
-                  samePoint(idToEdges.get(otherConnector.edgeId)!.position, reaction.position)
+                  samePoint(
+                    lookUp(idToEdges, otherConnector.edgeId, 'the edge').position,
+                    reaction.position
+                  )
               )?.edgeId;
               // Second case: different nodes are used between special and normal context
               replacement =
@@ -633,8 +644,8 @@ export class DiagramService {
               link.inputs[0].id !== link.outputs[0].id
           )
           ?.map((link) => {
-            const source = idToNodes.get(link.inputs[0].id)!;
-            const target = idToNodes.get(link.outputs[0].id)!;
+            const source = lookUp(idToNodes, link.inputs[0].id, 'the node');
+            const target = lookUp(idToNodes, link.outputs[0].id, 'the node');
 
             const sourceP = scale(source.position);
             const targetP = scale(target.position);
@@ -643,14 +654,13 @@ export class DiagramService {
               .flatMap((segment, i) => (i === 0 ? [segment.from, segment.to] : [segment.to]))
               .map((pos) => scale(pos));
 
-            let [from, to] = [points.shift()!, points.pop()!];
-            from = from ?? sourceP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
-            to = to ?? targetP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+            const from = points.shift() ?? sourceP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+            const to = points.pop() ?? targetP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
 
             // points = addRoundness(from, to, points);
             const relatives = this.absoluteToRelative(from, to, points);
 
-            const classes = [...this.linkClassMap.get(link.renderableClass)!];
+            const classes = [...lookUp(this.linkClassMap, link.renderableClass, 'the link class')];
             if (link.isDisease) classes.push('disease');
             const isBackground =
               link.isFadeOut ||
@@ -718,19 +728,23 @@ export class DiagramService {
     stop: Position
   ) {
     const stopPos = posToStr(edge, stop);
+    // Each step goes on from the point the last one added. The caller always
+    // passes at least one point.
     if (direction === 'forward') {
       const map = this.extraLine;
-      let pos = posToStr(edge, points.at(-1)!);
-      while (map.has(pos) && pos !== stopPos) {
-        points.push(map.get(pos)!);
-        pos = posToStr(edge, points.at(-1)!);
+      let at = points.at(-1);
+      while (at) {
+        const pos = posToStr(edge, at);
+        at = pos !== stopPos ? map.get(pos) : undefined;
+        if (at) points.push(at);
       }
     } else {
       const map = this.reverseExtraLine;
-      let pos = posToStr(edge, points.at(0)!);
-      while (map.has(pos) && pos !== stopPos) {
-        points.unshift(map.get(pos)!);
-        pos = posToStr(edge, points.at(0)!);
+      let at = points.at(0);
+      while (at) {
+        const pos = posToStr(edge, at);
+        at = pos !== stopPos ? map.get(pos) : undefined;
+        if (at) points.unshift(at);
       }
     }
   }
@@ -790,7 +804,7 @@ export class DiagramService {
     // const peTypes = ['Gene'];
     const reactionTypes = ['association', 'dissociation', 'transition', 'uncertain', 'omitted'];
 
-    const physicalEntities: cytoscape.NodeDefinition[] = Array.from({ length: amount }, (_x, i) => {
+    const physicalEntities: IdentifiedNode[] = Array.from({ length: amount }, (_x, i) => {
       const clazz = this.pick(peTypes);
       return {
         group: 'nodes',
@@ -805,7 +819,7 @@ export class DiagramService {
       };
     });
 
-    const reactions: cytoscape.NodeDefinition[] = physicalEntities.map((_node, i) => ({
+    const reactions: IdentifiedNode[] = physicalEntities.map((_node, i) => ({
       group: 'nodes',
       data: {
         id: `${i}-react`,
@@ -844,8 +858,8 @@ export class DiagramService {
     const additionalIn: cytoscape.EdgeDefinition[] = Array.from({ length: amount / 4 }).map(() => ({
       group: 'edges',
       data: {
-        source: this.pick(physicalEntities).data.id!,
-        target: this.pick(reactions).data.id!,
+        source: this.pick(physicalEntities).data.id,
+        target: this.pick(reactions).data.id,
       },
       classes: this.pick([
         'catalysis',
@@ -911,7 +925,7 @@ function getRect(node: Node): Rectangle {
 /**
  * Create a temporary cytoscape session to apply a layout to the nodes in order to avoid them to overlap each others
  */
-function avoidOverlap(definitions: cytoscape.NodeDefinition[]) {
+function avoidOverlap(definitions: IdentifiedNode[]) {
   const container = document.createElement('div');
 
   const style = new Style(container, {});
@@ -944,7 +958,7 @@ function avoidOverlap(definitions: cytoscape.NodeDefinition[]) {
   } as FcoseLayoutOptions);
   layout.run();
 
-  definitions.forEach((def) => (def.position = cy.getElementById(def.data.id!).position()));
+  definitions.forEach((def) => (def.position = cy.getElementById(def.data.id).position()));
 
   cy.destroy();
   container.remove();
