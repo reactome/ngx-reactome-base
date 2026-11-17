@@ -275,7 +275,7 @@ lines in the style library.
       `initHover` (59): handlers on node selectors take `EventObjectNode`, on
       edge selectors `EventObjectEdge`; ids read through T007's readers. Brings
       `ReactomeEventTarget`'s declared types against what is sent (open
-      question 2). 228 → 169. (#TBD) Measured 230 → 171: `no-unsafe-*` only
+      question 2). 228 → 169. (#43) Measured 230 → 171: `no-unsafe-*` only
       (argument 4, assignment 17, call 18, member access 18, return 2); no
       rule reaches zero. `ReactomeEventTarget` (exported) now declares
       `reactomeId: number | undefined` (the diagrams store numbers; the
@@ -368,7 +368,7 @@ lines in the style library.
    hover, a collection. Correct the exported type to what is sent (a change
    WebsiteAngular may need to follow), or keep the type and convert what is
    sent (a behaviour change)? Decided (16 Nov): correct the type to what is
-   sent. Done in T009 (#TBD).
+   sent. Done in T009 (#43).
 
 ## Bugs found on the way
 
@@ -389,7 +389,7 @@ named, and fixed only where it changes nothing a user sees.
   (`ngx-reactome-cytoscape-style/src/lib/model/reactome-event.model.ts`): see
   open question 2. Decided (16 Nov): the type follows what is sent
   (`reactomeId` a number, `element` a collection); in T009 and T010. The
-  type corrected in T009 (#TBD); what `initSelect` and `initClick` send is
+  type corrected in T009 (#43); what `initSelect` and `initClick` send is
   read through the readers in T010.
 - **Hovering an interactor whose id is not a valid CSS selector throws**
   (`interactivity.ts`, `initStructureVideo`'s handler, for `node.Protein`):
