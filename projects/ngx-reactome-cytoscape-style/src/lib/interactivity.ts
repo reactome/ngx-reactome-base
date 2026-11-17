@@ -4,7 +4,7 @@ import { Properties } from './properties';
 import { ReactomeEvent, ReactomeEventTypes } from './model/reactome-event.model';
 import Layers, { IHTMLLayer, layers, LayersPlugin } from 'cytoscape-layers';
 import { throttle } from './util/throttle';
-import { numberData } from './element-data';
+import { numberData, textData } from './element-data';
 
 cytoscape.use(Layers);
 type RenderableHTMLElement = HTMLElement & {
@@ -63,15 +63,6 @@ export class Interactivity {
   initHover(cy: cytoscape.Core, mapper = <X>(x: X) => x) {
     const hoverReaction = this.applyToReaction((col) => col.addClass('hover'), 'hovering');
     const deHoverReaction = this.applyToReaction((col) => col.removeClass('hover'), 'deHovering');
-    // Elements are looked up by id, not with a `#${id}` selector: an id that
-    // is not a valid selector, as an interactor's line whose accession has a
-    // colon in it (ChEBI's) or a space, found nothing, and the line was never
-    // highlighted.
-    const nodeOf = (modification: cytoscape.NodeSingular) => {
-      const nodeId = numberData(modification, 'nodeId');
-      return nodeId === undefined ? cy.collection() : cy.getElementById(String(nodeId));
-    };
-
     const container = cy.container()!;
     cy.on('mouseover', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
       container.dispatchEvent(
@@ -177,11 +168,15 @@ export class Interactivity {
         deHoverReaction(mapper(e.target).connectedNodes('.reaction'))
       )
 
+      // Elements are looked up by id, not with a `#${id}` selector: an id that
+      // is not a valid selector, as an interactor's line whose accession has a
+      // colon in it (ChEBI's) or a space, found nothing, and the line was never
+      // highlighted.
       .on('mouseover', 'node.Modification', (e: cytoscape.EventObjectNode) =>
-        mapper(nodeOf(e.target)).addClass('hover')
+        mapper(nodeOf(cy, e.target)).addClass('hover')
       )
       .on('mouseout', 'node.Modification', (e: cytoscape.EventObjectNode) =>
-        mapper(nodeOf(e.target)).removeClass('hover')
+        mapper(nodeOf(cy, e.target)).removeClass('hover')
       )
 
       .on('mouseover', 'edge.Interactor', (e: cytoscape.EventObjectEdge) =>
@@ -196,89 +191,91 @@ export class Interactivity {
     const selectReaction = this.applyToReaction((col) => col.select(), 'selecting');
     const container = cy.container()!;
 
-    cy.on('select', 'node.PhysicalEntity', (e) =>
+    cy.on('select', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
       container.dispatchEvent(
         new ReactomeEvent(ReactomeEventTypes.select, {
           element: e.target,
           type: 'PhysicalEntity',
-          reactomeId: e.target.data('reactomeId'),
+          reactomeId: numberData(e.target, 'reactomeId'),
           cy,
         })
       )
     )
-      .on('select', 'node.Pathway', (e) =>
+      .on('select', 'node.Pathway', (e: cytoscape.EventObjectNode) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'Pathway',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
-      .on('select', 'node.reaction', (e) =>
+      .on('select', 'node.reaction', (e: cytoscape.EventObjectNode) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
-      .on('select', 'edge.reaction', (e) =>
+      .on('select', 'edge.reaction', (e: cytoscape.EventObjectEdge) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
 
-      .on('unselect', 'node.PhysicalEntity', (e) =>
+      .on('unselect', 'node.PhysicalEntity', (e: cytoscape.EventObjectNode) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'PhysicalEntity',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
-      .on('unselect', 'node.Pathway', (e) =>
+      .on('unselect', 'node.Pathway', (e: cytoscape.EventObjectNode) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'Pathway',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
-      .on('unselect', 'node.reaction', (e) =>
+      .on('unselect', 'node.reaction', (e: cytoscape.EventObjectNode) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
-      .on('unselect', 'edge.reaction', (e) =>
+      .on('unselect', 'edge.reaction', (e: cytoscape.EventObjectEdge) =>
         container.dispatchEvent(
           new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
-            reactomeId: e.target.data('reactomeId'),
+            reactomeId: numberData(e.target, 'reactomeId'),
             cy,
           })
         )
       )
 
-      .on('select', 'edge', (e) => selectReaction(mapper(e.target).connectedNodes('.reaction')))
+      .on('select', 'edge', (e: cytoscape.EventObjectEdge) =>
+        selectReaction(mapper(e.target).connectedNodes('.reaction'))
+      )
       .on('unselect', 'edge', () =>
         selectReaction(
           mapper(
@@ -287,16 +284,18 @@ export class Interactivity {
         )
       ) // Avoid single element selection when double-clicking
 
-      .on('select', 'node.reaction', (event) => selectReaction(mapper(event.target)))
-      .on('select', 'node.Modification', (e) =>
-        mapper(cy.nodes(`#${e.target.data('nodeId')}`)).select()
+      .on('select', 'node.reaction', (event: cytoscape.EventObjectNode) =>
+        selectReaction(mapper(event.target))
+      )
+      .on('select', 'node.Modification', (e: cytoscape.EventObjectNode) =>
+        mapper(nodeOf(cy, e.target)).select()
       );
   }
 
   initClick(cy: cytoscape.Core) {
     const container = cy.container()!;
 
-    cy.on('tap', 'node.InteractorOccurrences', (e) => {
+    cy.on('tap', 'node.InteractorOccurrences', (e: cytoscape.EventObjectNode) => {
       const openClass = 'opened';
       const eventType = !e.target.hasClass(openClass)
         ? ReactomeEventTypes.open
@@ -306,22 +305,14 @@ export class Interactivity {
         new ReactomeEvent(eventType, {
           element: e.target,
           type: 'Interactor',
-          reactomeId: e.target.data('reactomeId'),
+          reactomeId: numberData(e.target, 'reactomeId'),
           cy,
         })
       );
     })
 
-      .on('tap', '.Interactor', (e) => {
-        const prop = e.target.isNode() ? 'accURL' : 'evidenceURLs';
-        const url = e.target.data(prop);
-        if (url) window.open(url);
-      })
-      .on('tap', '.DiseaseInteractor', (e) => {
-        const prop = e.target.isNode() ? 'accURL' : 'evidenceURLs';
-        const url = e.target.data(prop);
-        if (url) window.open(url);
-      })
+      .on('tap', '.Interactor', openInteractorPage)
+      .on('tap', '.DiseaseInteractor', openInteractorPage)
       .on('tap', '.Compartment', () => cy.elements().unselect());
 
     // .on('tap', e => {
@@ -350,7 +341,7 @@ export class Interactivity {
       },
       {
         init: (elem: RenderableHTMLElement, node: cytoscape.NodeSingular) => {
-          elem.innerHTML = node.data('html') || '';
+          elem.innerHTML = textData(node, 'html') ?? '';
           elem.style.display = 'flex';
           const video = elem.children[0] as HTMLVideoElement;
 
@@ -744,7 +735,9 @@ export class Interactivity {
 
     cy.on('zoom', this.onZoom.shadow);
     cy.on('zoom', this.onZoom.protein);
-    const handler = (e: cytoscape.EventObject) => updateDecorationPosition(e.target);
+    const handler = (e: cytoscape.EventObjectNode | cytoscape.EventObjectEdge) => {
+      if (e.target.isNode()) updateDecorationPosition(e.target);
+    };
     cy.on('mouseover', '.drug', handler)
       .on('mouseout', '.drug', handler)
       .on('unselect', '.drug', handler)
@@ -793,6 +786,21 @@ const state: State = {
   hovering: false,
   deHovering: false,
 };
+
+/**
+ * A modification's protein, looked up by id rather than with a `#${id}`
+ * selector, which finds nothing for an id that is not a valid selector.
+ */
+function nodeOf(cy: cytoscape.Core, modification: cytoscape.NodeSingular) {
+  const nodeId = numberData(modification, 'nodeId');
+  return nodeId === undefined ? cy.collection() : cy.getElementById(String(nodeId));
+}
+
+/** An interactor's page, from its node, or its evidence, from its line. */
+function openInteractorPage(e: cytoscape.EventObjectNode | cytoscape.EventObjectEdge) {
+  const url = textData(e.target, e.target.isNode() ? 'accURL' : 'evidenceURLs');
+  if (url) window.open(url);
+}
 
 class P extends Array<number> {
   constructor(x: number, y: number) {
