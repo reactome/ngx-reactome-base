@@ -72,18 +72,17 @@ module.exports = tseslint.config(
       // errors (and failed assertions on the data) are what a library should
       // say there.
       'no-console': ['error', { allow: ['warn', 'error', 'assert'] }],
-      '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      // `any` flowing through the code: an API answer read as any, then passed,
-      // returned or dereferenced as if its shape were known. Warned, and held
-      // at today's count rule by rule (scripts/check-lint.mjs), so new code
-      // types what it reads while the existing ones (990, tests and e2e
-      // included) are worked down.
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
+      // `any` declared, or flowing through the code: diagram data or an event
+      // read as any, then passed, returned or dereferenced as if its shape were
+      // known. All were typed (spec 001 T005-T011), so a new one is a new
+      // mistake.
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
       // Migrated in full with ng generate @angular/core:inject-migration (spec
       // 001 T003), so any new constructor injection is a step backwards.
       '@angular-eslint/prefer-inject': 'error',
