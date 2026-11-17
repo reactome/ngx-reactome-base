@@ -188,7 +188,7 @@ lines in the style library.
       request), ~~`dark.service.ts` (1: the stored theme, `JSON.parse`d, read as
       a boolean; what a value that is not one means is T022's fix)~~ (done in
       T022). Touches `diagram.service.ts`, which `dev_curator` has changed.
-      309 → 290, less the one T022 cleared. 314 → 295 (#TBD): the 17 left
+      309 → 290, less the one T022 cleared. 314 → 295 (#39): the 17 left
       here, and two non-null assertions on the address's values that the
       typed read no longer needs. Each parameter's type is what it holds:
       `path` is read as a list with numbers, as `flag` is, and
