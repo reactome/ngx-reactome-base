@@ -7,7 +7,7 @@ import {
 } from './drawer/image-builder';
 import { extract, mapProperty, propertyExtractor } from './properties-utils';
 
-import { Properties, setDefaults, UserProperties } from './properties';
+import { isGlobalColour, Properties, setDefaults, UserProperties } from './properties';
 import { Interactivity } from './interactivity';
 import chroma, { Scale } from 'chroma-js';
 
@@ -836,7 +836,15 @@ export class Style {
       {
         selector: '[?labelColor]',
         css: {
-          color: (e: cytoscape.EdgeSingular) => extract(this.p('global', e.data('labelColor'))),
+          // A name that is not a global colour threw here. An empty colour is
+          // invalid, so cytoscape leaves the label the colour the rules before
+          // this one give it.
+          color: (e: cytoscape.EdgeSingular) => {
+            const name: unknown = e.data('labelColor');
+            return typeof name === 'string' && isGlobalColour(name)
+              ? extract(this.p('global', name))
+              : '';
+          },
         },
       },
       {
