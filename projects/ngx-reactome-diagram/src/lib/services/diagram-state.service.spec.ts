@@ -88,4 +88,25 @@ describe('DiagramStateService', () => {
     await router.navigateByUrl('/?host=1');
     expect(service.get('select')).toBe('R-HSA-2');
   });
+
+  // What each parameter holds, as typed (T005): a list is read as items,
+  // numbers as numbers; anything else is the address's text.
+  it('reads a path as a list and the other parameters as text', async () => {
+    await router.navigateByUrl('/?PATH=R-HSA-1,123&FLGINT=true&overlay=x&ANALYSIS=t&select=5');
+    expect(service.get('path')).toEqual(['R-HSA-1', 123]);
+    expect(service.get('flagInteractors')).toBe('true');
+    expect(service.get('overlay')).toBe('x');
+    expect(service.get('analysis')).toBe('t');
+    expect(service.get('select')).toBe('5');
+  });
+
+  it('writes a set value and leaves out one that is empty, false, 0 or null', async () => {
+    await router.navigateByUrl('/?FLGINT=true&host=1');
+    service.set('flagInteractors', false);
+    service.set('select', 0);
+    service.set('path', ['R-HSA-1', 2]);
+    service.set('analysis', null);
+    await vi.waitFor(() => expect(router.url).toContain('path='));
+    expect(router.url).toBe('/?host=1&path=R-HSA-1,2');
+  });
 });

@@ -148,7 +148,8 @@ files they touch, one pull request each; they run before T009–T011 (see
       geometry's cost in the transform, `<video>` without `preload="none"` and
       requesting `undefined.mov` without an accession, leftover PSICQUIC code
       forcing `@angular/forms` and `@angular/material` into the peer
-      dependencies, dead code (`randomNetwork`, `roundness.ts`,
+      dependencies, `lodash` a peer dependency the diagram no longer imports
+      (since T005), dead code (`randomNetwork`, `roundness.ts`,
       `assets/data/*.txt`). To be split when taken up.
 - [x] T024 [Bugs] Two of T020's findings, decided on 16 Nov (see "Bugs found
       on the way"), `diagram/diagram.component.ts`: a diagram that fails to
@@ -179,7 +180,7 @@ files they touch, one pull request each; they run before T009–T011 (see
 The five `no-unsafe-*` rules and `no-explicit-any`, with `ban-ts-comment`'s
 lines in the style library.
 
-- [ ] T005 [US2] The diagram's services (19):
+- [x] T005 [US2] The diagram's services (19):
       `ngx-reactome-diagram/src/lib/services/diagram-state.service.ts` (14: the
       state's `UrlParam<any>` becomes the union of its values),
       `diagram.service.ts` (4: `DIAGRAM_CONFIG_TOKEN` becomes an
@@ -187,7 +188,20 @@ lines in the style library.
       request), ~~`dark.service.ts` (1: the stored theme, `JSON.parse`d, read as
       a boolean; what a value that is not one means is T022's fix)~~ (done in
       T022). Touches `diagram.service.ts`, which `dev_curator` has changed.
-      309 → 290, less the one T022 cleared.
+      309 → 290, less the one T022 cleared. 314 → 295 (#39): the 17 left
+      here, and two non-null assertions on the address's values that the
+      typed read no longer needs. Each parameter's type is what it holds:
+      `path` is read as a list with numbers, as `flag` is, and
+      `flagInteractors` from the address is its text (`"true"`), so they are
+      `(string | number)[]` and `boolean | string`, not the `string[]` and
+      `boolean` declared; nothing reads either. The read, the defaults and
+      the subscribers' observables are tables per parameter, so the compiler
+      checks each; two new tests, passing on `main`'s code, hold what is read
+      and what is written. `DiagramConfig` (`{ diagramUrl?: string }`) is
+      exported beside the token and named in the README. The diagram no longer
+      imports lodash, which stays among its peer dependencies (T023). Seen
+      failing: `main`'s two files, linted beside them with this
+      configuration, gave the 19 warnings and `check:lint` failed.
 - [ ] T006 [US2] The style library's property helpers:
       `ngx-reactome-cytoscape-style/src/lib/properties-utils.ts` (3:
       `Property<any>`, and `propertyMapper`'s result typed as its mapper's), and

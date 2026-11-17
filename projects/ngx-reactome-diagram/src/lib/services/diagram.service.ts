@@ -26,9 +26,16 @@ cytoscape.use(cytoscapeFcose);
 
 type RelativePosition = { distances: number[]; weights: number[] };
 
+// What an app provides for DIAGRAM_CONFIG_TOKEN.
+export interface DiagramConfig {
+  // Where the diagram files are loaded from: `${diagramUrl}/${id}.json` and
+  // `${diagramUrl}/${id}.graph.json`. Reactome's current release without it.
+  diagramUrl?: string;
+}
+
 // Above the service: when the constructor named it in @Inject, declared after
 // it, the decorator read it before it existed.
-export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<any>('DIAGRAM_CONFIG_TOKEN');
+export const DIAGRAM_CONFIG_TOKEN = new InjectionToken<DiagramConfig>('DIAGRAM_CONFIG_TOKEN');
 
 const posToStr = (edge: Edge, pos: Position) => `${edge.id}-${pos.x},${pos.y}`;
 
