@@ -1097,7 +1097,8 @@ function toExpression(value) {
 const imageBuilder = (properties, style) => memoize((node) => {
     let layers = [];
     const clazz = node.classes().find((clazz) => classToDrawers.has(clazz));
-    if (!clazz)
+    const provider = classToDrawers.get(clazz);
+    if (!clazz || !provider)
         return aggregate(layers);
     // Without a size there is nothing to size its drawing to: a complex, a
     // set or a gene was drawn with NaN and `undefined` in its SVG.
@@ -1105,7 +1106,6 @@ const imageBuilder = (properties, style) => memoize((node) => {
     const height = numberData(node, 'height');
     if (width === undefined || height === undefined)
         return aggregate(layers);
-    const provider = classToDrawers.get(clazz);
     const exps = expressionData(node);
     const drawerParams = {
         id: node.id(),
@@ -1738,50 +1738,53 @@ class Interactivity {
     initHover(cy, mapper = (x) => x) {
         const hoverReaction = this.applyToReaction((col) => col.addClass('hover'), 'hovering');
         const deHoverReaction = this.applyToReaction((col) => col.removeClass('hover'), 'deHovering');
+        // A headless graph has no container, and no page to send events to: each
+        // event sent to it threw out of the caller's `select()`, here and in
+        // `initSelect` and `initClick`.
         const container = cy.container();
-        cy.on('mouseover', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
+        cy.on('mouseover', 'node.PhysicalEntity', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'PhysicalEntity',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseover', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
+            .on('mouseover', 'node.Pathway', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'Pathway',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseover', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
+            .on('mouseover', 'node.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target,
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseover', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
+            .on('mouseover', 'edge.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.hover, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseout', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
+            .on('mouseout', 'node.PhysicalEntity', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'PhysicalEntity',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseout', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
+            .on('mouseout', 'node.Pathway', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'Pathway',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseout', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
+            .on('mouseout', 'node.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target,
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('mouseout', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
+            .on('mouseout', 'edge.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.leave, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
@@ -1809,49 +1812,49 @@ class Interactivity {
     initSelect(cy, mapper = (x) => x) {
         const selectReaction = this.applyToReaction((col) => col.select(), 'selecting');
         const container = cy.container();
-        cy.on('select', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
+        cy.on('select', 'node.PhysicalEntity', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'PhysicalEntity',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('select', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
+            .on('select', 'node.Pathway', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'Pathway',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('select', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
+            .on('select', 'node.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target,
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('select', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
+            .on('select', 'edge.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.select, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('unselect', 'node.PhysicalEntity', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
+            .on('unselect', 'node.PhysicalEntity', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'PhysicalEntity',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('unselect', 'node.Pathway', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
+            .on('unselect', 'node.Pathway', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'Pathway',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('unselect', 'node.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
+            .on('unselect', 'node.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target,
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
             cy,
         })))
-            .on('unselect', 'edge.reaction', (e) => container.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
+            .on('unselect', 'edge.reaction', (e) => container?.dispatchEvent(new ReactomeEvent(ReactomeEventTypes.unselect, {
             element: e.target.connectedNodes('.reaction'),
             type: 'reaction',
             reactomeId: numberData(e.target, 'reactomeId'),
@@ -1870,7 +1873,7 @@ class Interactivity {
                 ? ReactomeEventTypes.open
                 : ReactomeEventTypes.close;
             e.target.toggleClass(openClass);
-            container.dispatchEvent(new ReactomeEvent(eventType, {
+            container?.dispatchEvent(new ReactomeEvent(eventType, {
                 element: e.target,
                 type: 'Interactor',
                 reactomeId: numberData(e.target, 'reactomeId'),
@@ -1894,10 +1897,10 @@ class Interactivity {
     }
     initStructureVideo(cy) {
         const layersPlugin = layers(cy);
-        this.videoLayer = layersPlugin.append('html');
-        if (this.videoLayer)
-            this.videoLayer.node.style.opacity = '0';
-        layersPlugin.renderPerNode(this.videoLayer, (elem) => {
+        const videoLayer = layersPlugin.append('html');
+        this.videoLayer = videoLayer;
+        videoLayer.node.style.opacity = '0';
+        layersPlugin.renderPerNode(videoLayer, (elem) => {
             elem.render();
         }, {
             init: (elem, node) => {
@@ -2218,11 +2221,17 @@ class Interactivity {
         return new P(x, y);
     }
     interpolate(x, points) {
+        const first = points.at(0);
+        const last = points.at(-1);
+        // A curve comes from the properties, which a host may set: an empty one
+        // threw a TypeError reading its first point.
+        if (!first || !last)
+            throw new Error('interpolate: the curve has no points');
         // Ends inclusive, so a curve of one point is that point's value.
-        if (x <= points.at(0).x)
-            return points.at(0).y;
-        if (x >= points.at(-1).x)
-            return points.at(-1).y;
+        if (x <= first.x)
+            return first.y;
+        if (x >= last.x)
+            return last.y;
         for (let i = 0; i + 1 < points.length; i++) {
             const y = this.lerp(x, points[i], points[i + 1]);
             // An exact 0 is an answer, as the curves' own 0-valued points are.
@@ -2312,9 +2321,9 @@ class Style {
         this.initSubPathwayColors();
     }
     initSubPathwayColors(cy = this.cy) {
-        const subPathways = cy?.nodes('.Shadow');
-        if (!subPathways)
+        if (!cy)
             return;
+        const subPathways = cy.nodes('.Shadow');
         const dH = 360 / subPathways.length;
         subPathways.forEach((subPathway, i) => {
             const edges = cy.edges(`[pathway=${subPathway.data('reactomeId')}]`);
