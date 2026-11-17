@@ -303,7 +303,7 @@ lines in the style library.
       `getElementById`: an id with a space or bracket in it, such as a repeated
       edge's " (1)", is an invalid selector, and `cy.edges()` given one finds
       nothing (measured), so such an element is never highlighted (found in
-      T018). (#TBD) Measured 171 → 104: `no-unsafe-*` only (argument 5,
+      T018). (#44) Measured 171 → 104: `no-unsafe-*` only (argument 5,
       assignment 22, call 20, member access 20); no rule reaches zero. The 9
       left in the file are T013's `!`. Handlers take `EventObjectNode` on node
       selectors, `EventObjectEdge` on edge selectors, and either on the
@@ -411,7 +411,7 @@ named, and fixed only where it changes nothing a user sees.
   open question 2. Decided (16 Nov): the type follows what is sent
   (`reactomeId` a number, `element` a collection); in T009 and T010. The
   type corrected in T009 (#43); what `initSelect` and `initClick` send is
-  read through the readers in T010 (#TBD).
+  read through the readers in T010 (#44).
 - **Hovering an interactor whose id is not a valid CSS selector throws**
   (`interactivity.ts`, `initStructureVideo`'s handler, for `node.Protein`):
   it finds the node's video with `` querySelector(`#video-${id}`) ``, and jsdom
@@ -422,7 +422,7 @@ named, and fixed only where it changes nothing a user sees.
   interactor list in WebsiteAngular's tests has `CHEBI:28304` with none;
   Chromium throws for `#video-interactor-CHEBI:28304` ("not a valid
   selector"), so each hover of such an interactor threw, before its video
-  was looked at. Fixed in T010 (#TBD): the video is found by comparing ids
+  was looked at. Fixed in T010 (#44): the video is found by comparing ids
   within the layer, with a test seen failing on the old code.
 - **A stored theme that is not JSON stops the diagram's theme service**
   (`ngx-reactome-diagram/src/lib/services/dark.service.ts`): the stored value
