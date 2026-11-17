@@ -981,6 +981,14 @@ cytoscape.use(cytoscapeFcose);
 // Above the service: when the constructor named it in @Inject, declared after
 // it, the decorator read it before it existed.
 const DIAGRAM_CONFIG_TOKEN = new InjectionToken('DIAGRAM_CONFIG_TOKEN');
+// A part the diagram must contain. One that is not there stops the drawing, as
+// it did before with a TypeError, but naming the part.
+function lookUp(map, key, what) {
+    const value = map.get(key);
+    if (value === undefined)
+        throw new Error(`The diagram names ${what} ${String(key)}, not in it.`);
+    return value;
+}
 const posToStr = (edge, pos) => `${edge.id}-${pos.x},${pos.y}`;
 const pointToStr = (point) => `${point.x};${point.y}`;
 const scale = (pos, scale = 2) => {
@@ -1363,9 +1371,8 @@ class DiagramService {
                         reactomeId: item.reactomeId,
                     },
                     classes: ['Shadow'],
-                    position: closestToAverage(subpathwayIdToEventIds
-                        .get(item.reactomeId)
-                        .map((reactionId) => reactomeIdToEdge.get(reactionId))
+                    position: closestToAverage(lookUp(subpathwayIdToEventIds, item.reactomeId, 'the subpathway')
+                        .map((reactionId) => lookUp(reactomeIdToEdge, reactionId, 'the reaction'))
                         .map((edge) => scale(edge.position))),
                 };
             });
@@ -1381,7 +1388,7 @@ class DiagramService {
              */
             const edges = data.nodes.flatMap((node) => {
                 return node.connectors.map((connector) => {
-                    const reaction = idToEdges.get(connector.edgeId);
+                    const reaction = lookUp(idToEdges, connector.edgeId, 'the edge');
                     const reactionP = scale(reaction.position);
                     const nodeP = scale(node.position);
                     const [source, target] = connector.type !== 'OUTPUT' ? [node, reaction] : [reaction, node];
@@ -1396,15 +1403,14 @@ class DiagramService {
                         points.push(reactionP);
                     this.addEdgeInfo(reaction, points, 'backward', sourceP);
                     this.addEdgeInfo(reaction, points, 'forward', targetP);
-                    let [from, to] = [points.shift(), points.pop()];
-                    from = from ?? nodeP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
-                    to = to ?? reactionP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+                    const from = points.shift() ?? nodeP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+                    let to = points.pop() ?? reactionP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
                     if (connector.type === 'CATALYST') {
                         to = scale(connector.endShape.centre);
                     }
                     // points = addRoundness(from, to, points);
                     const relatives = this.absoluteToRelative(from, to, points);
-                    const classes = [...this.edgeTypeMap.get(connector.type)];
+                    const classes = [...lookUp(this.edgeTypeMap, connector.type, 'the connector type')];
                     if (reaction.isDisease)
                         classes.push('disease');
                     if (node.trivial)
@@ -1434,7 +1440,7 @@ class DiagramService {
                         // First case: same node is used both special and normal context
                         replacement = node.connectors.find((otherConnector) => otherConnector !== connector &&
                             otherConnector.isFadeOut &&
-                            samePoint(idToEdges.get(otherConnector.edgeId).position, reaction.position))?.edgeId;
+                            samePoint(lookUp(idToEdges, otherConnector.edgeId, 'the edge').position, reaction.position))?.edgeId;
                         // Second case: different nodes are used between special and normal context
                         replacement =
                             replacement ||
@@ -1469,19 +1475,18 @@ class DiagramService {
                 ?.filter((link) => !link.renderableClass.includes('EntitySet') ||
                 link.inputs[0].id !== link.outputs[0].id)
                 ?.map((link) => {
-                const source = idToNodes.get(link.inputs[0].id);
-                const target = idToNodes.get(link.outputs[0].id);
+                const source = lookUp(idToNodes, link.inputs[0].id, 'the node');
+                const target = lookUp(idToNodes, link.outputs[0].id, 'the node');
                 const sourceP = scale(source.position);
                 const targetP = scale(target.position);
                 const points = link.segments
                     .flatMap((segment, i) => (i === 0 ? [segment.from, segment.to] : [segment.to]))
                     .map((pos) => scale(pos));
-                let [from, to] = [points.shift(), points.pop()];
-                from = from ?? sourceP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
-                to = to ?? targetP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+                const from = points.shift() ?? sourceP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
+                const to = points.pop() ?? targetP; // Quick fix to avoid problem with reaction without visible outputs like R-HSA-2424252 in R-HSA-1474244
                 // points = addRoundness(from, to, points);
                 const relatives = this.absoluteToRelative(from, to, points);
-                const classes = [...this.linkClassMap.get(link.renderableClass)];
+                const classes = [...lookUp(this.linkClassMap, link.renderableClass, 'the link class')];
                 if (link.isDisease)
                     classes.push('disease');
                 const isBackground = link.isFadeOut ||
@@ -1526,20 +1531,26 @@ class DiagramService {
     }
     addEdgeInfo(edge, points, direction, stop) {
         const stopPos = posToStr(edge, stop);
+        // Each step goes on from the point the last one added. The caller always
+        // passes at least one point.
         if (direction === 'forward') {
             const map = this.extraLine;
-            let pos = posToStr(edge, points.at(-1));
-            while (map.has(pos) && pos !== stopPos) {
-                points.push(map.get(pos));
-                pos = posToStr(edge, points.at(-1));
+            let at = points.at(-1);
+            while (at) {
+                const pos = posToStr(edge, at);
+                at = pos !== stopPos ? map.get(pos) : undefined;
+                if (at)
+                    points.push(at);
             }
         }
         else {
             const map = this.reverseExtraLine;
-            let pos = posToStr(edge, points.at(0));
-            while (map.has(pos) && pos !== stopPos) {
-                points.unshift(map.get(pos));
-                pos = posToStr(edge, points.at(0));
+            let at = points.at(0);
+            while (at) {
+                const pos = posToStr(edge, at);
+                at = pos !== stopPos ? map.get(pos) : undefined;
+                if (at)
+                    points.unshift(at);
             }
         }
     }
