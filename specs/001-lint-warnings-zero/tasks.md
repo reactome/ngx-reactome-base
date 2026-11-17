@@ -206,7 +206,7 @@ lines in the style library.
       `ngx-reactome-cytoscape-style/src/lib/properties-utils.ts` (3:
       `Property<any>`, and `propertyMapper`'s result typed as its mapper's), and
       the `style.ts` warnings that clears (its `this.pm(...)` returns; about 13,
-      measured in the pull request). 295 → 262 (#TBD): 3 in
+      measured in the pull request). 295 → 262 (#40): 3 in
       `properties-utils.ts` and 30 in `style.ts` (18 assignments, 11 returns,
       1 call). `propertyMapper(properties)(group, key, mapper)` could not be
       typed without an unchecked cast (the value of `Properties[G][K]` is not
@@ -406,7 +406,7 @@ named, and fixed only where it changes nothing a user sees.
   threw** (`ngx-reactome-cytoscape-style/src/lib/style.ts`, the rule
   `node.InteractorOccurrences[?exp]`): its fallback called the not-found
   colour, a string, as a function. The selector keeps such an interactor from
-  reaching it, so no user saw it. Found in T006 and fixed there (#TBD), with a
+  reaching it, so no user saw it. Found in T006 and fixed there (#40), with a
   test seen failing on the old code.
 
 ## Silenced lines
