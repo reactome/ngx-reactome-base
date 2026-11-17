@@ -367,9 +367,16 @@ lines in the style library.
       planted change (the `replacement` fallback removed). Seen failing:
       `main`'s file linted beside this one gave 46 more `no-explicit-any`
       and `no-unsafe-*` warnings and `check:lint` failed.
-- [ ] T012 [US2] Promote `no-explicit-any` and the five `no-unsafe-*` rules
+- [x] T012 [US2] Promote `no-explicit-any` and the five `no-unsafe-*` rules
       to `error` (their counts are zero). Seen failing: an `any` planted in a
-      service. 54 warnings left, all `no-non-null-assertion`.
+      service. 54 warnings left, all `no-non-null-assertion`. (#TBD)
+  - Promoted. A scratch file in the diagram library planting one of each gave
+    errors for all six (`no-explicit-any` 1, `no-unsafe-assignment` 3,
+    `no-unsafe-member-access` 2, `no-unsafe-call` 1, `no-unsafe-return` 2,
+    `no-unsafe-argument` 1) and `check:lint` failed; removed, it passes.
+  - 58 warnings left, not 54: `no-non-null-assertion` 50 (T013-T015) and
+    T004's 8 (`prefer-signals` 6, `prefer-output-emitter-ref` 1,
+    `no-input-rename` 1), on hold for the curator tool's owner.
 
 ## Phase 3: Asserted values (User Story 3, P3)
 
