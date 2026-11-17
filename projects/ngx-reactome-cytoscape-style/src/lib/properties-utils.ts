@@ -24,7 +24,7 @@ export function extract<T>(property: Property<T>): T {
 }
 
 export type PropertiesType = {
-  [k: string]: Property<any>;
+  [k: string]: Property<unknown>;
 };
 
 export type Defaultable<T, K extends keyof T = never> = T & {
@@ -55,16 +55,9 @@ export const propertyExtractor =
   (properties: Properties) =>
   <G extends keyof Properties, K extends keyof Properties[G]>(group: G, key: K) =>
     properties[group][key];
-export const propertyMapper =
-  (properties: Properties) =>
-  <
-    G extends keyof Properties,
-    K extends keyof Properties[G],
-    T extends (Properties[G][K] extends Property<infer X> ? X : never),
-    M extends (t: T) => any,
-  >(
-    group: G,
-    key: K,
-    mapper: M
-  ) =>
-    mapper(extract(properties[group][key]));
+/**
+ * A property's value, mapped: a provider is called each time, so the result
+ * follows it.
+ */
+export const mapProperty = <T, R>(property: Property<T>, mapper: (t: T) => R): R =>
+  mapper(extract(property));
