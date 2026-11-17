@@ -3,11 +3,18 @@ type BackgroundImage = cytoscape.Css.BackgroundImage;
 type PropertyValueNode<T> = cytoscape.Css.PropertyValueNode<T>;
 import { Properties } from '../properties';
 
-type BaseImage = {
-  [k in keyof BackgroundImage]: BackgroundImage[k] extends PropertyValueNode<infer X> ? X : never;
+/**
+ * One layer of a node's background: one value of each property. Cytoscape's
+ * types also allow a list of values, one per layer, which is what the layers
+ * become once aggregated (`Aggregated`), never what one layer holds.
+ */
+export type Layer = {
+  [k in keyof BackgroundImage]: BackgroundImage[k] extends PropertyValueNode<infer X>
+    ? Exclude<X, readonly unknown[]>
+    : never;
 };
 
-export type Image = BaseImage & { requireGradient?: boolean; optional?: boolean };
+export type Image = Layer & { requireGradient?: boolean; optional?: boolean };
 
 export interface Drawer {
   background?: Image;
@@ -33,6 +40,7 @@ export interface DrawerProvider {
   (properties: Properties, params: DrawerParameters): Drawer;
 }
 
-export type Aggregated<T> = {
-  [k in keyof T]-?: T[k][];
+/** Each property's values for every layer, in layer order, as cytoscape takes them. */
+export type Aggregated = {
+  [k in keyof Layer]-?: NonNullable<Layer[k]>[];
 };

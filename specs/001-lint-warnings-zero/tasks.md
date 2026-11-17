@@ -244,13 +244,33 @@ lines in the style library.
       global colour (see "Bugs found on the way"). Seen failing: `main`'s two
       files, linted beside them with this configuration, gave the 9 warnings
       and `check:lint` failed.
-- [ ] T008 [US2] `ban-ts-comment` in the style library (21), then promote:
+- [x] T008 [US2] `ban-ts-comment` in the style library (21), then promote:
       the eleven gaps in cytoscape's style types through one local widened
       `Css` type handed to cytoscape at one point (not a module augmentation,
       which would ship to consumers); the image builder's `Aggregated` and
       `aggregate` typed so the eight `background-*` functions and its own line
       need none; `cy.layers()` as `layers(cy)`. At most one silenced line, with
       its reason. Observed in a consumer: a diagram draws as before. 249 → 228.
+      253 → 230 (#TBD): the 21 `ban-ts-comment`, and `cy.layers()`'s
+      `no-unsafe-call` and `no-unsafe-assignment`; `ban-ts-comment` promoted.
+      The widened type (`NodeCss`, `EdgeCss` and `Rule` in `style.ts`,
+      internal) has two more gaps than the eleven, each hidden behind the
+      first error in its rule: `target-arrow-width`, beside each
+      `source-arrow-width`, and `segment-radius` (cytoscape's other name for
+      `segment-radii`). Its hand-over is `getStyleSheet`'s
+      `rules as cytoscape.StylesheetCSS[]`, the one unchecked assertion (see
+      "Silenced lines"); `getStyleSheet` still returns cytoscape's type. A
+      layer is now one value of each background property (`Layer`), and
+      `aggregate` builds every property's list by name, so the eight
+      functions return cytoscape's list types; their fallbacks (`|| '100%'`
+      and the like) went, a list being never falsy. `layers(cy)` is the
+      function the plugin registers as `cy.layers`. Seen unchanged: for the
+      three fixture diagrams, the stylesheet, `cy.style().json()` and every
+      element's computed `ele.style()` (565 properties), plain, hovered,
+      flagged and selected, and with analysis values, were byte-identical on
+      `main` and on this branch; the library's `.d.ts` is identical too.
+      Seen failing: `main`'s three files, linted beside them with this
+      configuration, gave 21 `ban-ts-comment` errors and `check:lint` failed.
 - [ ] T009 [US2] `ngx-reactome-cytoscape-style/src/lib/interactivity.ts`,
       `initHover` (59): handlers on node selectors take `EventObjectNode`, on
       edge selectors `EventObjectEdge`; ids read through T007's readers. Brings
@@ -440,3 +460,14 @@ named, and fixed only where it changes nothing a user sees.
 
 22 today (21 `@ts-expect-error`, 1 `@ts-ignore`), none with a reason; the
 target is at most 5 (SC-004), each listed here with its reason.
+
+- **None silenced since T008 (#TBD)**: every `@ts-expect-error` and
+  `@ts-ignore` is gone, and `ban-ts-comment` is an error.
+- **One unchecked type assertion**, `ngx-reactome-cytoscape-style/src/lib/style.ts`,
+  `getStyleSheet`: `rules as cytoscape.StylesheetCSS[]`. cytoscape's style
+  types (3.34) leave out values cytoscape takes and the stylesheet gives
+  (`data(...)` on a label's margins and offset, one smoothing string for every
+  layer, a numeric `corner-radius`, the arrows' widths, `segment-radius`,
+  `edge-distances: 'endpoints'`), so the rules are written against cytoscape's
+  types widened by those alone and handed over here, once. Augmenting
+  cytoscape's module instead would ship in the library's typings.

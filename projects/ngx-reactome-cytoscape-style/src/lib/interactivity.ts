@@ -459,13 +459,12 @@ export class Interactivity {
   private moleculeLayer?: IHTMLLayer;
 
   initStructureMolecule(cy: cytoscape.Core) {
-    // @ts-expect-error
-    const layers: LayersPlugin = cy.layers();
+    const layersPlugin: LayersPlugin = layers(cy);
 
-    this.moleculeLayer = layers.append('html');
+    this.moleculeLayer = layersPlugin.append('html');
     this.moleculeLayer.node.classList.add('molecule');
 
-    layers.renderPerNode(
+    layersPlugin.renderPerNode(
       this.moleculeLayer,
       (elem: HTMLElement, node: cytoscape.NodeSingular) => {
         elem.style.visibility = node.visible() ? 'visible' : 'hidden';

@@ -15,23 +15,23 @@ import { subPathway } from './shape/sub-pathway-shape';
 import { extract } from '../properties-utils';
 import { Node } from '../types';
 import { Expression, expressionData, numberData } from '../element-data';
-import { Aggregated, DrawerParameters, DrawerProvider, Image } from './types';
+import { Aggregated, DrawerParameters, DrawerProvider, Image, Layer } from './types';
 import { Properties } from '../properties';
 import { Style } from '../style';
 import chroma from 'chroma-js';
 
 export const imageBuilder = (properties: Properties, style: Style) =>
   memoize(
-    (node: cytoscape.NodeSingular): Aggregated<Image> => {
+    (node: cytoscape.NodeSingular): Aggregated => {
       let layers: Image[] = [];
       const clazz = node.classes().find((clazz) => classToDrawers.has(clazz as Node)) as Node;
-      if (!clazz) return aggregate(layers, defaultBg);
+      if (!clazz) return aggregate(layers);
 
       // Without a size there is nothing to size its drawing to: a complex, a
       // set or a gene was drawn with NaN and `undefined` in its SVG.
       const width = numberData(node, 'width');
       const height = numberData(node, 'height');
-      if (width === undefined || height === undefined) return aggregate(layers, defaultBg);
+      if (width === undefined || height === undefined) return aggregate(layers);
 
       const provider = classToDrawers.get(clazz)!;
       const exps = expressionData(node);
@@ -125,7 +125,7 @@ export const imageBuilder = (properties: Properties, style: Style) =>
           ),
         }));
 
-      const aggregated = aggregate(layers, defaultBg);
+      const aggregated = aggregate(layers);
       aggregated['bounds-expansion'] = [
         Math.max(...(aggregated['bounds-expansion'] as number[]), 0),
       ];
@@ -141,7 +141,7 @@ export const imageBuilder = (properties: Properties, style: Style) =>
       `-${node.data('width')}x${node.data('height')}-e:${JSON.stringify(node.data('exp') ?? null)}`
   );
 
-const defaultBg: Image = {
+const defaultBg: Required<Layer> = {
   'background-image': '',
   'background-position-x': 0,
   'background-position-y': 0,
@@ -345,15 +345,29 @@ export function clearDrawersCache() {
   CROSS.cache.clear();
 }
 
-function aggregate<T extends object, K extends keyof T>(
-  toAggregate: T[],
-  defaultValue: T
-): Aggregated<T> {
-  const aggregate: Aggregated<T> = {} as Aggregated<T>;
-  //@ts-expect-error
-  const keys = new Set<K>(Object.keys(defaultValue));
-  keys.forEach((key) => (aggregate[key] = toAggregate.map((t) => t[key] ?? defaultValue[key])));
-  return aggregate;
+/** Each property's value in every layer, a layer without one taking the default's. */
+function aggregate(layers: Image[]): Aggregated {
+  const values = <K extends keyof Layer>(key: K) =>
+    layers.map((layer) => layer[key] ?? defaultBg[key]);
+  return {
+    'background-image': values('background-image'),
+    'background-image-crossorigin': values('background-image-crossorigin'),
+    'background-image-opacity': values('background-image-opacity'),
+    'background-image-smoothing': values('background-image-smoothing'),
+    'background-image-containment': values('background-image-containment'),
+    'background-width': values('background-width'),
+    'background-height': values('background-height'),
+    'background-fit': values('background-fit'),
+    'background-repeat': values('background-repeat'),
+    'background-position-x': values('background-position-x'),
+    'background-position-y': values('background-position-y'),
+    'background-offset-x': values('background-offset-x'),
+    'background-offset-y': values('background-offset-y'),
+    'background-width-relative-to': values('background-width-relative-to'),
+    'background-height-relative-to': values('background-height-relative-to'),
+    'background-clip': values('background-clip'),
+    'bounds-expansion': values('bounds-expansion'),
+  };
 }
 
 const RX = (properties: Properties, { height }: DrawerParameters, clazz: Node): Image => {
