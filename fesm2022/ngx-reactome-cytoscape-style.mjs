@@ -29,7 +29,11 @@ function defaultable(object) {
     return defaultable;
 }
 const propertyExtractor = (properties) => (group, key) => properties[group][key];
-const propertyMapper = (properties) => (group, key, mapper) => mapper(extract(properties[group][key]));
+/**
+ * A property's value, mapped: a provider is called each time, so the result
+ * follows it.
+ */
+const mapProperty = (property, mapper) => mapper(extract(property));
 
 const gene = (properties, { width, height, interactor, disease, lossOfFunction }) => {
     const t = extract(properties.global.thickness);
@@ -2197,11 +2201,11 @@ function interactivityOf(cy) {
 }
 class Style {
     constructor(container, properties = {}) {
+        this.pm = mapProperty;
         this.css = getComputedStyle(container);
         this.properties = setDefaults(properties, this.css);
         this.imageBuilder = imageBuilder(this.properties, this);
         this.p = propertyExtractor(this.properties);
-        this.pm = propertyMapper(this.properties);
     }
     bindToCytoscape(cy) {
         this.cy = cy;
@@ -2258,7 +2262,7 @@ class Style {
                     'border-color': this.p('compartment', 'fill'),
                     'background-color': this.p('compartment', 'fill'),
                     'background-opacity': this.p('compartment', 'opacity'),
-                    'border-width': this.pm('global', 'thickness', (t) => 3 * t),
+                    'border-width': this.pm(this.properties.global.thickness, (t) => 3 * t),
                 },
             },
             {
@@ -2378,7 +2382,7 @@ class Style {
                         // console.log(node.data(), exp)
                         return exp !== undefined
                             ? this.currentPalette(exp[0]).hex()
-                            : this.pm('analysis', 'notFound', (c) => c)();
+                            : this.pm(this.properties.analysis.notFound, (c) => c);
                     },
                     'border-width': this.p('global', 'thickness'),
                     'border-color': this.p('interactor', 'fill'),
@@ -2450,7 +2454,7 @@ class Style {
                     shape: 'round-rectangle',
                     'background-opacity': 0,
                     'background-color': this.p('genomeEncodedEntity', 'fill'),
-                    'text-margin-y': this.pm('genomeEncodedEntity', 'topRadius', (r) => r / 10),
+                    'text-margin-y': this.pm(this.properties.genomeEncodedEntity.topRadius, (r) => r / 10),
                     'border-width': 0, // Avoid disease border
                 },
             },
@@ -2474,7 +2478,7 @@ class Style {
                     'background-opacity': 0,
                     'background-color': this.p('gene', 'fill'),
                     'bounds-expansion': this.p('gene', 'decorationExtraWidth'),
-                    'text-margin-y': this.pm('gene', 'decorationHeight', (h) => h / 2),
+                    'text-margin-y': this.pm(this.properties.gene.decorationHeight, (h) => h / 2),
                     'border-width': 0, // Avoid disease border
                 },
             },
@@ -2509,30 +2513,30 @@ class Style {
                     'background-opacity': 0,
                     shape: 'round-rectangle',
                     'border-width': 0, // Avoid disease border
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => this.pm('entitySet', 'radius', (r) => `${node.width() - 2 * r - 6 * t}px`)),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => this.pm(this.properties.entitySet.radius, (r) => `${node.width() - 2 * r - 6 * t}px`)),
                 },
             },
             {
                 selector: 'node.EntitySet.drug',
                 css: {
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => this.pm('entitySet', 'radius', (r) => `${node.width() - 2 * r - 6 * t - 44}px`)),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => this.pm(this.properties.entitySet.radius, (r) => `${node.width() - 2 * r - 6 * t - 44}px`)),
                 },
             },
             {
                 selector: 'node.Complex',
                 css: {
                     shape: 'cut-rectangle',
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => node.width() - t * 6 + 'px'),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => node.width() - t * 6 + 'px'),
                     'background-opacity': 0,
                     'border-width': 0, // Avoid disease border
                     // "background-color": this.p("complex", 'fill'),
-                    // "width": (node: cytoscape.NodeSingular) => this.pm('global', 'thickness', t => node.data('width') -  2 * t) ,
-                    // "height": (node: cytoscape.NodeSingular) => this.pm('global', 'thickness', t => node.data('height') -  2 * t) ,
+                    // "width": (node: cytoscape.NodeSingular) => this.pm(this.properties.global.thickness, t => node.data('width') -  2 * t) ,
+                    // "height": (node: cytoscape.NodeSingular) => this.pm(this.properties.global.thickness, t => node.data('height') -  2 * t) ,
                     // // @ts-expect-error
-                    // "corner-radius": this.pm('complex', 'cut', c => c),
+                    // "corner-radius": this.pm(this.properties.complex.cut, c => c),
                     // "outline-width":  this.p('global', 'thickness'),
                     // "outline-color":  this.p('complex', 'fill'),
-                    // "outline-offset":  this.pm('global', 'thickness', t => - t),
+                    // "outline-offset":  this.pm(this.properties.global.thickness, t => - t),
                     // "outline-opacity":  1,
                     //
                     // // "border-position": 'inside',
@@ -2545,7 +2549,7 @@ class Style {
                 selector: 'node.Complex.drug',
                 css: {
                     'text-margin-x': 4,
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => node.width() - t * 6 - 44 + 'px'),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => node.width() - t * 6 - 44 + 'px'),
                 },
             },
             {
@@ -2556,7 +2560,7 @@ class Style {
                     // @ts-expect-error
                     'corner-radius': 999999,
                     'border-width': 0, // Avoid disease border
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => this.pm('cell', 'thickness', (ct) => node.width() - t * 2 - ct * 2 + 'px')),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => this.pm(this.properties.cell.thickness, (ct) => node.width() - t * 2 - ct * 2 + 'px')),
                 },
             },
             {
@@ -2566,14 +2570,14 @@ class Style {
                     'text-margin-x': 18,
                     'border-color': this.p('pathway', 'stroke'),
                     'border-position': 'inside',
-                    'border-width': this.pm('global', 'thickness', (t) => 3 * t),
+                    'border-width': this.pm(this.properties.global.thickness, (t) => 3 * t),
                 },
             },
             {
                 selector: 'node.Interacting.Pathway',
                 css: {
                     shape: 'rectangle',
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => `${node.width() - (6 * t + 36) * 2}px`),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => `${node.width() - (6 * t + 36) * 2}px`),
                 },
             },
             {
@@ -2582,7 +2586,7 @@ class Style {
                     //@ts-expect-error
                     'corner-radius': 99999,
                     shape: 'round-rectangle',
-                    'text-max-width': (node) => this.pm('global', 'thickness', (t) => `${node.width() - (6 * t + 36) * 2}px`),
+                    'text-max-width': (node) => this.pm(this.properties.global.thickness, (t) => `${node.width() - (6 * t + 36) * 2}px`),
                 },
             },
             {
@@ -2602,8 +2606,8 @@ class Style {
             {
                 selector: 'node.reaction',
                 css: {
-                    width: this.pm('global', 'thickness', (t) => t * 6),
-                    height: this.pm('global', 'thickness', (t) => t * 6),
+                    width: this.pm(this.properties.global.thickness, (t) => t * 6),
+                    height: this.pm(this.properties.global.thickness, (t) => t * 6),
                     shape: 'round-rectangle',
                     'text-halign': 'center',
                     'text-valign': 'center',
@@ -2626,21 +2630,21 @@ class Style {
             {
                 selector: 'node.reaction.hover',
                 css: {
-                    'border-width': this.pm('global', 'thickness', (t) => t * 1),
+                    'border-width': this.pm(this.properties.global.thickness, (t) => t * 1),
                     'border-color': this.p('global', 'hoverEdge'),
                 },
             },
             {
                 selector: 'node.reaction:selected',
                 css: {
-                    'border-width': this.pm('global', 'thickness', (t) => t * 1.5),
+                    'border-width': this.pm(this.properties.global.thickness, (t) => t * 1.5),
                     'border-color': this.p('global', 'selectEdge'),
                 },
             },
             {
                 selector: 'node.reaction.flag',
                 css: {
-                    'outline-width': this.pm('global', 'thickness', (t) => t * 1.5),
+                    'outline-width': this.pm(this.properties.global.thickness, (t) => t * 1.5),
                     'outline-color': this.p('global', 'flag'),
                 },
             },
@@ -2656,7 +2660,7 @@ class Style {
                 css: {
                     shape: 'ellipse',
                     'border-style': 'double',
-                    'border-width': this.pm('global', 'thickness', (t) => 3 * t),
+                    'border-width': this.pm(this.properties.global.thickness, (t) => 3 * t),
                 },
             },
             {
@@ -2681,7 +2685,7 @@ class Style {
                 selector: 'node.loss-of-function',
                 css: {
                     'border-style': 'dashed',
-                    'border-dash-pattern': this.pm('global', 'thickness', (t) => [t, t * 2]),
+                    'border-dash-pattern': this.pm(this.properties.global.thickness, (t) => [t, t * 2]),
                     'border-cap': 'round',
                 },
             },
@@ -2738,7 +2742,7 @@ class Style {
                 selector: 'edge.hover',
                 css: {
                     'line-color': this.p('global', 'hoverEdge'),
-                    width: this.pm('global', 'thickness', (t) => t * 1.5),
+                    width: this.pm(this.properties.global.thickness, (t) => t * 1.5),
                     'arrow-scale': 1,
                     'source-arrow-color': this.p('global', 'hoverEdge'),
                     'target-arrow-color': this.p('global', 'hoverEdge'),
@@ -2752,7 +2756,7 @@ class Style {
                 selector: 'edge:selected',
                 css: {
                     'line-color': this.p('global', 'selectEdge'),
-                    width: this.pm('global', 'thickness', (t) => t * 2),
+                    width: this.pm(this.properties.global.thickness, (t) => t * 2),
                     'arrow-scale': 1,
                     'source-arrow-color': this.p('global', 'selectEdge'),
                     'target-arrow-color': this.p('global', 'selectEdge'),
@@ -2812,11 +2816,11 @@ class Style {
                 css: {
                     'text-background-color': this.p('global', 'surface'),
                     'text-background-opacity': 1,
-                    'text-border-width': this.pm('global', 'thickness', (t) => t / 2),
+                    'text-border-width': this.pm(this.properties.global.thickness, (t) => t / 2),
                     'text-border-opacity': 1,
                     'text-border-color': this.p('global', 'onSurface'),
                     'text-background-shape': 'roundrectangle',
-                    'text-background-padding': this.pm('global', 'thickness', (t) => t + 'px'),
+                    'text-background-padding': this.pm(this.properties.global.thickness, (t) => t + 'px'),
                 },
             },
             {
@@ -2838,7 +2842,7 @@ class Style {
                 css: {
                     'underlay-color': 'data(color)',
                     'underlay-padding': this.p('shadow', 'padding'),
-                    'underlay-opacity': this.pm('shadow', 'opacity', (o) => o[0][1] / 100),
+                    'underlay-opacity': this.pm(this.properties.shadow.opacity, (o) => o[0][1] / 100),
                 },
             },
             {
@@ -2865,14 +2869,14 @@ class Style {
             {
                 selector: 'edge.hierarchy-hover',
                 css: {
-                    width: this.pm('global', 'thickness', (t) => t * 3),
+                    width: this.pm(this.properties.global.thickness, (t) => t * 3),
                     'z-index': 4,
                 },
             },
             {
                 selector: 'node.reaction.hierarchy-hover',
                 css: {
-                    'border-width': this.pm('global', 'thickness', (t) => t * 2),
+                    'border-width': this.pm(this.properties.global.thickness, (t) => t * 2),
                     'z-index': 4,
                 },
             },

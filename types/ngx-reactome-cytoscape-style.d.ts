@@ -10,7 +10,7 @@ type Property<T> = T | Provider<T>;
  */
 declare function extract<T>(property: Property<T>): T;
 type PropertiesType = {
-    [k: string]: Property<any>;
+    [k: string]: Property<unknown>;
 };
 declare const propertyExtractor: (properties: Properties) => <G extends keyof Properties, K extends keyof Properties[G]>(group: G, key: K) => Properties[G][K];
 
