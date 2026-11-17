@@ -202,11 +202,25 @@ lines in the style library.
       imports lodash, which stays among its peer dependencies (T023). Seen
       failing: `main`'s two files, linted beside them with this
       configuration, gave the 19 warnings and `check:lint` failed.
-- [ ] T006 [US2] The style library's property helpers:
+- [x] T006 [US2] The style library's property helpers:
       `ngx-reactome-cytoscape-style/src/lib/properties-utils.ts` (3:
       `Property<any>`, and `propertyMapper`'s result typed as its mapper's), and
       the `style.ts` warnings that clears (its `this.pm(...)` returns; about 13,
-      measured in the pull request).
+      measured in the pull request). 295 → 262 (#40): 3 in
+      `properties-utils.ts` and 30 in `style.ts` (18 assignments, 11 returns,
+      1 call). `propertyMapper(properties)(group, key, mapper)` could not be
+      typed without an unchecked cast (the value of `Properties[G][K]` is not
+      inferable inside it), so it became `mapProperty(property, mapper)`,
+      whose result is the mapper's, and `style.ts` passes the property
+      (`this.pm(this.properties.global.thickness, …)`); neither is exported
+      from the library. `PropertiesType`'s index, `Property<any>`, is
+      `Property<unknown>`, reachable through `Style.properties` and
+      `UserProperties`: WebsiteAngular reads only named properties and passes
+      no `UserProperties`, so nothing there changes. Found on the way, and
+      fixed in its own commit with a test seen failing: the stylesheet called
+      the not-found colour, a string, as a function (see "Bugs found on the
+      way"). Seen failing: `main`'s two files, linted beside them with this
+      configuration, gave the 33 warnings and `check:lint` failed.
 - [ ] T007 [US2] Element data in the style library: readers for what
       `ele.data(name)` holds (text, number, list; anything else absent), with a
       spec, used by the rest of `style.ts` and by
@@ -387,6 +401,13 @@ named, and fixed only where it changes nothing a user sees.
   connector's `replacement` is a number, which also brings the reaction's
   lines (`[reactionId=…]`); a reaction's id as text does not. Found in T021.
   Decided (16 Nov): leave it as it is unless curators ask.
+
+- **An interactor without expression values had a stylesheet colour that
+  threw** (`ngx-reactome-cytoscape-style/src/lib/style.ts`, the rule
+  `node.InteractorOccurrences[?exp]`): its fallback called the not-found
+  colour, a string, as a function. The selector keeps such an interactor from
+  reaching it, so no user saw it. Found in T006 and fixed there (#40), with a
+  test seen failing on the old code.
 
 ## Silenced lines
 
