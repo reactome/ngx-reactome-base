@@ -400,7 +400,7 @@ lines in the style library.
   - Seen failing: `main`'s three files linted beside this branch's gave 11
     more warnings and `check:lint` failed (`no-non-null-assertion: 39 ->
     50`).
-- [ ] T014 [US3] `no-non-null-assertion` in the diagram's services (24):
+- [x] T014 [US3] `no-non-null-assertion` in the diagram's services (24):
       `diagram.service.ts` (22: map look-ups while building elements; a part of
       the diagram that is not there stops the drawing with an error naming it,
       as it stopped it with a `TypeError` before), `diagram-state.service.ts`
@@ -408,6 +408,31 @@ lines in the style library.
       phase's counts are one lower than written. Touches
       `diagram.service.ts`, which `dev_curator` has changed; if
       the 22 make too large a diff against it, split by method. 42 → 17.
+      (#TBD)
+  - 22, all in `diagram.service.ts` (`diagram-state.service.ts`'s 2 went in
+    T005): 47 → 25, `no-non-null-assertion` 39 → 17. Nothing promoted. One
+    pull request: the diff stayed small.
+  - A part of the diagram that is not there (a connector's edge, a link's
+    entity, a sub-pathway's reaction, a connector type or link class) is
+    looked up with `lookUp`, as in WebsiteAngular, and stops the drawing with
+    "The diagram names the edge 123, not in it." where it stopped with
+    "Cannot read properties of undefined (reading 'position')". Three tests,
+    seen failing on the old code with that `TypeError`.
+  - The rest change nothing: a line's ends read as `points.shift() ?? nodeP`,
+    which is what the `!` and the `??` after it did; `addEdgeInfo` reads
+    each point once (its caller always gives it one); shadow labels and the
+    random network's nodes are typed with their ids, which they always have.
+    The elements drawn for the three fixtures are identical to `main`'s
+    (compared whole), and the built `.d.ts` files are unchanged.
+  - `dev_curator` changes three of the same places (the sub-pathway label's
+    position, the connector's edge, a faded counterpart's edge) and filters
+    out connectors and links whose parts are missing, with a warning, where
+    `main` stops. Its filters run before these look-ups, so the two compose;
+    the sub-pathway label and the counterpart lines will conflict textually
+    when it comes back.
+  - Seen failing: `main`'s `diagram.service.ts` linted beside this branch's
+    gave 22 more warnings and `check:lint` failed (`no-non-null-assertion:
+    17 -> 39`).
 - [ ] T015 [US3] `no-non-null-assertion` in the diagram component (17: the
       view children's elements (7) and the cytoscape instances (10), mostly in
       the compare view), then promote the rule. 17 → 0.
