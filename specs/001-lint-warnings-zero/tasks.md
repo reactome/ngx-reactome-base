@@ -369,7 +369,7 @@ lines in the style library.
       and `no-unsafe-*` warnings and `check:lint` failed.
 - [x] T012 [US2] Promote `no-explicit-any` and the five `no-unsafe-*` rules
       to `error` (their counts are zero). Seen failing: an `any` planted in a
-      service. 54 warnings left, all `no-non-null-assertion`. (#TBD)
+      service. 54 warnings left, all `no-non-null-assertion`. (#46)
   - Promoted. A scratch file in the diagram library planting one of each gave
     errors for all six (`no-explicit-any` 1, `no-unsafe-assignment` 3,
     `no-unsafe-member-access` 2, `no-unsafe-call` 1, `no-unsafe-return` 2,
