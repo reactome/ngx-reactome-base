@@ -334,7 +334,7 @@ lines in the style library.
       readers give them. 100 → 54. `[reactionId=${replacedBy}]` goes through
       `withData` once `replacedBy` is typed (found in T018). Since T021 the
       service writes no object there (a reaction's `replacement` was a raw
-      Edge), so the object branch is no longer reached. (#TBD) Measured 104 →
+      Edge), so the object branch is no longer reached. (#45) Measured 104 →
       58, the 46 being the file's `no-explicit-any` (4) and `no-unsafe-*`
       (argument 7, assignment 10, call 7, member access 10, return 8), which
       reach zero (promoted in T012). Left: T004's 8 and 50
