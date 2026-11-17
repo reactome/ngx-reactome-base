@@ -43,6 +43,10 @@ describe('interpolate', () => {
     expect(interpolate(130, [{ x: 130, y: 50 }])).toBe(50);
   });
 
+  it('names a curve of no points', () => {
+    expect(() => interpolate(130, [])).toThrow('interpolate: the curve has no points');
+  });
+
   it('interpolates between points as before', () => {
     expect(
       interpolate(140, [

@@ -1,9 +1,9 @@
 {
-  "warnings": 55,
+  "warnings": 47,
   "rules": {
     "@angular-eslint/no-input-rename": 1,
     "@angular-eslint/prefer-output-emitter-ref": 1,
     "@angular-eslint/prefer-signals": 6,
-    "@typescript-eslint/no-non-null-assertion": 47
+    "@typescript-eslint/no-non-null-assertion": 39
   }
 }

@@ -335,10 +335,11 @@ export class Interactivity {
 
   initStructureVideo(cy: cytoscape.Core) {
     const layersPlugin: LayersPlugin = layers(cy);
-    this.videoLayer = layersPlugin.append('html');
-    if (this.videoLayer) this.videoLayer.node.style.opacity = '0';
+    const videoLayer = layersPlugin.append('html');
+    this.videoLayer = videoLayer;
+    videoLayer.node.style.opacity = '0';
     layersPlugin.renderPerNode(
-      this.videoLayer!,
+      videoLayer,
       (elem: HTMLElement) => {
         (elem as RenderableHTMLElement).render();
       },
@@ -360,7 +361,7 @@ export class Interactivity {
                 this.addLoading(elem);
                 video.oncanplay = (_e) => this.removeLoading(elem);
                 let errors = 0;
-                const sources = video.querySelectorAll('source')!;
+                const sources = video.querySelectorAll('source');
                 sources.forEach((source) =>
                   source.addEventListener('error', (_e) => {
                     errors++;
@@ -756,9 +757,14 @@ export class Interactivity {
   }
 
   interpolate(x: number, points: P[]): number {
+    const first = points.at(0);
+    const last = points.at(-1);
+    // A curve comes from the properties, which a host may set: an empty one
+    // threw a TypeError reading its first point.
+    if (!first || !last) throw new Error('interpolate: the curve has no points');
     // Ends inclusive, so a curve of one point is that point's value.
-    if (x <= points.at(0)!.x) return points.at(0)!.y;
-    if (x >= points.at(-1)!.x) return points.at(-1)!.y;
+    if (x <= first.x) return first.y;
+    if (x >= last.x) return last.y;
     for (let i = 0; i + 1 < points.length; i++) {
       const y = this.lerp(x, points[i], points[i + 1]);
       // An exact 0 is an answer, as the curves' own 0-valued points are.
