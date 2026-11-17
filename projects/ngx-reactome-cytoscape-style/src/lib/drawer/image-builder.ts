@@ -25,7 +25,8 @@ export const imageBuilder = (properties: Properties, style: Style) =>
     (node: cytoscape.NodeSingular): Aggregated => {
       let layers: Image[] = [];
       const clazz = node.classes().find((clazz) => classToDrawers.has(clazz as Node)) as Node;
-      if (!clazz) return aggregate(layers);
+      const provider = classToDrawers.get(clazz);
+      if (!clazz || !provider) return aggregate(layers);
 
       // Without a size there is nothing to size its drawing to: a complex, a
       // set or a gene was drawn with NaN and `undefined` in its SVG.
@@ -33,7 +34,6 @@ export const imageBuilder = (properties: Properties, style: Style) =>
       const height = numberData(node, 'height');
       if (width === undefined || height === undefined) return aggregate(layers);
 
-      const provider = classToDrawers.get(clazz)!;
       const exps = expressionData(node);
       const drawerParams: DrawerParameters = {
         id: node.id(),

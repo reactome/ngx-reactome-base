@@ -92,12 +92,12 @@ export class Style {
   }
 
   initSubPathwayColors(cy = this.cy) {
-    const subPathways = cy?.nodes('.Shadow');
-    if (!subPathways) return;
+    if (!cy) return;
+    const subPathways = cy.nodes('.Shadow');
     const dH = 360 / subPathways.length;
 
     subPathways.forEach((subPathway, i) => {
-      const edges = cy!.edges(`[pathway=${subPathway.data('reactomeId')}]`);
+      const edges = cy.edges(`[pathway=${subPathway.data('reactomeId')}]`);
       subPathway.data('edges', edges);
 
       const color = chroma.hsl(dH * i, 1, extract(this.properties.shadow.luminosity) / 100);

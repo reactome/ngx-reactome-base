@@ -380,10 +380,26 @@ lines in the style library.
 
 ## Phase 3: Asserted values (User Story 3, P3)
 
-- [ ] T013 [US3] `no-non-null-assertion` in the style library (12):
+- [x] T013 [US3] `no-non-null-assertion` in the style library (12):
       `interactivity.ts` (9: the graph's container (3), the video layer, a
       video's sources, the zoom curve's ends (4)),
-      `drawer/image-builder.ts` (2), `style.ts` (1). 54 → 42.
+      `drawer/image-builder.ts` (2), `style.ts` (1). 54 → 42. (#47)
+  - 11, not 12 (`image-builder.ts` had 1): 58 → 47, `no-non-null-assertion`
+    50 → 39. Nothing promoted.
+  - The container: a headless graph's is null, and each event sent to it
+    threw; fixed in its own commit (see "Bugs found on the way").
+  - The rest change nothing where the `!` held: the video layer is read once
+    from `append`, which always returns one (its `if` went); a video's
+    `querySelectorAll` never returns null; `initSubPathwayColors` returns
+    early on no graph, as `cy?.nodes` did; the drawer is looked up with the
+    class it was found by, so both are absent together. An empty zoom curve
+    (a host can set one) now throws "interpolate: the curve has no points"
+    where it threw a `TypeError`, with a test seen failing on the old code.
+  - The style library's built `.d.ts` files are identical on `main` and
+    this branch, so WebsiteAngular was not re-checked.
+  - Seen failing: `main`'s three files linted beside this branch's gave 11
+    more warnings and `check:lint` failed (`no-non-null-assertion: 39 ->
+    50`).
 - [ ] T014 [US3] `no-non-null-assertion` in the diagram's services (24):
       `diagram.service.ts` (22: map look-ups while building elements; a part of
       the diagram that is not there stops the drawing with an error naming it,
@@ -552,6 +568,16 @@ named, and fixed only where it changes nothing a user sees.
   libraries or in WebsiteAngular sets `labelColor`, so no diagram drawn
   today changes. Found in T007 and fixed there (#41), with a test seen
   failing on the old code.
+- **A graph with no container threw on each select, hover or badge tap**
+  (`ngx-reactome-cytoscape-style/src/lib/interactivity.ts`, `initHover`,
+  `initSelect`, `initClick`): the events were sent to `cy.container()!`, and a
+  headless graph's is null. Such a graph binds when structures are off
+  (`--structures: 0`); with them on, the structure layers refuse it first.
+  Selecting an entity on it, even with `select()`, threw "Cannot read
+  properties of null (reading 'dispatchEvent')". Nothing in these libraries
+  or in WebsiteAngular binds a headless graph, so no user saw it. Now such a
+  graph sends no events and the rest of each handler runs. Found in T013 and
+  fixed there (#47), with a test seen failing on the old code.
 
 ## Silenced lines
 
