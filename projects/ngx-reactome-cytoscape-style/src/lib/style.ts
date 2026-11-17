@@ -224,7 +224,7 @@ export class Style {
             // console.log(node.data(), exp)
             return exp !== undefined
               ? this.currentPalette(exp[0]).hex()
-              : this.pm('analysis', 'notFound', (c) => c)();
+              : this.pm('analysis', 'notFound', (c) => c);
           },
           'border-width': this.p('global', 'thickness'),
           'border-color': this.p('interactor', 'fill'),
