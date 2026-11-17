@@ -297,7 +297,7 @@ describe('DiagramComponent, lifecycle', () => {
       return new ReactomeEvent(ReactomeEventTypes.hover, {
         element: legend.getElementById('protein'),
         type: 'PhysicalEntity',
-        reactomeId: 'protein',
+        reactomeId: undefined,
         cy: legend,
       });
     };
@@ -322,7 +322,7 @@ describe('DiagramComponent, lifecycle', () => {
         new ReactomeEvent(ReactomeEventTypes.select, {
           element: transition,
           type: 'reaction',
-          reactomeId: 'transition',
+          reactomeId: undefined,
           cy: legend,
         })
       );
@@ -348,7 +348,7 @@ describe('DiagramComponent, lifecycle', () => {
       const event = new ReactomeEvent(ReactomeEventTypes.hover, {
         element: cy.getElementById('protein'),
         type: 'PhysicalEntity',
-        reactomeId: 'protein',
+        reactomeId: undefined,
         cy,
       });
       expect(await uncaught(() => component['_reactomeEvents$'].next(event))).toEqual([]);

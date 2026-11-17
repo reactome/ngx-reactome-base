@@ -52,7 +52,7 @@ describe('DiagramComponent', () => {
         new ReactomeEvent(type, {
           element: cy.getElementById(id),
           type: 'PhysicalEntity',
-          reactomeId: String(cy.getElementById(id).data('reactomeId')),
+          reactomeId: Number(cy.getElementById(id).data('reactomeId')),
           cy,
         })
       );

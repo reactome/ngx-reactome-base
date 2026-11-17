@@ -75,10 +75,18 @@ describe('DiagramComponent, selecting', () => {
   /** The handler looks once the event has been handled. */
   const settled = () => new Promise((resolve) => setTimeout(resolve, 10));
 
-  const send = (type: ReactomeEventTypes, element: cytoscape.NodeSingular, cy: cytoscape.Core) =>
+  /** Sent as the style library sends it: the element's database id, or none. */
+  const send = (type: ReactomeEventTypes, element: cytoscape.NodeSingular, cy: cytoscape.Core) => {
+    const reactomeId: unknown = element.data('reactomeId');
     component['_reactomeEvents$'].next(
-      new ReactomeEvent(type, { element, type: 'PhysicalEntity', reactomeId: element.id(), cy })
+      new ReactomeEvent(type, {
+        element,
+        type: 'PhysicalEntity',
+        reactomeId: typeof reactomeId === 'number' ? reactomeId : undefined,
+        cy,
+      })
     );
+  };
 
   describe('bug 1: a value from the address that is not a number', () => {
     it('flags only what carries that accession', async () => {
