@@ -251,7 +251,7 @@ lines in the style library.
       `aggregate` typed so the eight `background-*` functions and its own line
       need none; `cy.layers()` as `layers(cy)`. At most one silenced line, with
       its reason. Observed in a consumer: a diagram draws as before. 249 → 228.
-      253 → 230 (#TBD): the 21 `ban-ts-comment`, and `cy.layers()`'s
+      253 → 230 (#42): the 21 `ban-ts-comment`, and `cy.layers()`'s
       `no-unsafe-call` and `no-unsafe-assignment`; `ban-ts-comment` promoted.
       The widened type (`NodeCss`, `EdgeCss` and `Rule` in `style.ts`,
       internal) has two more gaps than the eleven, each hidden behind the
@@ -461,7 +461,7 @@ named, and fixed only where it changes nothing a user sees.
 22 today (21 `@ts-expect-error`, 1 `@ts-ignore`), none with a reason; the
 target is at most 5 (SC-004), each listed here with its reason.
 
-- **None silenced since T008 (#TBD)**: every `@ts-expect-error` and
+- **None silenced since T008 (#42)**: every `@ts-expect-error` and
   `@ts-ignore` is gone, and `ban-ts-comment` is an error.
 - **One unchecked type assertion**, `ngx-reactome-cytoscape-style/src/lib/style.ts`,
   `getStyleSheet`: `rules as cytoscape.StylesheetCSS[]`. cytoscape's style
