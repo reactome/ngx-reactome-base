@@ -1,15 +1,14 @@
 {
-  "warnings": 253,
+  "warnings": 230,
   "rules": {
     "@angular-eslint/no-input-rename": 1,
     "@angular-eslint/prefer-output-emitter-ref": 1,
     "@angular-eslint/prefer-signals": 6,
-    "@typescript-eslint/ban-ts-comment": 21,
     "@typescript-eslint/no-explicit-any": 4,
     "@typescript-eslint/no-non-null-assertion": 50,
     "@typescript-eslint/no-unsafe-argument": 16,
-    "@typescript-eslint/no-unsafe-assignment": 50,
-    "@typescript-eslint/no-unsafe-call": 46,
+    "@typescript-eslint/no-unsafe-assignment": 49,
+    "@typescript-eslint/no-unsafe-call": 45,
     "@typescript-eslint/no-unsafe-member-access": 48,
     "@typescript-eslint/no-unsafe-return": 10
   }

@@ -12,6 +12,44 @@ import { Interactivity } from './interactivity';
 import { expressionData, numberData, textData } from './element-data';
 import chroma, { Scale } from 'chroma-js';
 
+/**
+ * cytoscape's style types (3.34) leave out values cytoscape takes and this
+ * stylesheet gives: a `data(...)` mapper for a label's margins and a source
+ * label's offset, one `background-image-smoothing` for every background layer
+ * in one string, a number (or none, from a function) as `corner-radius`, the
+ * arrows' widths, `segment-radius` (cytoscape's other name for
+ * `segment-radii`) and `edge-distances: 'endpoints'`. Widened here and handed
+ * to cytoscape once, in `getStyleSheet`. Not by augmenting cytoscape's module:
+ * that would ship in this library's typings and widen cytoscape's types in
+ * every app that installs it.
+ */
+type DataMapper = `data(${string})`;
+type NodeCss = Omit<
+  cytoscape.Css.Node,
+  'text-margin-x' | 'text-margin-y' | 'background-image-smoothing' | 'corner-radius'
+> & {
+  'text-margin-x'?: cytoscape.Css.Node['text-margin-x'] | DataMapper;
+  'text-margin-y'?: cytoscape.Css.Node['text-margin-y'] | DataMapper;
+  'background-image-smoothing'?:
+    cytoscape.Css.Node['background-image-smoothing'] | `${'yes' | 'no'} ${string}`;
+  'corner-radius'?:
+    | cytoscape.Css.Node['corner-radius']
+    | number
+    | cytoscape.Css.MapperFunction<cytoscape.NodeSingular, number | undefined>;
+};
+type ArrowWidth = cytoscape.Css.PropertyValueEdge<number | `${number}%` | 'match-line'>;
+type EdgeCss = Omit<cytoscape.Css.Edge, 'edge-distances' | 'source-text-offset'> & {
+  'edge-distances'?: cytoscape.Css.Edge['edge-distances'] | 'endpoints';
+  'source-text-offset'?: cytoscape.Css.Edge['source-text-offset'] | DataMapper;
+  'source-arrow-width'?: ArrowWidth;
+  'target-arrow-width'?: ArrowWidth;
+  'segment-radius'?: cytoscape.Css.PropertyValueEdge<number | number[]>;
+};
+interface Rule {
+  selector: string;
+  css: NodeCss | EdgeCss | cytoscape.Css.Core;
+}
+
 const INTERACTIVITY_KEY = '_reactomeInteractivity';
 
 /**
@@ -72,7 +110,7 @@ export class Style {
   }
 
   getStyleSheet(): cytoscape.StylesheetCSS[] {
-    return [
+    const rules: Rule[] = [
       {
         selector: '*',
         css: {
@@ -119,9 +157,7 @@ export class Style {
           'text-opacity': 1,
           'text-valign': 'bottom',
           'text-halign': 'right',
-          // @ts-expect-error
           'text-margin-x': 'data(textX)',
-          // @ts-expect-error
           'text-margin-y': 'data(textY)',
         },
       },
@@ -166,27 +202,17 @@ export class Style {
           'text-valign': 'center',
           'text-wrap': 'wrap',
           'text-max-width': (node: cytoscape.NodeSingular) => node.data('width') + 'px',
-          // @ts-expect-error
           'background-image-smoothing': 'no no no no no no no no',
 
-          // @ts-expect-error
           'background-image': (node) => this.imageBuilder(node)['background-image'],
-          // @ts-expect-error
-          'background-position-y': (node) => this.imageBuilder(node)['background-position-y'] || [],
-          // @ts-expect-error
-          'background-position-x': (node) => this.imageBuilder(node)['background-position-x'] || [],
-          // @ts-expect-error
-          'background-height': (node) => this.imageBuilder(node)['background-height'] || '100%',
-          // @ts-expect-error
-          'background-width': (node) => this.imageBuilder(node)['background-width'] || '100%',
-          // @ts-expect-error
-          'background-clip': (node) => this.imageBuilder(node)['background-clip'] || 'node',
-          // @ts-expect-error
+          'background-position-y': (node) => this.imageBuilder(node)['background-position-y'],
+          'background-position-x': (node) => this.imageBuilder(node)['background-position-x'],
+          'background-height': (node) => this.imageBuilder(node)['background-height'],
+          'background-width': (node) => this.imageBuilder(node)['background-width'],
+          'background-clip': (node) => this.imageBuilder(node)['background-clip'],
           'background-image-containment': (node) =>
-            this.imageBuilder(node)['background-image-containment'] || 'inside',
-          // @ts-expect-error
-          'background-image-opacity': (node) =>
-            this.imageBuilder(node)['background-image-opacity'] || 1,
+            this.imageBuilder(node)['background-image-containment'],
+          'background-image-opacity': (node) => this.imageBuilder(node)['background-image-opacity'],
           'bounds-expansion': (node) => this.imageBuilder(node)['bounds-expansion'][0] || 0,
           color: this.p('global', 'onPrimary'),
         },
@@ -334,7 +360,6 @@ export class Style {
           'background-color': this.p('molecule', 'fill'),
           'border-color': this.p('molecule', 'stroke'),
           'border-width': this.p('global', 'thickness'),
-          // @ts-expect-error
           'corner-radius': (node: cytoscape.NodeSingular) => {
             const width = numberData(node, 'width');
             const height = numberData(node, 'height');
@@ -419,7 +444,6 @@ export class Style {
         css: {
           'background-opacity': 0,
           shape: 'round-rectangle',
-          // @ts-expect-error
           'corner-radius': 999999,
           'border-width': 0, // Avoid disease border
 
@@ -453,7 +477,6 @@ export class Style {
       {
         selector: 'node.SUB.Pathway',
         css: {
-          //@ts-expect-error
           'corner-radius': 99999,
           shape: 'round-rectangle',
           'text-max-width': (node: cytoscape.NodeSingular) =>
@@ -600,7 +623,6 @@ export class Style {
           'mid-source-arrow-color': this.p('global', 'onSurface'),
           'mid-target-arrow-color': this.p('global', 'onSurface'),
           'source-arrow-color': this.p('global', 'onSurface'),
-          // @ts-expect-error
           'source-arrow-width': '100%',
           'target-arrow-width': '100%',
           'font-size': this.p('font', 'size'),
@@ -624,7 +646,6 @@ export class Style {
           'arrow-scale': 1,
           'source-arrow-color': this.p('global', 'hoverEdge'),
           'target-arrow-color': this.p('global', 'hoverEdge'),
-          // @ts-expect-error
           'source-arrow-width': '50%',
           'target-arrow-width': '50%',
           'z-index': 2,
@@ -638,7 +659,6 @@ export class Style {
           'arrow-scale': 1,
           'source-arrow-color': this.p('global', 'selectEdge'),
           'target-arrow-color': this.p('global', 'selectEdge'),
-          // @ts-expect-error
           'source-arrow-width': '50%',
           'target-arrow-width': '50%',
           'z-index': 3,
@@ -768,7 +788,6 @@ export class Style {
           'segment-weights': 'data(weights)',
           'segment-radius': 30,
           'radius-type': 'influence-radius',
-          // @ts-expect-error
           'edge-distances': 'endpoints',
         },
       },
@@ -835,7 +854,6 @@ export class Style {
       {
         selector: 'edge[?sourceOffset]',
         css: {
-          // @ts-expect-error
           'source-text-offset': 'data(sourceOffset)',
         },
       },
@@ -929,6 +947,10 @@ export class Style {
         },
       },
     ];
+    // The one hand-over to cytoscape's types, unchecked: `Rule` is theirs
+    // widened by the values cytoscape takes and its types leave out (see
+    // `NodeCss` and `EdgeCss`). Typed as theirs, those rules would not compile.
+    return rules as cytoscape.StylesheetCSS[];
   }
 
   clearCache() {

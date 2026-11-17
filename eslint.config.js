@@ -118,7 +118,10 @@ module.exports = tseslint.config(
       '@angular-eslint/no-input-rename': 'warn',
       // All twelve removed, so a new empty hook is a new mistake.
       '@angular-eslint/no-empty-lifecycle-method': 'error',
-      '@typescript-eslint/ban-ts-comment': 'warn',
+      // All 22 silenced type checks removed (spec 001 T002, T008): cytoscape's
+      // style gaps are one widened type handed over in getStyleSheet, so a new
+      // @ts-expect-error or @ts-ignore is a new hole in the type check.
+      '@typescript-eslint/ban-ts-comment': 'error',
       // Clean, and warned only because they were never promoted: the ratchet
       // held them at zero, but a new one showed in an editor and in the
       // pre-commit lint as a warning, which is read as allowed. Errors now
