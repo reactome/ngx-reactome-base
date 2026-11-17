@@ -325,7 +325,7 @@ lines in the style library.
       `interactor-X (1)`) now plays and pauses its video, where `main` threw
       "Invalid selector". Seen failing: `main`'s `interactivity.ts` linted
       beside it gave 67 more `no-unsafe-*` warnings and `check:lint` failed.
-- [ ] T011 [US2] `ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`
+- [x] T011 [US2] `ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`
       (46): `displayNetwork` takes the `cytoscape.ElementsDefinition` that
       `getDiagram` returns; the compare view's `add` and `remove` handlers an
       event on one element; `replacedBy`, which the code treats as an id, a
@@ -334,7 +334,39 @@ lines in the style library.
       readers give them. 100 → 54. `[reactionId=${replacedBy}]` goes through
       `withData` once `replacedBy` is typed (found in T018). Since T021 the
       service writes no object there (a reaction's `replacement` was a raw
-      Edge), so the object branch is no longer reached.
+      Edge), so the object branch is no longer reached. (#TBD) Measured 104 →
+      58, the 46 being the file's `no-explicit-any` (4) and `no-unsafe-*`
+      (argument 7, assignment 10, call 7, member access 10, return 8), which
+      reach zero (promoted in T012). Left: T004's 8 and 50
+      `no-non-null-assertion`. Measured on the three fixtures: `replacedBy` is
+      text or absent, `replacement` text (nodes) or a number (connectors),
+      `id` text; nothing has an object, `isCrossed` or `triggerPosition`.
+      The element data are read through a small module of the diagram
+      library's own, `diagram/element-data.ts` (the style library's readers
+      are not exported, and nothing new is). The object branch is removed:
+      no writer in these libraries or in the curator tool's main branch
+      sets an object there (`dev_curator`'s service still writes the raw
+      Edge, pre-T021; read for its `reactomeId` as a `reactionId`, it marked
+      nothing there either). A shadow's lines are found as the style library
+      finds them (`[pathway=…]`, now through `withData`) rather than read
+      from the value it keeps on the shadow, and its missing
+      `triggerPosition` reads as NaN, as `undefined` compared; no shadow is
+      replaced or crossed, so neither is reached on the fixtures.
+      `displayNetwork` takes `ElementsDefinition | ElementDefinition[]`, as
+      the curator tool calls it with `[]` for an empty diagram, and
+      `avoidSideEffect` a `() => void`: the library's `.d.ts` differs in
+      those two signatures only. Seen unchanged: on the three fixtures, with
+      `usedbId` off and on, every element's tokens set as the state's
+      select and flag, every element of both panes hovered, left, selected
+      and unselected, the compare view's `add` and `remove` handlers, and
+      the compare pane panned, gave the same selection, flags, hover,
+      hidden elements, underlay paddings, replaced elements and positions,
+      and state on `main`'s build and this branch's, except
+      `displayNetwork([])`, whose `comparing` is now `false` where it was
+      `undefined` (the pane hidden either way); the comparison caught a
+      planted change (the `replacement` fallback removed). Seen failing:
+      `main`'s file linted beside this one gave 46 more `no-explicit-any`
+      and `no-unsafe-*` warnings and `check:lint` failed.
 - [ ] T012 [US2] Promote `no-explicit-any` and the five `no-unsafe-*` rules
       to `error` (their counts are zero). Seen failing: an `any` planted in a
       service. 54 warnings left, all `no-non-null-assertion`.
@@ -493,7 +525,10 @@ named, and fixed only where it changes nothing a user sees.
   marks that reaction in the other pane, where it marked nothing. A
   connector's `replacement` is a number, which also brings the reaction's
   lines (`[reactionId=…]`); a reaction's id as text does not. Found in T021.
-  Decided (16 Nov): leave it as it is unless curators ask.
+  Decided (16 Nov): leave it as it is unless curators ask. Measured in T011:
+  an event's element is always a node (a line sends its reaction's node), so
+  a connector's number never reaches the handler, and no reaction brings
+  its lines on the fixtures.
 
 - **An interactor without expression values had a stylesheet colour that
   threw** (`ngx-reactome-cytoscape-style/src/lib/style.ts`, the rule
