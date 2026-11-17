@@ -408,7 +408,7 @@ lines in the style library.
       phase's counts are one lower than written. Touches
       `diagram.service.ts`, which `dev_curator` has changed; if
       the 22 make too large a diff against it, split by method. 42 → 17.
-      (#TBD)
+      (#48)
   - 22, all in `diagram.service.ts` (`diagram-state.service.ts`'s 2 went in
     T005): 47 → 25, `no-non-null-assertion` 39 → 17. Nothing promoted. One
     pull request: the diff stayed small.
