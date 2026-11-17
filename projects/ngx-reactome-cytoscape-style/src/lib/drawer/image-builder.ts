@@ -14,6 +14,7 @@ import { diseaseInteractor } from './shape/disease-interactor-shape';
 import { subPathway } from './shape/sub-pathway-shape';
 import { extract } from '../properties-utils';
 import { Node } from '../types';
+import { Expression, expressionData, numberData } from '../element-data';
 import { Aggregated, DrawerParameters, DrawerProvider, Image } from './types';
 import { Properties } from '../properties';
 import { Style } from '../style';
@@ -26,12 +27,18 @@ export const imageBuilder = (properties: Properties, style: Style) =>
       const clazz = node.classes().find((clazz) => classToDrawers.has(clazz as Node)) as Node;
       if (!clazz) return aggregate(layers, defaultBg);
 
+      // Without a size there is nothing to size its drawing to: a complex, a
+      // set or a gene was drawn with NaN and `undefined` in its SVG.
+      const width = numberData(node, 'width');
+      const height = numberData(node, 'height');
+      if (width === undefined || height === undefined) return aggregate(layers, defaultBg);
+
       const provider = classToDrawers.get(clazz)!;
-      const exps = node.data('exp');
+      const exps = expressionData(node);
       const drawerParams: DrawerParameters = {
         id: node.id(),
-        width: node.data('width'),
-        height: node.data('height'),
+        width,
+        height,
         drug: node.hasClass('drug'),
         disease: node.hasClass('disease'),
         interactor: node.hasClass('Interactor'),
@@ -167,7 +174,7 @@ function addGradient(svgText: string, gradient: string, _single: boolean = false
 
 function _expToGradient(
   _id: string,
-  exps: (number | [number, number] | undefined)[],
+  exps: Expression[],
   _properties: Properties,
   palette: chroma.Scale
 ): string | undefined {
@@ -189,7 +196,7 @@ function _expToGradient(
   const delta = 1 / size;
   exps.forEach((exp, _i) => {
     const p = stops.length - 1;
-    const realExp = Array.isArray(exp) ? exp[0]! : exp;
+    const realExp = Array.isArray(exp) ? exp[0] : exp;
     if (stops.length !== 0 && stops[p].exp === realExp) {
       // A [value, count] pair is count shares of the width, merged or not.
       const share = Array.isArray(exp) ? delta * exp[1] : delta;
@@ -251,7 +258,7 @@ function _expToGradient(
 let gradients = new WeakMap<chroma.Scale, Map<string, string | undefined>>();
 function expToGradient(
   id: string,
-  exps: (number | [number, number] | undefined)[],
+  exps: Expression[] | undefined,
   properties: Properties,
   palette: chroma.Scale
 ): string | undefined {

@@ -124,6 +124,33 @@ export interface Properties extends PropertiesType {
   };
 }
 
+/** The global properties that are colours: what an element's `labelColor` may name. */
+type GlobalColour = {
+  [K in keyof Properties['global']]: Properties['global'][K] extends Property<string> ? K : never;
+}[keyof Properties['global']];
+
+// Every global colour, so the compiler holds this list to the type.
+const GLOBAL_COLOURS: Record<GlobalColour, true> = {
+  surface: true,
+  onSurface: true,
+  primary: true,
+  onPrimary: true,
+  primaryContainer: true,
+  onPrimaryContainer: true,
+  positive: true,
+  negative: true,
+  negativeContrast: true,
+  selectNode: true,
+  selectEdge: true,
+  hoverNode: true,
+  hoverEdge: true,
+  flag: true,
+};
+
+export function isGlobalColour(name: string): name is GlobalColour {
+  return Object.hasOwn(GLOBAL_COLOURS, name);
+}
+
 /** A CSS variable as a number, or the default when it is unset or not a number. 0 is a number. */
 function cssNumber(css: CSSStyleDeclaration, name: string, defaultValue: number): number {
   const value = Number.parseFloat(css.getPropertyValue(name));

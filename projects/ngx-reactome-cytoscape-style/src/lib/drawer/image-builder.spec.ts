@@ -49,6 +49,15 @@ const images = (style: Style, node: cytoscape.NodeSingular) =>
   imageBuilder(style.properties, style)(node)['background-image'] as string[];
 
 describe('the image builder', () => {
+  // Drawn, a complex without a size had NaN and `undefined` in its SVG.
+  it('draws nothing for a node without a size', () => {
+    const cy = cytoscape({
+      headless: true,
+      elements: [{ data: { id: 'n' }, classes: ['Complex', 'PhysicalEntity'] }],
+    });
+    expect(images(aStyle(), cy.getElementById('n'))).toEqual([]);
+  });
+
   it("does not hand one diagram's drawing to another node with the same id", () => {
     clearDrawersCache();
     const small = aNode({ width: 100, height: 40 });

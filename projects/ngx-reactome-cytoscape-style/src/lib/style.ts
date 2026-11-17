@@ -7,8 +7,9 @@ import {
 } from './drawer/image-builder';
 import { extract, mapProperty, propertyExtractor } from './properties-utils';
 
-import { Properties, setDefaults, UserProperties } from './properties';
+import { isGlobalColour, Properties, setDefaults, UserProperties } from './properties';
 import { Interactivity } from './interactivity';
+import { expressionData, numberData, textData } from './element-data';
 import chroma, { Scale } from 'chroma-js';
 
 const INTERACTIVITY_KEY = '_reactomeInteractivity';
@@ -19,7 +20,8 @@ const INTERACTIVITY_KEY = '_reactomeInteractivity';
  * most recently and so may belong to an entirely different cytoscape instance.
  */
 export function interactivityOf(cy: cytoscape.Core): Interactivity | undefined {
-  return cy.scratch(INTERACTIVITY_KEY);
+  const interactivity: unknown = cy.scratch(INTERACTIVITY_KEY);
+  return interactivity instanceof Interactivity ? interactivity : undefined;
 }
 
 export class Style {
@@ -219,11 +221,10 @@ export class Style {
         selector: 'node.InteractorOccurrences[?exp]',
         css: {
           'background-color': (node) => {
-            const exp = node.data('exp') as number[];
-            // console.log(node.data(), exp)
-            return exp !== undefined
-              ? this.currentPalette(exp[0]).hex()
-              : this.pm(this.properties.analysis.notFound, (c) => c);
+            const exp = expressionData(node);
+            if (exp === undefined) return this.pm(this.properties.analysis.notFound, (c) => c);
+            const first = exp[0];
+            return this.currentPalette(Array.isArray(first) ? first[0] : first).hex();
           },
           'border-width': this.p('global', 'thickness'),
           'border-color': this.p('interactor', 'fill'),
@@ -334,8 +335,13 @@ export class Style {
           'border-color': this.p('molecule', 'stroke'),
           'border-width': this.p('global', 'thickness'),
           // @ts-expect-error
-          'corner-radius': (node: cytoscape.NodeSingular) =>
-            Math.min(node.data('width'), node.data('height')) / 2,
+          'corner-radius': (node: cytoscape.NodeSingular) => {
+            const width = numberData(node, 'width');
+            const height = numberData(node, 'height');
+            return width === undefined || height === undefined
+              ? undefined
+              : Math.min(width, height) / 2;
+          },
         },
       },
       {
@@ -836,7 +842,15 @@ export class Style {
       {
         selector: '[?labelColor]',
         css: {
-          color: (e: cytoscape.EdgeSingular) => extract(this.p('global', e.data('labelColor'))),
+          // A name that is not a global colour threw here. An empty colour is
+          // invalid, so cytoscape leaves the label the colour the rules before
+          // this one give it.
+          color: (e: cytoscape.EdgeSingular) => {
+            const name = textData(e, 'labelColor');
+            return name !== undefined && isGlobalColour(name)
+              ? extract(this.p('global', name))
+              : '';
+          },
         },
       },
       {
