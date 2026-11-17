@@ -221,11 +221,29 @@ lines in the style library.
       the not-found colour, a string, as a function (see "Bugs found on the
       way"). Seen failing: `main`'s two files, linted beside them with this
       configuration, gave the 33 warnings and `check:lint` failed.
-- [ ] T007 [US2] Element data in the style library: readers for what
+- [x] T007 [US2] Element data in the style library: readers for what
       `ele.data(name)` holds (text, number, list; anything else absent), with a
       spec, used by the rest of `style.ts` and by
       `ngx-reactome-cytoscape-style/src/lib/drawer/image-builder.ts` (4). T006
-      and T007 together: 41. 290 → 249.
+      and T007 together: 41. 290 → 249. 262 → 253 (#TBD): 4 in the image
+      builder (`exp`, `width`, `height` and the gradient's argument), 4 in
+      `style.ts` (`interactivityOf`'s `cy.scratch`, read as an `Interactivity`
+      or nothing; the molecule's corner radius (2); the label colour), and
+      the gradient's `exp[0]!`, which the honest type of a node's values no
+      longer needs. `element-data.ts` (`textData`, `numberData`, `listData`,
+      as WebsiteAngular's, and `expressionData` for a node's analysis values)
+      is internal: nothing exported changes. A node's values are numbers,
+      none, or `[value, shares]` pairs whose value may be none (a pathway's
+      not-found entities, `[undefined, n]`), not the `[number, number]`
+      declared. What no writer stores now reads differently: a size written as
+      text or missing (a drawn node is not drawn, where its SVG had NaN and
+      `undefined` in it; a molecule's corner radius is not applied, where it
+      was NaN), `exp` that is not a list (no values), an entry of it that is
+      not a value (none). Found on the way, and fixed in its own commit with a
+      test seen failing: the label colour threw for a name that is not a
+      global colour (see "Bugs found on the way"). Seen failing: `main`'s two
+      files, linted beside them with this configuration, gave the 9 warnings
+      and `check:lint` failed.
 - [ ] T008 [US2] `ban-ts-comment` in the style library (21), then promote:
       the eleven gaps in cytoscape's style types through one local widened
       `Css` type handed to cytoscape at one point (not a module augmentation,
@@ -408,6 +426,15 @@ named, and fixed only where it changes nothing a user sees.
   colour, a string, as a function. The selector keeps such an interactor from
   reaching it, so no user saw it. Found in T006 and fixed there (#40), with a
   test seen failing on the old code.
+- **A label colour that names no global colour threw**
+  (`ngx-reactome-cytoscape-style/src/lib/style.ts`, the rule
+  `[?labelColor]`): the name was looked up among the global properties and
+  what was found passed to `extract`, which threw on nothing, when cytoscape
+  styled the element. Now only a global colour is applied; for any other
+  value the label keeps the colour of the rules before it. Nothing in these
+  libraries or in WebsiteAngular sets `labelColor`, so no diagram drawn
+  today changes. Found in T007 and fixed there (#TBD), with a test seen
+  failing on the old code.
 
 ## Silenced lines
 
