@@ -2194,9 +2194,9 @@ let DiagramComponent = class DiagramComponent {
     }
     ngAfterViewInit() {
         this.dark.$dark.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.updateStyle());
-        const container = this.cytoscapeContainer.nativeElement;
-        const compareContainer = this.compareContainer.nativeElement;
-        const legendContainer = this.legendContainer.nativeElement;
+        const container = viewElement(this.cytoscapeContainer, 'diagram');
+        const compareContainer = viewElement(this.compareContainer, 'compare pane');
+        const legendContainer = viewElement(this.legendContainer, 'legend');
         Object.values(ReactomeEventTypes).forEach((type) => {
             container.addEventListener(type, (e) => this._reactomeEvents$.next(e));
             compareContainer.addEventListener(type, (e) => this._reactomeEvents$.next(e));
@@ -2246,7 +2246,7 @@ let DiagramComponent = class DiagramComponent {
      * never compared.
      */
     displayNetwork(elements) {
-        const container = this.cytoscapeContainer.nativeElement;
+        const container = viewElement(this.cytoscapeContainer, 'diagram');
         const fadesOut = (element) => Boolean(element.data['isFadeOut']);
         this.comparing =
             !Array.isArray(elements) &&
@@ -2270,7 +2270,7 @@ let DiagramComponent = class DiagramComponent {
         });
         this.reactomeStyle.bindToCytoscape(this.cy);
         this.reactomeStyle.clearCache();
-        this.loadCompare(elements, container);
+        this.loadCompare(elements, this.cy, container);
         // As the state's own changes are shown: zoomed to, and not sent to the
         // host as if clicked (issue #14, bug 7).
         this.avoidSideEffect(() => this.stateToDiagram());
@@ -2288,21 +2288,22 @@ let DiagramComponent = class DiagramComponent {
                 this.cy.elements('.Compartment').style('visibility', 'visible');
             });
     }
-    loadCompare(elements, container) {
+    loadCompare(elements, cy, container) {
         // Nothing writes a shadow's `triggerPosition` (none in the fixtures), and
         // no shadow is replaced or crossed; read absent, it is NaN, which sorts
         // and compares as the `undefined` read before.
         const getPosition = (e) => e.is('.Shadow') ? (numberData(e, 'triggerPosition') ?? NaN) : e.boundingBox().x1;
         const isReplaced = (e) => isSet(e, 'replacedBy') || isSet(e, 'isCrossed');
         if (this.comparing) {
-            this.cy.elements('[!isBackground]').style('visibility', 'hidden');
-            this.replacedElements = this.cy.elements('[?replacedBy]')
+            cy.elements('[!isBackground]').style('visibility', 'hidden');
+            this.replacedElements = cy
+                .elements('[?replacedBy]')
                 .add('[?isCrossed]')
                 .sort((a, b) => getPosition(a) - getPosition(b))
                 .style('visibility', 'hidden')
                 .toArray();
             this.replacedElementsPosition = this.replacedElements.map(getPosition);
-            this.cy.on('add', (e) => {
+            cy.on('add', (e) => {
                 const addedElement = e.target;
                 if (isReplaced(addedElement)) {
                     const x = getPosition(addedElement);
@@ -2314,7 +2315,7 @@ let DiagramComponent = class DiagramComponent {
                     addedElement.style('visibility', 'hidden');
                 }
             });
-            this.cy.on('remove', (e) => {
+            cy.on('remove', (e) => {
                 const removedElement = e.target;
                 const index = this.replacedElements.indexOf(removedElement);
                 if (index > -1) {
@@ -2322,29 +2323,30 @@ let DiagramComponent = class DiagramComponent {
                     this.replacedElementsPosition.splice(index, 1);
                 }
             });
-            const compareContainer = this.compareContainer.nativeElement;
-            this.cyCompare = cytoscape({
+            const compareContainer = viewElement(this.compareContainer, 'compare pane');
+            const cyCompare = cytoscape({
                 container: compareContainer,
                 elements: elements,
                 style: this.reactomeStyle?.getStyleSheet(),
                 layout: { name: 'preset' },
             });
-            this.cyCompare.elements('[?isFadeOut]').remove();
-            this.cyCompare.elements('.Compartment').remove();
-            this.cy.nodes('.crossed').removeClass('crossed');
-            this.cyCompare.on('viewport', () => this.syncViewports(this.cyCompare, compareContainer, this.cy, container));
-            this.cy.on('viewport', () => this.syncViewports(this.cy, container, this.cyCompare, compareContainer));
+            this.cyCompare = cyCompare;
+            cyCompare.elements('[?isFadeOut]').remove();
+            cyCompare.elements('.Compartment').remove();
+            cy.nodes('.crossed').removeClass('crossed');
+            cyCompare.on('viewport', () => this.syncViewports(cyCompare, compareContainer, cy, container));
+            cy.on('viewport', () => this.syncViewports(cy, container, cyCompare, compareContainer));
             this.reactomeStyleCompare = new Style(compareContainer);
-            this.reactomeStyleCompare?.bindToCytoscape(this.cyCompare);
-            this.cyCompare.minZoom(this.cy.minZoom());
-            this.cyCompare.maxZoom(this.cy.maxZoom());
+            this.reactomeStyleCompare?.bindToCytoscape(cyCompare);
+            cyCompare.minZoom(cy.minZoom());
+            cyCompare.maxZoom(cy.maxZoom());
             // A pane destroyed by then, with its diagram replaced or the component
-            // gone, is left alone.
-            const drawnCompare = this.cyCompare;
+            // gone, is left alone. One still drawn is the field's, and `cy` the
+            // diagram's: replacing the diagram destroys the pane first.
             setTimeout(() => {
-                if (drawnCompare.destroyed())
+                if (cyCompare.destroyed())
                     return;
-                this.syncViewports(this.cy, container, this.cyCompare, compareContainer);
+                this.syncViewports(cy, container, cyCompare, compareContainer);
                 this.initialiseReplaceElements();
             });
         }
@@ -2523,7 +2525,11 @@ let DiagramComponent = class DiagramComponent {
     }
     updateReplacementVisibility() {
         // // Calculate the position of the element that is to the right of the separation
-        const extent = this.cyCompare.extent();
+        // Only a compare pane's extent says which replaced elements show.
+        const cyCompare = this.cyCompare;
+        if (cyCompare === undefined)
+            return;
+        const extent = cyCompare.extent();
         let limitIndex = this.replacedElementsPosition.findIndex((x1) => x1 >= extent.x1);
         if (limitIndex === -1)
             limitIndex = this.replacedElements.length;
@@ -2581,8 +2587,13 @@ let DiagramComponent = class DiagramComponent {
         if (!this.compareDragging)
             return;
         compareContainer.style['left'] = $event.x - container.getBoundingClientRect().x + 'px';
-        this.cyCompare.resize();
-        this.syncViewports(this.cy, this.cytoscapeContainer.nativeElement, this.cyCompare, this.compareContainer.nativeElement);
+        // The handle is in the compare pane, shown only once one is drawn.
+        const cy = this.cy;
+        const cyCompare = this.cyCompare;
+        if (cy === undefined || cyCompare === undefined)
+            return;
+        cyCompare.resize();
+        this.syncViewports(cy, viewElement(this.cytoscapeContainer, 'diagram'), cyCompare, viewElement(this.compareContainer, 'compare pane'));
     }
     updateLegend() {
         this.legend.resize();
@@ -2660,6 +2671,16 @@ function subPathwayEdges(shadow) {
     return pathway === undefined
         ? shadow.cy().collection().edges()
         : withData(shadow.cy(), 'pathway', pathway).edges();
+}
+/**
+ * A view child's element. The three are in the template unconditionally, so
+ * each is there from the view's creation; asked for before then, or after a
+ * template that lost one, it is a mistake, and said so.
+ */
+function viewElement(ref, name) {
+    if (ref === undefined)
+        throw new Error(`DiagramComponent: the ${name} element is not in the view yet.`);
+    return ref.nativeElement;
 }
 
 /*
