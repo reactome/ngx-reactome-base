@@ -12,7 +12,10 @@ interface Position {
     y: number;
 }
 
-declare const DIAGRAM_CONFIG_TOKEN: InjectionToken<any>;
+interface DiagramConfig {
+    diagramUrl?: string;
+}
+declare const DIAGRAM_CONFIG_TOKEN: InjectionToken<DiagramConfig>;
 declare class DiagramService {
     private http;
     extraLine: Map<string, Position>;
@@ -156,4 +159,4 @@ declare class DiagramComponent implements AfterViewInit, OnChanges {
 }
 
 export { DIAGRAM_CONFIG_TOKEN, DiagramComponent, DiagramService };
-export type { DiagramLoadFailure };
+export type { DiagramConfig, DiagramLoadFailure };

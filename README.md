@@ -8,7 +8,8 @@ Angular fails to create the service (`NullInjectorError`). Its one setting,
 `diagramUrl`, is where the diagram files are loaded from: for a diagram `id`,
 `${diagramUrl}/${id}.json` (the layout) and `${diagramUrl}/${id}.graph.json`
 (the graph). Without `diagramUrl`, they come from Reactome's current release,
-`https://reactome.org/download/current/diagram`.
+`https://reactome.org/download/current/diagram`. The token's type,
+`DiagramConfig`, is exported with it.
 
 ```typescript
 import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';

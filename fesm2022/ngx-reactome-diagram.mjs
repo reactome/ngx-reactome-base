@@ -10,7 +10,6 @@ import cytoscapeFcose from 'cytoscape-fcose';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { isArray } from 'lodash';
 import { UntilDestroy } from '@ngneat/until-destroy';
 import { MatDialog } from '@angular/material/dialog';
 import * as i1 from '@angular/common';
@@ -1793,6 +1792,39 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "21.2.26", ngImpo
                 }]
         }], ctorParameters: () => [] });
 
+const TOKENS = [
+    'select',
+    'flag',
+    'path',
+    'flagInteractors',
+    'overlay',
+    'analysis',
+    'analysisProfile',
+];
+// A database id is a number; anything else, such as a gene name, a string.
+const list = (raw) => raw.split(',').map((v) => (/^\d+$/.test(v) ? parseInt(v) : v));
+const text = (raw) => raw;
+// How each parameter is read from the address.
+const READ = {
+    select: text,
+    flag: list,
+    path: list,
+    flagInteractors: text,
+    overlay: text,
+    analysis: text,
+    analysisProfile: text,
+};
+// What each parameter is when the address does not name it: a new list each
+// time, so the state never shares one.
+const DEFAULTS = {
+    select: () => '',
+    flag: () => [],
+    path: () => [],
+    flagInteractors: () => false,
+    overlay: () => '',
+    analysis: () => null,
+    analysisProfile: () => null,
+};
 class DiagramStateService {
     constructor() {
         this.router = inject(Router);
@@ -1807,62 +1839,57 @@ class DiagramStateService {
             analysis: { value: null, otherTokens: ['ANALYSIS'] },
             analysisProfile: { value: null },
         };
-        // What each parameter is when the address does not name it: text, a
-        // boolean, null or an empty list, copied when used.
-        this.defaults = new Map([
-            ['select', ''],
-            ['flag', []],
-            ['path', []],
-            ['flagInteractors', false],
-            ['overlay', ''],
-            ['analysis', null],
-            ['analysisProfile', null],
-        ]);
         this._state$ = new BehaviorSubject(this.state);
         this.state$ = this._state$.asObservable();
-        this.onChange = Object.keys(this.state).reduce((properties, prop) => {
-            properties[`${prop}$`] = this.state$.pipe(map((state) => state[prop].value), distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString())
-            // share()
-            );
-            return properties;
-        }, {});
+        this.onChange = {
+            select$: this.watch('select'),
+            flag$: this.watch('flag'),
+            path$: this.watch('path'),
+            flagInteractors$: this.watch('flagInteractors'),
+            overlay$: this.watch('overlay'),
+            analysis$: this.watch('analysis'),
+            analysisProfile$: this.watch('analysisProfile'),
+        };
         const route = inject(ActivatedRoute);
         route.queryParamMap.subscribe((params) => {
             if (this.ignore)
                 return;
             let change = false;
-            for (const mainToken in this.state) {
-                const param = this.state[mainToken];
-                const tokens = [mainToken, ...(param.otherTokens || [])];
-                const token = tokens.find((token) => params.has(token));
-                if (token) {
-                    const formerValue = param.value;
-                    if (isArray(param.value)) {
-                        const rawValue = params.get(token);
-                        // A database id is a number; anything else, such as a gene name, a string.
-                        param.value = rawValue.split(',').map((v) => (/^\d+$/.test(v) ? parseInt(v) : v));
-                    }
-                    else {
-                        param.value = params.get(token);
-                    }
-                    // Changed when it differs from before. This was inverted, so a state
-                    // read from the address reached no one and an unchanged one did.
-                    change = change || formerValue?.toString() !== param.value?.toString();
-                }
-                else if (!this.blockRouterChange && this.defaults.has(mainToken)) {
-                    const initial = this.defaults.get(mainToken);
-                    if (String(param.value) === String(initial))
-                        continue;
-                    // Gone from the address, so back to its default: it was kept, and a
-                    // selection or flag removed from the address stayed. Not while the
-                    // router is blocked, when the address is not where the state lives.
-                    param.value = Array.isArray(initial) ? [] : initial;
-                    change = true;
-                }
+            for (const mainToken of TOKENS) {
+                change = this.read(mainToken, params) || change;
             }
             if (change)
                 this._state$.next(this.state);
         });
+    }
+    watch(token) {
+        return this.state$.pipe(map((state) => state[token].value), distinctUntilChanged((v1, v2) => v1?.toString() === v2?.toString())
+        // share()
+        );
+    }
+    // Reads one parameter from the address, and says whether it changed.
+    read(mainToken, params) {
+        const param = this.state[mainToken];
+        const tokens = [mainToken, ...(param.otherTokens || [])];
+        const token = tokens.find((token) => params.has(token));
+        const raw = token === undefined ? null : params.get(token);
+        if (raw !== null) {
+            const formerValue = param.value;
+            param.value = READ[mainToken](raw);
+            // Changed when it differs from before. This was inverted, so a state
+            // read from the address reached no one and an unchanged one did.
+            return formerValue?.toString() !== param.value?.toString();
+        }
+        // Gone from the address, so back to its default: it was kept, and a
+        // selection or flag removed from the address stayed. Not while the
+        // router is blocked, when the address is not where the state lives.
+        if (this.blockRouterChange)
+            return false;
+        const initial = DEFAULTS[mainToken]();
+        if (String(param.value) === String(initial))
+            return false;
+        param.value = initial;
+        return true;
     }
     get(token) {
         return this.state[token].value;
@@ -1885,18 +1912,17 @@ class DiagramStateService {
     // Merged into the host's address: replacing the query string and dropping
     // the fragment took the host's own parameters with them. A parameter with no
     // value is removed, under its aliases too, or an alias left behind would
-    // bring the value back on the next read.
+    // bring the value back on the next read. A list with no items, '', 0, false
+    // and null are no value.
     onPropertyModified() {
         const queryParams = {};
-        for (const [token, param] of Object.entries(this.state)) {
-            const set = param.value && param.value.length !== 0;
+        for (const token of TOKENS) {
+            const param = this.state[token];
+            const value = param.value;
+            const set = Array.isArray(value) ? value.length !== 0 : Boolean(value);
             for (const alias of param.otherTokens ?? [])
                 queryParams[alias] = null;
-            queryParams[token] = !set
-                ? null
-                : Array.isArray(param.value)
-                    ? param.value.join(',')
-                    : param.value;
+            queryParams[token] = !set ? null : Array.isArray(value) ? value.join(',') : value;
         }
         return this.router.navigate([], {
             queryParams,
