@@ -271,11 +271,31 @@ lines in the style library.
       `main` and on this branch; the library's `.d.ts` is identical too.
       Seen failing: `main`'s three files, linted beside them with this
       configuration, gave 21 `ban-ts-comment` errors and `check:lint` failed.
-- [ ] T009 [US2] `ngx-reactome-cytoscape-style/src/lib/interactivity.ts`,
+- [x] T009 [US2] `ngx-reactome-cytoscape-style/src/lib/interactivity.ts`,
       `initHover` (59): handlers on node selectors take `EventObjectNode`, on
       edge selectors `EventObjectEdge`; ids read through T007's readers. Brings
       `ReactomeEventTarget`'s declared types against what is sent (open
-      question 2). 228 → 169.
+      question 2). 228 → 169. (#TBD) Measured 230 → 171: `no-unsafe-*` only
+      (argument 4, assignment 17, call 18, member access 18, return 2); no
+      rule reaches zero. `ReactomeEventTarget` (exported) now declares
+      `reactomeId: number | undefined` (the diagrams store numbers; the
+      legend's elements have none) and `element: cytoscape.NodeCollection`
+      (a reaction's line sends `connectedNodes('.reaction')`); the diagram
+      component's two reads and three specs follow it. In `initHover` only,
+      T010's `#${…}` selectors became `getElementById` (a modification's
+      `nodeId`, an interactor line's id). Seen unchanged: on the three fixture
+      diagrams plus hand-made interactor lines, hovering and leaving every
+      element (938) emitted the same 1,720 events (type, detail type,
+      `reactomeId`, element ids, `cy`) and left the same classes and computed
+      styles on `main`'s build and this branch's, except the one intended
+      difference: an interactor line whose id is not a valid selector
+      (`CHEBI:15377-…`, `X (1)-…`) is now highlighted, where `main` warned
+      "The selector … is invalid" and highlighted nothing. Seen failing:
+      `main`'s `interactivity.ts` linted beside it gave 59 more warnings and
+      `check:lint` failed. WebsiteAngular, type-checked (`check:types`)
+      against this build, fails on one line, `diagram.component.ts`'s
+      `legend2state` (`element.id()`, not declared on a collection), and
+      passes with `element[0]?.id()`, which is what `id()` reads at run time.
 - [ ] T010 [US2] `interactivity.ts`, `initSelect` (42), `initClick` (20) and the
       rest (7: the structure video's and molecule's layers, the zoom curve). 169
       → 100. The `#${…}` selectors built from element data, here and in
@@ -348,7 +368,7 @@ lines in the style library.
    hover, a collection. Correct the exported type to what is sent (a change
    WebsiteAngular may need to follow), or keep the type and convert what is
    sent (a behaviour change)? Decided (16 Nov): correct the type to what is
-   sent.
+   sent. Done in T009 (#TBD).
 
 ## Bugs found on the way
 
@@ -368,7 +388,16 @@ named, and fixed only where it changes nothing a user sees.
 - **The exported event type says text where a number is sent**
   (`ngx-reactome-cytoscape-style/src/lib/model/reactome-event.model.ts`): see
   open question 2. Decided (16 Nov): the type follows what is sent
-  (`reactomeId` a number, `element` a collection); in T009 and T010.
+  (`reactomeId` a number, `element` a collection); in T009 and T010. The
+  type corrected in T009 (#TBD); what `initSelect` and `initClick` send is
+  read through the readers in T010.
+- **Hovering an interactor whose id is not a valid CSS selector throws**
+  (`interactivity.ts`, `initStructureVideo`'s handler, for `node.Protein`):
+  it finds the node's video with `` querySelector(`#video-${id}`) ``, and jsdom
+  threw "Invalid selector" for a hand-made interactor node of class
+  `Protein` with an accession containing a colon. WebsiteAngular names an
+  interactor's node `interactor-<accession>`. Found in T009, not yet
+  measured in a browser or on a real interactor; for T010 to confirm or drop.
 - **A stored theme that is not JSON stops the diagram's theme service**
   (`ngx-reactome-diagram/src/lib/services/dark.service.ts`): the stored value
   is `JSON.parse`d unguarded, so anything else in `is-dark` throws while the

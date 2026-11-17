@@ -694,7 +694,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     )
     .subscribe((e) => {
       if (e.type !== ReactomeEventTypes.select) return;
-      let elements: cytoscape.NodeSingular = e.detail.element;
+      let elements: cytoscape.NodeCollection = e.detail.element;
       if (e.detail.type === 'reaction') {
         elements = e.detail.cy.elements('node.reaction:selected');
       }
@@ -723,7 +723,7 @@ export class DiagramComponent implements AfterViewInit, OnChanges {
     )
     .subscribe((e) => {
       if (e.detail.cy.elements(':selected').nonempty()) return;
-      const element: cytoscape.SingularElementArgument = e.detail.element;
+      const element: cytoscape.NodeCollection = e.detail.element;
       const id: unknown = element.data(this.usedbId ? 'reactomeId' : 'graph.stId');
       if (id !== undefined && String(id) === String(this.state.get('select'))) {
         this.state.set('select', '');
