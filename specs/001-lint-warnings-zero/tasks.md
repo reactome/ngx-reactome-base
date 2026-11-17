@@ -296,14 +296,35 @@ lines in the style library.
       against this build, fails on one line, `diagram.component.ts`'s
       `legend2state` (`element.id()`, not declared on a collection), and
       passes with `element[0]?.id()`, which is what `id()` reads at run time.
-- [ ] T010 [US2] `interactivity.ts`, `initSelect` (42), `initClick` (20) and the
+- [x] T010 [US2] `interactivity.ts`, `initSelect` (42), `initClick` (20) and the
       rest (7: the structure video's and molecule's layers, the zoom curve). 169
       → 100. The `#${…}` selectors built from element data, here and in
       `initHover` (`nodeId`, an interactor edge's `id`), become
       `getElementById`: an id with a space or bracket in it, such as a repeated
       edge's " (1)", is an invalid selector, and `cy.edges()` given one finds
       nothing (measured), so such an element is never highlighted (found in
-      T018).
+      T018). (#44) Measured 171 → 104: `no-unsafe-*` only (argument 5,
+      assignment 22, call 20, member access 20); no rule reaches zero. The 9
+      left in the file are T013's `!`. Handlers take `EventObjectNode` on node
+      selectors, `EventObjectEdge` on edge selectors, and either on the
+      selectors that match both (`.Interactor`, `.DiseaseInteractor`, `.drug`,
+      the drug's handler acting on nodes only, as only nodes are structure
+      containers); ids, URLs and the video's HTML read through the readers
+      (`numberData`, `textData`). The modification's `#${nodeId}` became the
+      lookup `initHover` uses (`nodeOf`, now shared). The structure video is
+      found by comparing ids, not with a `#video-…` selector (see "Bugs found
+      on the way"). Nothing exported changes: the library's `.d.ts` is
+      identical. Seen unchanged: on the three fixture diagrams plus hand-made
+      interactors (nodes, lines, a badge, a disease interactor), selecting,
+      unselecting, tapping twice and hovering every element (956), and
+      zooming, emitted the same events (type, detail, `reactomeId`, element
+      ids, `cy`), opened the same URLs, left the same classes, selection and
+      computed styles, and played the same videos on `main`'s build and this
+      branch's, except the one intended difference: an interactor `Protein`
+      whose id is not a valid selector (`interactor-CHEBI:28304`,
+      `interactor-X (1)`) now plays and pauses its video, where `main` threw
+      "Invalid selector". Seen failing: `main`'s `interactivity.ts` linted
+      beside it gave 67 more `no-unsafe-*` warnings and `check:lint` failed.
 - [ ] T011 [US2] `ngx-reactome-diagram/src/lib/diagram/diagram.component.ts`
       (46): `displayNetwork` takes the `cytoscape.ElementsDefinition` that
       `getDiagram` returns; the compare view's `add` and `remove` handlers an
@@ -390,14 +411,19 @@ named, and fixed only where it changes nothing a user sees.
   open question 2. Decided (16 Nov): the type follows what is sent
   (`reactomeId` a number, `element` a collection); in T009 and T010. The
   type corrected in T009 (#43); what `initSelect` and `initClick` send is
-  read through the readers in T010.
+  read through the readers in T010 (#44).
 - **Hovering an interactor whose id is not a valid CSS selector throws**
   (`interactivity.ts`, `initStructureVideo`'s handler, for `node.Protein`):
   it finds the node's video with `` querySelector(`#video-${id}`) ``, and jsdom
   threw "Invalid selector" for a hand-made interactor node of class
   `Protein` with an accession containing a colon. WebsiteAngular names an
-  interactor's node `interactor-<accession>`. Found in T009, not yet
-  measured in a browser or on a real interactor; for T010 to confirm or drop.
+  interactor's node `interactor-<accession>`. Found in T009. Confirmed in
+  T010: an interactor with no type is drawn as a `Protein`, and a recorded
+  interactor list in WebsiteAngular's tests has `CHEBI:28304` with none;
+  Chromium throws for `#video-interactor-CHEBI:28304` ("not a valid
+  selector"), so each hover of such an interactor threw, before its video
+  was looked at. Fixed in T010 (#44): the video is found by comparing ids
+  within the layer, with a test seen failing on the old code.
 - **A stored theme that is not JSON stops the diagram's theme service**
   (`ngx-reactome-diagram/src/lib/services/dark.service.ts`): the stored value
   is `JSON.parse`d unguarded, so anything else in `is-dark` throws while the
