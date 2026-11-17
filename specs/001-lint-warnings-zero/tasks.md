@@ -383,7 +383,7 @@ lines in the style library.
 - [x] T013 [US3] `no-non-null-assertion` in the style library (12):
       `interactivity.ts` (9: the graph's container (3), the video layer, a
       video's sources, the zoom curve's ends (4)),
-      `drawer/image-builder.ts` (2), `style.ts` (1). 54 → 42. (#TBD)
+      `drawer/image-builder.ts` (2), `style.ts` (1). 54 → 42. (#47)
   - 11, not 12 (`image-builder.ts` had 1): 58 → 47, `no-non-null-assertion`
     50 → 39. Nothing promoted.
   - The container: a headless graph's is null, and each event sent to it
@@ -577,7 +577,7 @@ named, and fixed only where it changes nothing a user sees.
   properties of null (reading 'dispatchEvent')". Nothing in these libraries
   or in WebsiteAngular binds a headless graph, so no user saw it. Now such a
   graph sends no events and the rest of each handler runs. Found in T013 and
-  fixed there (#TBD), with a test seen failing on the old code.
+  fixed there (#47), with a test seen failing on the old code.
 
 ## Silenced lines
 
