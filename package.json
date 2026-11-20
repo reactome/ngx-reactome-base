@@ -1,6 +1,7 @@
 {
   "name": "ngx-reactome-style",
   "version": "0.1.0",
+  "license": "CC0-1.0",
   "description": "Shared Reactome Angular Material theme (Sass only).",
   "peerDependencies": {
     "@angular/material": ">=19.0.0"
