@@ -1,6 +1,7 @@
 {
   "name": "ngx-reactome-cytoscape-style",
   "version": "0.1.0",
+  "license": "CC0-1.0",
   "type": "module",
   "exports": {
     "./assets": {
